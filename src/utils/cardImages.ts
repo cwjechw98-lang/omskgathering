@@ -4,13 +4,16 @@ import { LOCAL_CARD_BACK_IMAGE, LOCAL_CARD_IMAGES } from '../data/localCardImage
 export function getCardCoverSources(card: Pick<CardData, 'id' | 'imageUrl'>): { src?: string; fallback?: string } {
   const localSrc = LOCAL_CARD_IMAGES[card.id];
   if (localSrc) {
-    return { src: localSrc, fallback: card.imageUrl };
+    // Vite сам подставит /omskgathering/ на GitHub и / на локальном компе
+    const finalSrc = import.meta.env.BASE_URL + localSrc.replace(/^\//, '');
+    return { src: finalSrc, fallback: card.imageUrl };
   }
   return { src: card.imageUrl };
 }
 
 export function getCardBackSource(): string | undefined {
-  return LOCAL_CARD_BACK_IMAGE || undefined;
+  if (!LOCAL_CARD_BACK_IMAGE) return undefined;
+  return import.meta.env.BASE_URL + LOCAL_CARD_BACK_IMAGE.replace(/^\//, '');
 }
 
 export function handleImageErrorWithFallback(img: HTMLImageElement): void {
