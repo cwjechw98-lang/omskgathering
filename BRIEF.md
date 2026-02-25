@@ -25,7 +25,8 @@
 ## Notes
 - Local card covers are cached in `public/cards`; map is in `src/data/localCardImages.ts`.
 - For recache, put `POLLINATIONS_API_KEY` in `.env` (see `.env.example`) and run `npm run cache:card-images`.
+- Keeper audit artifacts are in `output/keeper-audit/` (engine + UI reports and screenshots).
 
 ## Next Session Prompt
 - Paste in new chat:
-  `Подхвати память по проекту omsk gatering. Открой BRIEF.md и WORKLOG.md. Проверь git status и последний коммит. Проверь локальные обложки карт и рубашку в UI (output/visual-covers как референс). Затем продолжим по адаптивности mobile/desktop и polishing.` 
+  `Подхвати память по проекту omsk gatering. Открой BRIEF.md и WORKLOG.md, затем проверь output/keeper-audit (engine-keeper-report.json, mechanics-matrix-report.json, ui-keeper-report-post-fix.json). После этого продолжим: 1) расширить regression-покрытие механик, 2) пройти адаптивность mobile/desktop, 3) финальный UX-polish режима с Хранителем.` 

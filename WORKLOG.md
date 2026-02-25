@@ -55,3 +55,11 @@
 - Added secret-safety defaults for image pipeline: `.env*` ignored in git and `.env.example` added.
 - `scripts/cache-card-images.mjs` now reads `.env` automatically (if present), so API key does not need to be passed inline in commands.
 
+### 2026-02-26
+- Ran Keeper-mode verification cycle (engine + UI).
+- Stress-tested engine vs Keeper in batch simulations with no crashes/timeouts; Keeper attack actions observed for both hero and creature targets.
+- Added mechanics matrix audit (`output/keeper-audit/mechanics-matrix-report.json`): all 60 cards are playable through engine APIs; core keyword checks pass.
+- Fixed engine authority gap: `defender` can no longer attack when calling `attackPlayer/attackCreature` directly (`src/game/engine.ts`).
+- Re-ran regression suite after fix: `npm run test:regression` 9/9 PASS.
+- Captured post-fix Keeper UI smoke (`output/keeper-audit/ui-keeper-report-post-fix.json`, `05-after-defender-fix-keeper.png`) with no console/page errors.
+

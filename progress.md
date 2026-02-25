@@ -54,3 +54,10 @@ TODO update:
 - Generated src/data/localCardImages.ts with full local path map and LOCAL_CARD_BACK_IMAGE set.
 - Post-cache verification: `npm run build` PASS, `npm run test:regression` PASS (9/9).
 
+
+- Keeper-focused validation run completed:
+- Engine stress (hundreds of simulated matches) and UI smoke in AI mode produced no runtime errors.
+- Added/fixed authority rule in engine: defenders cannot attack even via direct engine API calls (attackPlayer/attackCreature guards).
+- Mechanics matrix report saved to output/keeper-audit/mechanics-matrix-report.json (60/60 cards playable, keyword checks pass).
+- Post-fix UI report saved to output/keeper-audit/ui-keeper-report-post-fix.json.
+

@@ -649,6 +649,7 @@ export function attackPlayer(
 
   const attacker = player.field.find(c => c.uid === attackerUid);
   if (!attacker) return state;
+  if (hasKeyword(attacker, 'defender')) return state;
   if (attacker.summoningSickness || attacker.hasAttacked || attacker.frozen > 0) return state;
 
   // Check for defenders (unless unblockable or flying and no flying defenders)
@@ -723,6 +724,7 @@ export function attackCreature(
   const attacker = player.field.find(c => c.uid === attackerUid);
   const defender = opponent.field.find(c => c.uid === defenderUid);
   if (!attacker || !defender) return state;
+  if (hasKeyword(attacker, 'defender')) return state;
   if (attacker.summoningSickness || attacker.hasAttacked || attacker.frozen > 0) return state;
 
   // Flying check
