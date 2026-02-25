@@ -288,11 +288,24 @@ body {
   transition: transform 0.08s var(--ease-out), box-shadow 0.08s var(--ease-out);
 }
 .card-in-hand:hover {
-  transform: translateY(-12px) scale(1.15);
+  transform: translateY(-12px) scale(1.2);
   box-shadow: 0 12px 24px rgba(0,0,0,0.4), 0 0 20px rgba(201, 168, 76, 0.3);
   z-index: 100;
 }
 .card-in-hand:not(:hover) {
+  transition: transform 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
+}
+
+/* FIELD CARD HOVER: responsive but calmer than hand */
+.card-in-field {
+  transition: transform 0.1s var(--ease-out), box-shadow 0.1s var(--ease-out);
+}
+.card-in-field:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.45);
+  z-index: 80;
+}
+.card-in-field:not(:hover) {
   transition: transform 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
 }
 
@@ -353,7 +366,7 @@ body {
   100% { transform: translateX(0) translateY(0) scale(1); } /* Возврат */
 }
 .card-attack-animation {
-  animation: cardAttack 0.6s var(--ease-out) forwards;
+  animation: cardAttack 0.65s var(--ease-out) forwards;
 }
 
 /* 6. ПОЛУЧЕНИЕ УРОНА: shake 0.15с + flash */
@@ -370,7 +383,7 @@ body {
   100% { box-shadow: 0 0 0 rgba(255,0,0,0); }
 }
 .card-damage-animation {
-  animation: cardDamageShake 0.15s linear, cardDamageFlash 0.2s ease-out;
+  animation: cardDamageShake 0.15s linear, cardDamageFlash 0.1s ease-out;
 }
 
 /* 7. СМЕРТЬ КАРТЫ: 0.2с партиклы + 0.3с растворение */

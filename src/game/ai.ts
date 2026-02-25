@@ -148,9 +148,14 @@ function getPlayerDefenders(p: PlayerState): CardInstance[] {
 }
 
 // ====== MAIN AI TURN ======
-export function aiTurn(state: GameState): { state: GameState; comment: string | null } {
+export type AIAttackAction =
+  | { type: 'attack-hero'; attackerUid: string }
+  | { type: 'attack-creature'; attackerUid: string; defenderUid: string };
+
+export function aiTurn(state: GameState): { state: GameState; comment: string | null; actions: AIAttackAction[] } {
   let gs = JSON.parse(JSON.stringify(state)) as GameState;
   let lastComment: string | null = null;
+  const actions: AIAttackAction[] = [];
 
   // ========== PHASE 1: PLAY A LAND ==========
   const landInHand = gs.player2.hand.find(c => c.data.type === 'land');
@@ -242,6 +247,7 @@ export function aiTurn(state: GameState): { state: GameState; comment: string | 
         const next = attackPlayer(gs, 'player2', att.uid);
         if (next !== gs) {
           gs = next;
+          actions.push({ type: 'attack-hero', attackerUid: att.uid });
           if (!lastComment) lastComment = '⚔️ ЗА ОМСК!!! ФИНАЛЬНАЯ АТАКА!!!';
         }
         if (gs.gameOver) break;
@@ -254,6 +260,7 @@ export function aiTurn(state: GameState): { state: GameState; comment: string | 
       const next = attackPlayer(gs, 'player2', att.uid);
       if (next !== gs) {
         gs = next;
+        actions.push({ type: 'attack-hero', attackerUid: att.uid });
         if (!lastComment) lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
       }
       if (gs.gameOver) break;
@@ -267,6 +274,7 @@ export function aiTurn(state: GameState): { state: GameState; comment: string | 
         const next = attackCreature(gs, 'player2', att.uid, target.uid);
         if (next !== gs) {
           gs = next;
+          actions.push({ type: 'attack-creature', attackerUid: att.uid, defenderUid: target.uid });
           if (!lastComment) lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
         }
       } else {
@@ -286,6 +294,7 @@ export function aiTurn(state: GameState): { state: GameState; comment: string | 
       const next = attackCreature(gs, 'player2', att.uid, trade.uid);
       if (next !== gs) {
         gs = next;
+        actions.push({ type: 'attack-creature', attackerUid: att.uid, defenderUid: trade.uid });
         if (!lastComment) lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
       }
     } else {
@@ -293,6 +302,7 @@ export function aiTurn(state: GameState): { state: GameState; comment: string | 
       const next = attackPlayer(gs, 'player2', att.uid);
       if (next !== gs) {
         gs = next;
+        actions.push({ type: 'attack-hero', attackerUid: att.uid });
         if (!lastComment) lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
       }
     }
@@ -302,7 +312,7 @@ export function aiTurn(state: GameState): { state: GameState; comment: string | 
 
   // ========== PHASE 4: END TURN ==========
   gs = endTurn(gs);
-  return { state: gs, comment: lastComment };
+  return { state: gs, comment: lastComment, actions };
 }
 
 // ========== CARD SCORING ==========
