@@ -24,3 +24,7 @@
 
 ## Notes
 - 
+
+## Next Session Prompt
+- Paste in new chat:
+  `Подхвати память по проекту omsk gatering. Открой BRIEF.md и WORKLOG.md. Проверь git status и последний коммит. Проверь локальные обложки карт и рубашку в UI (output/visual-covers как референс). Затем продолжим по адаптивности mobile/desktop и polishing.` 

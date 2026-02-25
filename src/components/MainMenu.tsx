@@ -5,6 +5,7 @@ import { CardInstance } from '../game/types';
 import { generateUid, getEffectiveAttack, getEffectiveHealth } from '../game/engine';
 import { ParticleCanvas } from './effects/ParticleCanvas';
 import { Torch } from './effects/Torch';
+import { getCardCoverSources, handleImageErrorWithFallback } from '../utils/cardImages';
 // SparkleLoadLine removed
 
 interface MainMenuProps {
@@ -209,6 +210,7 @@ function CardCollection({ onBack }: { onBack: () => void }) {
   const displayCards = ALL_CARDS.filter(c => c.id !== 'chinovnik');
   const filtered = filter === 'all' ? displayCards : displayCards.filter(c => c.type === filter || c.color === filter);
   const detail = selectedCard ? displayCards.find(c => c.id === selectedCard) : null;
+  const detailArt = detail ? getCardCoverSources(detail) : null;
   const hasMore = visibleCount < filtered.length;
   const [liteFx, setLiteFx] = useState(false);
 
@@ -272,6 +274,7 @@ function CardCollection({ onBack }: { onBack: () => void }) {
                 tempBuffAttack: 0, tempBuffHealth: 0, keywords: [...(cardData.keywords || [])],
               };
               const isSelected = selectedCard === cardData.id;
+              const art = getCardCoverSources(cardData);
               const rarityBorder = cardData.rarity === 'mythic' ? 'border-orange-500/60 shadow-orange-500/20'
                 : cardData.rarity === 'rare' ? 'border-[#c9a84c]/50 shadow-[#c9a84c]/15'
                 : 'border-gray-700/50';
@@ -287,9 +290,9 @@ function CardCollection({ onBack }: { onBack: () => void }) {
                     {/* Art section — 60% height */}
                     <div className={`relative ${COLOR_BG[cardData.color]} overflow-hidden`}
                       style={{ paddingTop: '75%' /* aspect ratio */ }}>
-                      {cardData.imageUrl && (
-                        <img src={cardData.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80"
-                          loading="lazy" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      {art.src && (
+                        <img src={art.src} data-fallback={art.fallback} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80"
+                          loading="lazy" onError={e => handleImageErrorWithFallback(e.currentTarget)} />
                       )}
                       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/90" />
 
@@ -373,9 +376,9 @@ function CardCollection({ onBack }: { onBack: () => void }) {
         {detail && (
           <div className="w-80 shrink-0 bg-[#0f0f18]/98 border-l border-[#c9a84c]/20 overflow-y-auto">
             <div className={`relative h-56 ${COLOR_BG[detail.color]} overflow-hidden`}>
-              {detail.imageUrl && (
-                <img src={detail.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover"
-                  loading="lazy" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              {detailArt?.src && (
+                <img src={detailArt.src} data-fallback={detailArt.fallback} alt="" className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy" onError={e => handleImageErrorWithFallback(e.currentTarget)} />
               )}
               <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#0f0f18]" />
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-7xl drop-shadow-lg">{detail.emoji}</div>

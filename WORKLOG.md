@@ -44,3 +44,10 @@
 - Added GitHub Pages workflow for deploy-on-main via Actions (`.github/workflows/deploy-pages.yml`).
 - Reduced main menu render load: lighter/adaptive particle settings, disabled particle pointer interaction by default, DPR cap in ParticleCanvas.
 
+### 2026-02-26
+- Switched card-cover download pipeline to authenticated Pollinations endpoint (`gen.pollinations.ai/image`) and added resume support to `scripts/cache-card-images.mjs`.
+- Cached local card art successfully: `public/cards` now contains 60 card covers + 1 card back image.
+- Wired local art resolver into UI (`MainMenu` and `GameBoard`) with fallback chain local -> external -> emoji.
+- Verified visual rendering via Playwright (`output/visual-covers`): collection and game board screenshots show loaded local covers and loaded card backs, no console/page errors.
+- Post-change checks passed: `npm run build` and `npm run test:regression` (9/9).
+

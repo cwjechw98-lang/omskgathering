@@ -36,3 +36,21 @@ TODO for next agent:
 - If network/package cache is enabled, install playwright and run skill client against local dev server.
 - Add one more AI regression with defender-present path expecting attack-creature action.
 - Optional: expose window.render_game_to_text in UI to let the skill emit state-*.json artifacts.
+
+- Added local card-art pipeline:
+- New resolver src/utils/cardImages.ts (local -> external -> emoji fallback via onError).
+- GameBoard/MainMenu now use resolver for card art; enemy hand supports optional local card-back image.
+- Added generated map file src/data/localCardImages.ts and download script scripts/cache-card-images.mjs + npm script cache:card-images.
+- Attempted to cache covers from pollinations.ai in elevated mode; blocked by HTTP 530 (error code 1033) for all assets, so map remains empty and UI falls back to external/emoji.
+
+TODO update:
+- Run `npm run cache:card-images` from a network/location where pollinations.ai is reachable, then verify local files under public/cards and generated src/data/localCardImages.ts.
+- If 530 persists, switch image source/provider (or use pre-generated local assets) and keep resolver as-is.
+
+
+- Switched Pollinations image pipeline to new authenticated endpoint (gen.pollinations.ai/image) with POLLINATIONS_API_KEY.
+- Added resume behavior to scripts/cache-card-images.mjs (skip existing files, incremental map writes).
+- Cached local card covers successfully with API key: 60/60 cards + card-back stored in public/cards (61 files total).
+- Generated src/data/localCardImages.ts with full local path map and LOCAL_CARD_BACK_IMAGE set.
+- Post-cache verification: `npm run build` PASS, `npm run test:regression` PASS (9/9).
+

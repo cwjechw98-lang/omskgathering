@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:regression": "tsc -p tsconfig.regression.json && powershell -Command \"Set-Content -Path .tmp-regression/package.json -Value '{\\\"type\\\":\\\"commonjs\\\"}'\" && node .tmp-regression/tests/regression/combat-regression.js"
+    "test:regression": "tsc -p tsconfig.regression.json && powershell -Command \"Set-Content -Path .tmp-regression/package.json -Value '{\\\"type\\\":\\\"commonjs\\\"}'\" && node .tmp-regression/tests/regression/combat-regression.js",
+    "cache:card-images": "node scripts/cache-card-images.mjs"
   },
   "dependencies": {
     "clsx": "2.1.1",

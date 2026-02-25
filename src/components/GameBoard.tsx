@@ -8,6 +8,7 @@ import { aiTurn } from '../game/ai';
 import { PlayerArea } from './PlayerArea';
 import { CARD_NARRATIVES, STORY_EVENTS, DEATH_QUOTES, getAILoreComment, AI_CHARACTER } from '../data/lore';
 import { CardPlayAnimation, CardDeathAnimation } from './effects/CardDust';
+import { getCardBackSource, getCardCoverSources, handleImageErrorWithFallback } from '../utils/cardImages';
 
 interface Props { mode: 'ai' | 'local' | 'online'; onBack: () => void }
 
@@ -189,6 +190,7 @@ function FieldCard({ card, player, opponent, selected, isTarget, canAct, attackA
   const sick = card.summoningSickness;
   const attacked = card.hasAttacked;
   const isDef = card.keywords.includes('defender');
+  const art = getCardCoverSources(card.data);
 
   const borderCls = selected ? 'ring-2 ring-yellow-400 shadow-yellow-400/50 shadow-lg scale-105'
     : isTarget ? 'ring-2 ring-red-500 shadow-red-500/40 shadow-lg animate-pulse cursor-crosshair'
@@ -203,9 +205,9 @@ function FieldCard({ card, player, opponent, selected, isTarget, canAct, attackA
       title={`${card.data.name}\n${card.data.description}\n⚔${atk} ❤${hp}`}>
 
       <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} />
-      {card.data.imageUrl && (
-        <img src={card.data.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40"
-          loading="lazy" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+      {art.src && (
+        <img src={art.src} data-fallback={art.fallback} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40"
+          loading="lazy" onError={e => handleImageErrorWithFallback(e.currentTarget)} />
       )}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" />
 
@@ -268,6 +270,7 @@ function HandCard({ card, selected, canPlay, isLand, onClick, onDragStart, onDra
     : canPlay
     ? 'border-green-500/60 shadow-green-500/15 shadow-md'
     : 'border-gray-700/40 opacity-45';
+  const art = getCardCoverSources(card.data);
 
   return (
     <div onClick={onClick}
@@ -279,10 +282,10 @@ function HandCard({ card, selected, canPlay, isLand, onClick, onDragStart, onDra
       title={`${card.data.name} (${card.data.cost}💎)\n${card.data.description}\n${canPlay ? '👆 Двойной клик или перетащите на поле' : '❌ Не хватает маны'}`}>
 
       <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} />
-      {card.data.imageUrl && (
-        <img src={card.data.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30"
+      {art.src && (
+        <img src={art.src} data-fallback={art.fallback} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30"
           loading="lazy" draggable={false}
-          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          onError={e => handleImageErrorWithFallback(e.currentTarget)} />
       )}
       <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80" />
 
@@ -325,6 +328,7 @@ function CardPreview({ card, owner, gs, onClose }: {
   card: CardInstance; owner: 'player1' | 'player2'; gs: GameState; onClose: () => void;
 }) {
   const opp = owner === 'player1' ? 'player2' : 'player1';
+  const art = getCardCoverSources(card.data);
   return (
     <div className="absolute top-12 right-2 z-40" style={{ width: 'clamp(200px, 17vw, 280px)' }}
       onClick={e => e.stopPropagation()}>
@@ -332,9 +336,9 @@ function CardPreview({ card, owner, gs, onClose }: {
         <button onClick={onClose} className="absolute top-1 right-1 z-20 text-gray-400 hover:text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-700 text-sm transition">✕</button>
 
         <div className={`relative overflow-hidden ${COLOR_ART[card.data.color]}`} style={{ height: 'clamp(70px, 8vw, 120px)' }}>
-          {card.data.imageUrl && (
-            <img src={card.data.imageUrl} alt="" className="w-full h-full object-cover"
-              loading="lazy" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          {art.src && (
+            <img src={art.src} data-fallback={art.fallback} alt="" className="w-full h-full object-cover"
+              loading="lazy" onError={e => handleImageErrorWithFallback(e.currentTarget)} />
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0f0f18]/98" />
           <div className="absolute bottom-1 left-1/2 -translate-x-1/2" style={{ fontSize: 'clamp(28px, 3vw, 42px)' }}>{card.data.emoji}</div>
@@ -409,6 +413,8 @@ export function GameBoard({ mode, onBack }: Props) {
   const attackAnimTimerRef = useRef<number | null>(null);
   const damageAnimTimerRef = useRef<number | null>(null);
   const aiAnimTimerRef = useRef<number | null>(null);
+  const aiTurnTimerRef = useRef<number | null>(null);
+  const mountedRef = useRef(true);
   const prevFieldRef = useRef<{ p1: string[]; p2: string[] }>({ p1: [], p2: [] });
   const cardRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -418,6 +424,7 @@ export function GameBoard({ mode, onBack }: Props) {
   const myTurn = mode === 'ai' ? isP1Turn : true;
   const me = gs.player1;
   const enemy = gs.player2;
+  const cardBackSrc = getCardBackSource();
 
   // Track card deaths for animations + death quotes
   useEffect(() => {
@@ -525,10 +532,13 @@ export function GameBoard({ mode, onBack }: Props) {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       if (attackAnimTimerRef.current) window.clearTimeout(attackAnimTimerRef.current);
       if (damageAnimTimerRef.current) window.clearTimeout(damageAnimTimerRef.current);
       if (aiAnimTimerRef.current) window.clearTimeout(aiAnimTimerRef.current);
+      if (aiTurnTimerRef.current) window.clearTimeout(aiTurnTimerRef.current);
     };
   }, []);
 
@@ -554,8 +564,14 @@ export function GameBoard({ mode, onBack }: Props) {
   // AI turn
   const runAI = useCallback(() => {
     if (mode !== 'ai' || gs.currentTurn !== 'player2' || gs.gameOver) return;
+    if (aiTurnTimerRef.current) {
+      window.clearTimeout(aiTurnTimerRef.current);
+      aiTurnTimerRef.current = null;
+    }
     setAiThinking(true);
-    setTimeout(() => {
+    aiTurnTimerRef.current = window.setTimeout(() => {
+      aiTurnTimerRef.current = null;
+      if (!mountedRef.current) return;
       const result = aiTurn(gs);
       setGs(result.state);
       if (result.actions && result.actions.length > 0) {
@@ -571,7 +587,7 @@ export function GameBoard({ mode, onBack }: Props) {
       if (lastCard) showCardNarrative(lastCard.data.id);
       setAiThinking(false);
     }, 1200);
-  }, [mode, gs, showCardNarrative, addMessage]);
+  }, [mode, gs, showCardNarrative, addMessage, runAIAnimations]);
 
   useEffect(() => {
     if (mode === 'ai' && gs.currentTurn === 'player2' && !gs.gameOver) {
@@ -804,8 +820,19 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* Enemy hand (face down) */}
       <div className="flex justify-center gap-0.5 px-2 shrink-0" style={{ height: 'clamp(18px, 2vw, 28px)' }}>
         {enemy.hand.map((_, i) => (
-          <div key={i} className="bg-gradient-to-b from-red-900/80 to-red-950 rounded border border-red-800/30 flex items-center justify-center"
-            style={{ width: 'clamp(12px, 1.5vw, 22px)', height: '100%', fontSize: 'clamp(4px, 0.6vw, 7px)' }}>🂠</div>
+          <div key={i} className="bg-gradient-to-b from-red-900/80 to-red-950 rounded border border-red-800/30 flex items-center justify-center relative overflow-hidden"
+            style={{ width: 'clamp(12px, 1.5vw, 22px)', height: '100%', fontSize: 'clamp(4px, 0.6vw, 7px)' }}>
+            {cardBackSrc && (
+              <img
+                src={cardBackSrc}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover opacity-90"
+                loading="lazy"
+                onError={e => handleImageErrorWithFallback(e.currentTarget)}
+              />
+            )}
+            <span className="relative z-10">🂠</span>
+          </div>
         ))}
         <span className="text-gray-600 ml-0.5 self-center" style={{ fontSize: 'clamp(7px, 0.8vw, 10px)' }}>{enemy.hand.length}</span>
       </div>
