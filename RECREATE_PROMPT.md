@@ -285,3 +285,56 @@ useEffect(() => { return () => { mounted.current = false; }; }, []);
 12. `src/App.tsx` — роутинг
 13. `src/index.css` — стили
 14. `index.html` — шрифты Google Fonts
+
+---
+
+## 🔧 7 Принципов структурного программирования (применённые в коде)
+
+### 1. Модульность
+- Код разделён на модули: `engine.ts` (логика), `ai.ts` (ИИ), `types.ts` (типы), `cards.ts` (данные), `lore.ts` (нарратив)
+- Каждый модуль решает одну задачу, экспортирует чёткий API
+
+### 2. Иерархическая структура
+- `App.tsx` → `MainMenu.tsx` / `StoryIntro.tsx` / `GameBoard.tsx`
+- `GameBoard.tsx` → `PlayerArea.tsx`, `CardPlayAnimation`, `CardDeathAnimation`
+
+### 3. Единственность входа/выхода
+- Все функции движка (`playCard`, `attackPlayer`, `attackCreature`, `endTurn`) имеют один вход и один выход
+- Возвращают либо новое состояние, либо исходное (immutable pattern)
+
+### 4. Ограниченное использование goto
+- Нет goto/label. Используются только структурные конструкции: if/else, switch/case, for/while, early return
+
+### 5. Использование только 3 базовых конструкций
+- Последовательность: линейное выполнение
+- Ветвление: if/else, switch/case для карт
+- Цикл: for для обработки полей, while для AI-раундов (с safety counter)
+
+### 6. Ограниченный размер модулей
+- Самый большой файл `GameBoard.tsx` ~700 строк — в пределах нормы для React-компонента
+- Функции engine.ts в среднем 20-50 строк
+
+### 7. Минимизация глобальных переменных
+- Единственная глобальная переменная: `uidCounter` для генерации уникальных ID
+- Всё остальное состояние передаётся через параметры или React state
+
+---
+
+## 📋 Исправленные после аудита проблемы
+
+### Удалённый мёртвый код:
+- `CardInstance.canAttack` — удалено (использовалось `summoningSickness + hasAttacked + frozen`)
+- `GameState.selectedCard` — удалено (не использовалось в engine)
+- `GameState.attackingCards` — удалено (не использовалось)
+- `GameState.blockingAssignments` — удалено (не использовалось)
+- `GameAction` type — удалено (не использовалось)
+- `CardDamageEffect`, `TurnTransition` — удалены (не импортировались)
+
+### Исправленная несогласованность:
+- AI `getPlayerDefenders()` проверял `defender || vigilance`
+- Engine `isBlocker()` проверял только `defender`
+- **Исправлено**: теперь оба проверяют только `defender` (по правилам MTG vigilance НЕ заставляет атаковать себя)
+
+### Баг с "бесконечными атаками":
+- **Причина**: отсутствовала авторитетная проверка `currentTurn === playerKey` в функциях атаки
+- **Исправлено**: добавлена проверка в `playCard`, `attackPlayer`, `attackCreature`

@@ -13,7 +13,6 @@ export function createCardInstance(data: CardData): CardInstance {
     currentAttack: data.attack ?? 0,
     currentHealth: data.health ?? 0,
     maxHealth: data.health ?? 0,
-    canAttack: false,
     frozen: 0,
     hasAttacked: false,
     summoningSickness: true,
@@ -55,9 +54,6 @@ export function createInitialGameState(): GameState {
     gameOver: false,
     winner: null,
     log: [],
-    selectedCard: null,
-    attackingCards: [],
-    blockingAssignments: {},
     cantAttackNextTurn: false,
     lastDiceRoll: null,
     aiComment: null,
@@ -830,7 +826,6 @@ export function endTurn(state: GameState): GameState {
   // === Start next turn ===
   newState.currentTurn = nextPlayerKey;
   newState.turnNumber += 1;
-  newState.selectedCard = null;
   newState.lastDiceRoll = null;
   newState.aiComment = null;
 

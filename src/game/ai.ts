@@ -141,8 +141,10 @@ function canCreatureAttack(c: CardInstance): boolean {
   return !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !kw(c, 'defender');
 }
 
+// Only 'defender' is a mandatory blocker in MTG rules.
+// Vigilance allows attacking without tapping but does NOT force enemies to attack it.
 function getPlayerDefenders(p: PlayerState): CardInstance[] {
-  return p.field.filter(c => (kw(c, 'defender') || kw(c, 'vigilance')) && c.frozen <= 0 && c.currentHealth > 0);
+  return p.field.filter(c => kw(c, 'defender') && c.frozen <= 0 && c.currentHealth > 0);
 }
 
 // ====== MAIN AI TURN ======

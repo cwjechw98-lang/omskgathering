@@ -1,284 +1,284 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
-// Color palettes for each card color
-const COLOR_PALETTES: Record<string, string[]> = {
-  white:     ['#f5f0e1','#d4c5a0','#fffbe6','#c9a84c','#ffffff'],
-  blue:      ['#4a90d9','#1a3a5c','#70b8ff','#2a5f8f','#a0d0ff'],
-  black:     ['#6a2c8a','#2d1b3d','#9955bb','#1a1a2e','#c080e0'],
-  red:       ['#ff4444','#ff7700','#ff2200','#ffaa00','#ff6633'],
-  green:     ['#22aa44','#44dd66','#1a5a1a','#88ff88','#33cc55'],
-  colorless: ['#888888','#aaaaaa','#666666','#bbbbbb','#999999'],
+interface CardAnimationProps {
+  cardName: string;
+  cardEmoji: string;
+  cardColor: string;
+  onDone: () => void;
+}
+
+// Цвета по стихиям
+const colorMap: Record<string, string> = {
+  red: '#ef4444',
+  blue: '#3b82f6',
+  green: '#22c55e',
+  black: '#a855f7',
+  white: '#fbbf24',
+  colorless: '#9ca3af',
+  land: '#78716c'
 };
 
-// Single particle component
-function Particle({ 
-  x, y, color, delay, size, angle, speed, type 
-}: { 
-  x: number; y: number; color: string; delay: number; 
-  size: number; angle: number; speed: number; type: 'destroy' | 'play';
-}) {
-  const endX = x + Math.cos(angle) * speed * 150;
-  const endY = y + Math.sin(angle) * speed * 150 + (type === 'destroy' ? 100 : -50);
+// ===== РОЗЫГРЫШ КАРТЫ: 0.3-0.5 сек с overshoot =====
+export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
+  cardName,
+  cardEmoji,
+  cardColor,
+  onDone
+}) => {
+  const mountedRef = useRef(true);
+  const [phase, setPhase] = useState<'show' | 'hide'>('show');
+  const color = colorMap[cardColor] || colorMap.colorless;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    
+    // Показываем 0.5 сек (карта летит на поле 0.4с + 0.1с пауза)
+    const hideTimer = setTimeout(() => {
+      if (mountedRef.current) setPhase('hide');
+    }, 500);
+    
+    // Полностью убираем через 0.7 сек
+    const doneTimer = setTimeout(() => {
+      if (mountedRef.current) onDone();
+    }, 700);
+
+    // Клик/тап/клавиша — мгновенное закрытие
+    const dismiss = () => {
+      if (mountedRef.current) onDone();
+    };
+    
+    window.addEventListener('click', dismiss);
+    window.addEventListener('keydown', dismiss);
+    window.addEventListener('touchstart', dismiss);
+
+    return () => {
+      mountedRef.current = false;
+      clearTimeout(hideTimer);
+      clearTimeout(doneTimer);
+      window.removeEventListener('click', dismiss);
+      window.removeEventListener('keydown', dismiss);
+      window.removeEventListener('touchstart', dismiss);
+    };
+  }, [onDone]);
 
   return (
     <div
-      className="absolute rounded-sm"
       style={{
-        left: x,
-        top: y,
-        width: size,
-        height: size,
-        backgroundColor: color,
-        boxShadow: `0 0 ${size * 2}px ${color}`,
-        animation: `particleExplode 1.2s ease-out ${delay}s forwards`,
-        '--end-x': `${endX - x}px`,
-        '--end-y': `${endY - y}px`,
-        transform: `rotate(${Math.random() * 360}deg)`,
-      } as React.CSSProperties}
-    />
-  );
-}
-
-// Card play animation overlay - FULL SCREEN with portal-like behavior
-export function CardPlayAnimation({ 
-  cardName, 
-  cardEmoji,
-  cardColor,
-  onComplete 
-}: { 
-  cardName: string; 
-  cardEmoji: string;
-  cardColor: string;
-  onComplete: () => void;
-}) {
-  const [particles] = useState(() => {
-    const palette = COLOR_PALETTES[cardColor] || COLOR_PALETTES.colorless;
-    const arr = [];
-    const centerX = typeof window !== 'undefined' ? window.innerWidth / 2 : 400;
-    const centerY = typeof window !== 'undefined' ? window.innerHeight / 2 : 300;
-    
-    // Create 40 particles exploding from center
-    for (let i = 0; i < 40; i++) {
-      const angle = (i / 40) * Math.PI * 2 + Math.random() * 0.3;
-      const speed = 1 + Math.random() * 2;
-      arr.push({
-        x: centerX,
-        y: centerY,
-        color: palette[Math.floor(Math.random() * palette.length)],
-        delay: Math.random() * 0.2,
-        size: 4 + Math.random() * 8,
-        angle,
-        speed,
-      });
-    }
-    return arr;
-  });
-
-  useEffect(() => {
-    const timer = setTimeout(onComplete, 1800);
-    return () => clearTimeout(timer);
-  }, [onComplete]);
-
-  return (
-    <div 
-      className="fixed inset-0 z-[99999] flex items-center justify-center"
-      style={{
-        background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.9) 100%)',
-        animation: 'fadeIn 0.3s ease-out',
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'auto',
+        cursor: 'pointer',
+        backgroundColor: phase === 'show' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0)',
+        transition: 'background-color 0.2s ease-out'
       }}
     >
-      {/* Particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {particles.map((p, i) => (
-          <Particle key={i} {...p} type="play" />
-        ))}
-      </div>
-
-      {/* Card name display */}
-      <div 
-        className="relative z-10 text-center px-8 py-6 rounded-2xl"
+      {/* Карта с overshoot анимацией */}
+      <div
+        className="card-play-animation"
         style={{
-          background: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(10px)',
-          border: `2px solid ${COLOR_PALETTES[cardColor]?.[0] || '#c9a84c'}`,
-          boxShadow: `0 0 60px ${COLOR_PALETTES[cardColor]?.[0] || '#c9a84c'}40`,
-          animation: 'cardNameAppear 0.5s ease-out',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px',
+          opacity: phase === 'show' ? 1 : 0,
+          transition: 'opacity 0.15s ease-in'
         }}
       >
-        <div className="text-6xl mb-4" style={{ animation: 'emojiPulse 1s ease-in-out infinite' }}>
+        {/* Emoji карты */}
+        <div
+          style={{
+            fontSize: '72px',
+            filter: `drop-shadow(0 0 20px ${color})`,
+            animation: 'emojiPulse 0.3s ease-out'
+          }}
+        >
           {cardEmoji}
         </div>
-        <div 
-          className="font-heading font-bold text-white"
-          style={{ 
-            fontSize: 'clamp(24px, 4vw, 40px)',
-            textShadow: `0 0 20px ${COLOR_PALETTES[cardColor]?.[0] || '#c9a84c'}`,
+        
+        {/* Название */}
+        <div
+          style={{
+            fontSize: '28px',
+            fontFamily: 'Cinzel, serif',
+            fontWeight: 'bold',
+            color: '#fff',
+            textShadow: `0 0 20px ${color}, 0 0 40px ${color}`,
+            textAlign: 'center',
+            maxWidth: '300px'
           }}
         >
-          {cardName}
+          ⚡ {cardName}
         </div>
-        <div className="text-[#c9a84c] font-body mt-2 text-sm">разыграна</div>
+
+        {/* Частицы — быстрый взрыв 0.3с */}
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+          {Array.from({ length: 20 }).map((_, i) => {
+            const angle = (i / 20) * 360;
+            const distance = 80 + Math.random() * 60;
+            const x = Math.cos(angle * Math.PI / 180) * distance;
+            const y = Math.sin(angle * Math.PI / 180) * distance;
+            return (
+              <div
+                key={i}
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: color,
+                  boxShadow: `0 0 10px ${color}`,
+                  transform: phase === 'show' 
+                    ? `translate(${x}px, ${y}px) scale(1)` 
+                    : 'translate(0, 0) scale(0)',
+                  opacity: phase === 'show' ? 0 : 1,
+                  transition: `all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 0.01}s`
+                }}
+              />
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
-}
-
-// Card death animation overlay
-export function CardDeathAnimation({ 
-  cardName, 
-  cardEmoji,
-  cardColor,
-  onComplete 
-}: { 
-  cardName: string; 
-  cardEmoji: string;
-  cardColor: string;
-  onComplete: () => void;
-}) {
-  const [particles] = useState(() => {
-    const palette = COLOR_PALETTES[cardColor] || COLOR_PALETTES.colorless;
-    const arr = [];
-    const centerX = typeof window !== 'undefined' ? window.innerWidth / 2 : 400;
-    const centerY = typeof window !== 'undefined' ? window.innerHeight / 2 : 300;
-    
-    // Create 30 particles for death
-    for (let i = 0; i < 30; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 0.5 + Math.random() * 1.5;
-      arr.push({
-        x: centerX + (Math.random() - 0.5) * 200,
-        y: centerY + (Math.random() - 0.5) * 200,
-        color: palette[Math.floor(Math.random() * palette.length)],
-        delay: Math.random() * 0.3,
-        size: 3 + Math.random() * 6,
-        angle,
-        speed,
-      });
-    }
-    return arr;
-  });
-
-  useEffect(() => {
-    const timer = setTimeout(onComplete, 1500);
-    return () => clearTimeout(timer);
-  }, [onComplete]);
-
-  return (
-    <div 
-      className="fixed inset-0 z-[99999] flex items-center justify-center pointer-events-none"
-      style={{
-        background: 'radial-gradient(ellipse at center, rgba(30,0,0,0.5) 0%, rgba(0,0,0,0.7) 100%)',
-        animation: 'fadeIn 0.2s ease-out',
-      }}
-    >
-      {/* Particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {particles.map((p, i) => (
-          <Particle key={i} {...p} type="destroy" />
-        ))}
-      </div>
-
-      {/* Card name display */}
-      <div 
-        className="relative z-10 text-center px-6 py-4 rounded-xl"
+      
+      {/* Подсказка */}
+      <div
         style={{
-          background: 'rgba(20,0,0,0.8)',
-          border: '2px solid #ff4444',
-          boxShadow: '0 0 40px rgba(255,0,0,0.3)',
-          animation: 'cardNameAppear 0.4s ease-out',
+          position: 'absolute',
+          bottom: '20%',
+          fontSize: '12px',
+          color: 'rgba(255,255,255,0.5)',
+          opacity: phase === 'show' ? 1 : 0,
+          transition: 'opacity 0.1s'
         }}
       >
-        <div className="text-4xl mb-2 opacity-50 grayscale">{cardEmoji}</div>
-        <div 
-          className="font-heading font-bold text-red-400"
-          style={{ fontSize: 'clamp(18px, 3vw, 28px)' }}
-        >
-          {cardName}
-        </div>
-        <div className="text-red-500 font-body mt-1 text-sm">💀 УНИЧТОЖЕН</div>
+        tap to skip
       </div>
     </div>
   );
-}
+};
 
-// Dust effect interface for backward compatibility
-export interface DustEffect {
-  x: number; 
-  y: number; 
-  w: number; 
-  h: number;
-  color: string; 
-  type: 'destroy' | 'move';
-}
-
-// Main component - now just triggers the overlay animations
-export function CardDustEffect({ 
-  effects, 
-  onEffectDone 
-}: { 
-  effects: DustEffect[];
-  onEffectDone: (index: number) => void;
-}) {
-  // This is now handled by the overlay components directly
-  // Just clean up effects immediately
-  useEffect(() => {
-    effects.forEach((_, idx) => {
-      setTimeout(() => onEffectDone(idx), 100);
-    });
-  }, [effects, onEffectDone]);
-
-  return null;
-}
-
-// Sparkle line for collection scroll
-export function SparkleLoadLine({ visible }: { visible: boolean }) {
-  const [sparkles, setSparkles] = useState<Array<{ id: number; x: number; delay: number }>>([]);
+// ===== СМЕРТЬ КАРТЫ: 0.2с партиклы + 0.3с растворение =====
+export const CardDeathAnimation: React.FC<CardAnimationProps> = ({
+  cardName,
+  cardEmoji,
+  onDone
+}) => {
+  const mountedRef = useRef(true);
+  const [phase, setPhase] = useState<'particles' | 'dissolve' | 'done'>('particles');
 
   useEffect(() => {
-    if (!visible) return;
+    mountedRef.current = true;
     
-    const interval = setInterval(() => {
-      setSparkles(prev => {
-        const newSparkles = [...prev];
-        if (newSparkles.length < 20) {
-          newSparkles.push({
-            id: Date.now() + Math.random(),
-            x: Math.random() * 100,
-            delay: Math.random() * 0.5,
-          });
-        }
-        return newSparkles.filter(s => Date.now() - s.id < 2000);
-      });
-    }, 100);
+    // Фаза 1: партиклы 0.2с
+    const dissolveTimer = setTimeout(() => {
+      if (mountedRef.current) setPhase('dissolve');
+    }, 200);
+    
+    // Фаза 2: растворение 0.3с, итого 0.5с
+    const doneTimer = setTimeout(() => {
+      if (mountedRef.current) onDone();
+    }, 500);
 
-    return () => clearInterval(interval);
-  }, [visible]);
+    const dismiss = () => {
+      if (mountedRef.current) onDone();
+    };
+    
+    window.addEventListener('click', dismiss);
+    window.addEventListener('keydown', dismiss);
+    window.addEventListener('touchstart', dismiss);
 
-  if (!visible) return null;
+    return () => {
+      mountedRef.current = false;
+      clearTimeout(dissolveTimer);
+      clearTimeout(doneTimer);
+      window.removeEventListener('click', dismiss);
+      window.removeEventListener('keydown', dismiss);
+      window.removeEventListener('touchstart', dismiss);
+    };
+  }, [onDone]);
 
   return (
-    <div className="relative h-10 w-full overflow-hidden">
-      {/* Horizontal line */}
-      <div 
-        className="absolute top-1/2 left-0 right-0 h-px"
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'auto',
+        cursor: 'pointer',
+        backgroundColor: phase !== 'done' ? 'rgba(50,0,0,0.5)' : 'rgba(0,0,0,0)',
+        transition: 'background-color 0.15s ease-in'
+      }}
+    >
+      <div
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, #c9a84c 20%, #f0d68a 50%, #c9a84c 80%, transparent 100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '8px',
+          opacity: phase === 'dissolve' ? 0 : 1,
+          transform: phase === 'dissolve' ? 'scale(0.5) rotate(10deg)' : 'scale(1)',
+          filter: phase === 'dissolve' ? 'grayscale(1) brightness(0.5)' : 'none',
+          transition: 'all 0.3s ease-in'
         }}
-      />
-      
-      {/* Sparkles */}
-      {sparkles.map(s => (
+      >
+        {/* Emoji */}
+        <div style={{ fontSize: '56px', filter: 'grayscale(0.5)' }}>
+          {cardEmoji}
+        </div>
+        
+        {/* Название */}
         <div
-          key={s.id}
-          className="absolute top-1/2 w-2 h-2 rounded-full bg-[#f0d68a]"
           style={{
-            left: `${s.x}%`,
-            transform: 'translateY(-50%)',
-            boxShadow: '0 0 8px #c9a84c, 0 0 16px #f0d68a',
-            animation: `sparkleFloat 1s ease-out ${s.delay}s forwards`,
+            fontSize: '22px',
+            fontFamily: 'Cinzel, serif',
+            color: '#ff4444',
+            textShadow: '0 0 15px rgba(255,0,0,0.8)'
           }}
-        />
-      ))}
+        >
+          💀 {cardName}
+        </div>
+      </div>
+
+      {/* Частицы смерти — взрыв 0.2с */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        {Array.from({ length: 15 }).map((_, i) => {
+          const angle = (i / 15) * 360;
+          const distance = 60 + Math.random() * 40;
+          const x = Math.cos(angle * Math.PI / 180) * distance;
+          const y = Math.sin(angle * Math.PI / 180) * distance - 20; // Вверх
+          return (
+            <div
+              key={i}
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: '#ff4444',
+                boxShadow: '0 0 8px #ff4444',
+                transform: phase === 'particles' 
+                  ? `translate(${x}px, ${y}px)` 
+                  : 'translate(0, 0)',
+                opacity: phase === 'particles' ? 1 : 0,
+                transition: `all 0.2s ease-out ${i * 0.01}s`
+              }}
+            />
+          );
+        })}
+      </div>
     </div>
   );
-}
+};
+
+// CardDamageEffect and TurnTransition removed - not currently used
+// Can be re-added when combat animations are implemented

@@ -5,7 +5,7 @@ import { CardInstance } from '../game/types';
 import { generateUid, getEffectiveAttack, getEffectiveHealth } from '../game/engine';
 import { ParticleCanvas } from './effects/ParticleCanvas';
 import { Torch } from './effects/Torch';
-import { SparkleLoadLine } from './effects/CardDust';
+// SparkleLoadLine removed
 
 interface MainMenuProps {
   onStartGame: (mode: 'ai' | 'local') => void;
@@ -244,7 +244,7 @@ function CardCollection({ onBack }: { onBack: () => void }) {
               const instance: CardInstance = {
                 uid: generateUid(), data: cardData,
                 currentAttack: cardData.attack ?? 0, currentHealth: cardData.health ?? 0,
-                maxHealth: cardData.health ?? 0, canAttack: false, frozen: 0, hasAttacked: false,
+                maxHealth: cardData.health ?? 0, frozen: 0, hasAttacked: false,
                 summoningSickness: false, buffAttack: 0, buffHealth: 0,
                 tempBuffAttack: 0, tempBuffHealth: 0, keywords: [...(cardData.keywords || [])],
               };
@@ -332,8 +332,12 @@ function CardCollection({ onBack }: { onBack: () => void }) {
             })}
           </div>
 
-          {/* Sparkle load line at bottom */}
-          <SparkleLoadLine visible={hasMore} />
+          {/* Load more indicator */}
+          {hasMore && (
+            <div className="flex justify-center py-4">
+              <div className="h-0.5 w-32 bg-gradient-to-r from-transparent via-[#c9a84c]/50 to-transparent animate-pulse" />
+            </div>
+          )}
 
           {!hasMore && filtered.length > 0 && (
             <div className="text-center py-4">

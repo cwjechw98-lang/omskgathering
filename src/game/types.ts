@@ -6,7 +6,6 @@ export interface CardInstance {
   currentAttack: number;
   currentHealth: number;
   maxHealth: number;
-  canAttack: boolean;
   frozen: number;
   hasAttacked: boolean;
   summoningSickness: boolean;
@@ -46,18 +45,7 @@ export interface GameState {
   gameOver: boolean;
   winner: 'player1' | 'player2' | null;
   log: string[];
-  selectedCard: string | null;
-  attackingCards: string[];
-  blockingAssignments: Record<string, string>;
   cantAttackNextTurn: boolean;
   lastDiceRoll: DiceRoll | null;
   aiComment: string | null;
 }
-
-export type GameAction =
-  | { type: 'PLAY_CARD'; cardUid: string }
-  | { type: 'ATTACK_PLAYER'; cardUid: string }
-  | { type: 'ATTACK_CREATURE'; attackerUid: string; defenderUid: string }
-  | { type: 'END_TURN' }
-  | { type: 'SELECT_CARD'; cardUid: string | null }
-  | { type: 'DRAW_CARD' };

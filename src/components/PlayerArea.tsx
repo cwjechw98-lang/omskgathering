@@ -7,10 +7,9 @@ interface PlayerAreaProps {
   isTop?: boolean;
 }
 
-export function PlayerArea({ player, isCurrentPlayer, label, isTop }: PlayerAreaProps) {
+export function PlayerArea({ player, isCurrentPlayer, label }: PlayerAreaProps) {
   const healthPercent = Math.max(0, (player.health / player.maxHealth) * 100);
   const healthColor = player.health > 20 ? 'bg-green-600' : player.health > 10 ? 'bg-yellow-500' : player.health > 5 ? 'bg-orange-500' : 'bg-red-500';
-  void isTop;
 
   return (
     <div className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-colors ${

@@ -7,7 +7,7 @@ import {
 import { aiTurn } from '../game/ai';
 import { PlayerArea } from './PlayerArea';
 import { CARD_NARRATIVES, STORY_EVENTS, DEATH_QUOTES, getAILoreComment, AI_CHARACTER } from '../data/lore';
-import { CardDustEffect, CardPlayAnimation, CardDeathAnimation } from './effects/CardDust';
+import { CardPlayAnimation, CardDeathAnimation } from './effects/CardDust';
 
 interface Props { mode: 'ai' | 'local' | 'online'; onBack: () => void }
 
@@ -26,10 +26,7 @@ const COLOR_ART: Record<string, string> = {
   red: 'card-art-red', green: 'card-art-green', colorless: 'card-art-colorless',
 };
 
-type DustEffect = {
-  x: number; y: number; w: number; h: number;
-  color: string; type: 'destroy' | 'move';
-};
+// DustEffect type removed - using CSS animations
 
 /* ═══════════════════════════════════════════
    UNIFIED MESSAGE SYSTEM — one consistent place
@@ -47,35 +44,54 @@ let msgIdCounter = 0;
 
 function useMessageFeed() {
   const [messages, setMessages] = useState<GameMessage[]>([]);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const addMessage = useCallback((
     type: GameMessage['type'],
     text: string,
     emoji: string,
-    duration = 12000
+    duration = 5000 // reduced from 12000
   ) => {
     const id = ++msgIdCounter;
     const msg: GameMessage = { id, type, text, emoji, createdAt: Date.now(), duration };
-    setMessages(prev => [...prev.slice(-10), msg]); // keep last 10
+    setMessages(prev => [...prev.slice(-5), msg]); // keep last 5 (was 10)
   }, []);
 
-  // Auto-remove expired messages
+  // Auto-remove expired messages - faster check
   useEffect(() => {
     if (messages.length === 0) return;
     const interval = setInterval(() => {
+      if (!mountedRef.current) return;
       const now = Date.now();
       setMessages(prev => prev.filter(m => now - m.createdAt < m.duration));
-    }, 500);
+    }, 200); // faster updates for smoother fade
     return () => clearInterval(interval);
   }, [messages.length]);
 
   const clear = useCallback(() => setMessages([]), []);
+  
+  const dismiss = useCallback((id: number) => {
+    setMessages(prev => prev.filter(m => m.id !== id));
+  }, []);
 
-  return { messages, addMessage, clear };
+  return { messages, addMessage, clear, dismiss };
 }
 
-function MessageFeed({ messages }: { messages: GameMessage[] }) {
+function MessageFeed({ messages, onDismiss }: { messages: GameMessage[]; onDismiss?: (id: number) => void }) {
   const feedRef = useRef<HTMLDivElement>(null);
+  const [, forceUpdate] = useState(0);
+
+  // Force re-render every 100ms for smooth fade animation
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const interval = setInterval(() => forceUpdate(n => n + 1), 100);
+    return () => clearInterval(interval);
+  }, [messages.length]);
 
   useEffect(() => {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
@@ -91,8 +107,8 @@ function MessageFeed({ messages }: { messages: GameMessage[] }) {
       <div ref={feedRef} className="flex flex-col gap-2 overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
         {messages.map(msg => {
           const age = now - msg.createdAt;
-          const fadeStart = msg.duration * 0.7;
-          const opacity = age > fadeStart ? Math.max(0, 1 - (age - fadeStart) / (msg.duration * 0.3)) : 1;
+          const fadeStart = msg.duration * 0.6; // start fading earlier
+          const opacity = age > fadeStart ? Math.max(0, 1 - (age - fadeStart) / (msg.duration * 0.4)) : 1;
           const isAI = msg.type === 'ai';
 
           return (
@@ -144,6 +160,14 @@ function MessageFeed({ messages }: { messages: GameMessage[] }) {
                     {msg.text}
                   </p>
                 </div>
+              )}
+              {/* Click to dismiss */}
+              {onDismiss && (
+                <button 
+                  onClick={() => onDismiss(msg.id)}
+                  className="absolute top-1 right-1 text-gray-600 hover:text-white text-xs w-4 h-4 flex items-center justify-center rounded-full hover:bg-gray-700/50 transition pointer-events-auto"
+                  title="Закрыть"
+                >✕</button>
               )}
             </div>
           );
@@ -374,7 +398,7 @@ export function GameBoard({ mode, onBack }: Props) {
   const [aiThinking, setAiThinking] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [seenStoryEvents, setSeenStoryEvents] = useState<Set<number>>(new Set());
-  const [dustEffects, setDustEffects] = useState<DustEffect[]>([]);
+  // dustEffects removed - using CSS animations
   const [dragCardUid, setDragCardUid] = useState<string | null>(null);
   const [dropZoneActive, setDropZoneActive] = useState(false);
   const [playAnim, setPlayAnim] = useState<{ name: string; emoji: string; color: string } | null>(null);
@@ -383,14 +407,14 @@ export function GameBoard({ mode, onBack }: Props) {
   const prevFieldRef = useRef<{ p1: string[]; p2: string[] }>({ p1: [], p2: [] });
   const cardRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const { messages, addMessage, clear: clearMessages } = useMessageFeed();
+  const { messages, addMessage, clear: clearMessages, dismiss: dismissMessage } = useMessageFeed();
 
   const isP1Turn = gs.currentTurn === 'player1';
   const myTurn = mode === 'ai' ? isP1Turn : true;
   const me = gs.player1;
   const enemy = gs.player2;
 
-  // Track card deaths for dust effects + death quotes
+  // Track card deaths for animations + death quotes
   useEffect(() => {
     const currentP1 = me.field.map(c => c.uid);
     const currentP2 = enemy.field.map(c => c.uid);
@@ -399,21 +423,21 @@ export function GameBoard({ mode, onBack }: Props) {
     if (prev.p1.length > 0 || prev.p2.length > 0) {
       const diedP1 = prev.p1.filter(uid => !currentP1.includes(uid));
       const diedP2 = prev.p2.filter(uid => !currentP2.includes(uid));
-      const allDiedUids = [...diedP1, ...diedP2];
+      const allDied = [...diedP1, ...diedP2];
 
-      if (allDiedUids.length > 0) {
-        // Find card data for death animation
-        const allCards = [...me.graveyard, ...enemy.graveyard];
-        const deadCard = allCards.find(c => allDiedUids.includes(c.uid));
-        if (deadCard) {
+      if (allDied.length > 0) {
+        // Search both graveyards for dead card data
+        const allGraveCards = [...me.graveyard, ...enemy.graveyard];
+        const deadCard = allGraveCards.find(c => allDied.includes(c.uid));
+        if (deadCard && !deathAnim) {
           setDeathAnim({ name: deadCard.data.name, emoji: deadCard.data.emoji, color: deadCard.data.color });
         }
 
-        // Death quotes via unified message feed
-        const lastLog = gs.log[gs.log.length - 1] || '';
+        // Death quote message
+        const recent = gs.log.slice(-5).join(' ');
         for (const [cardId, quote] of Object.entries(DEATH_QUOTES)) {
-          if (lastLog.includes(cardId) || lastLog.toLowerCase().includes(cardId.replace(/_/g, ' '))) {
-            addMessage('death', quote, '💀', 16000);
+          if (recent.includes(cardId) || recent.toLowerCase().includes(cardId.replace(/_/g, ' '))) {
+            addMessage('death', quote, '💀', 5000);
             break;
           }
         }
@@ -421,13 +445,13 @@ export function GameBoard({ mode, onBack }: Props) {
     }
 
     prevFieldRef.current = { p1: currentP1, p2: currentP2 };
-  }, [me.field, enemy.field, gs.log, me.graveyard, enemy.graveyard, addMessage]);
+  }, [me.field, enemy.field]); // eslint-disable-line
 
   // Story events via unified message feed
   useEffect(() => {
     const ev = STORY_EVENTS.find(e => e.turnTrigger === gs.turnNumber && !seenStoryEvents.has(e.turnTrigger));
     if (ev) {
-      addMessage('story', ev.text, ev.emoji, 10000);
+      addMessage('story', ev.text, ev.emoji, 5000);
       setSeenStoryEvents(p => new Set([...p, ev.turnTrigger]));
     }
   }, [gs.turnNumber, seenStoryEvents, addMessage]);
@@ -447,7 +471,7 @@ export function GameBoard({ mode, onBack }: Props) {
 
   const showCardNarrative = useCallback((cardId: string) => {
     const n = CARD_NARRATIVES[cardId];
-    if (n) addMessage('narrative', n, '📖', 15000);
+    if (n) addMessage('narrative', n, '📖', 5000);
   }, [addMessage]);
 
   const getHint = (): string => {
@@ -482,8 +506,8 @@ export function GameBoard({ mode, onBack }: Props) {
         lastCard?.data.id || '',
         result.state.player2.health, result.state.player1.health, result.state.turnNumber
       );
-      // AI comment: long enough for reading
-      addMessage('ai', lore, AI_CHARACTER.avatarEmoji, 20000);
+      // AI comment: 6 seconds is enough
+      addMessage('ai', lore, AI_CHARACTER.avatarEmoji, 6000);
       if (lastCard) showCardNarrative(lastCard.data.id);
       setAiThinking(false);
     }, 1200);
@@ -614,7 +638,7 @@ export function GameBoard({ mode, onBack }: Props) {
 
   const restart = () => {
     setGs(createInitialGameState()); setSelectedHand(null); setSelectedAttacker(null);
-    setInspected(null); setDustEffects([]); setPlayAnim(null); setDeathAnim(null);
+    setInspected(null); setPlayAnim(null); setDeathAnim(null);
     setSeenStoryEvents(new Set()); prevFieldRef.current = { p1: [], p2: [] };
     cardRefsMap.current.clear(); clearMessages();
   };
@@ -630,15 +654,12 @@ export function GameBoard({ mode, onBack }: Props) {
     { id: 'done', icon: '⏭️', label: 'Конец', active: phase === 'done', done: false },
   ];
 
-  const handleDustDone = useCallback((idx: number) => {
-    setDustEffects(prev => prev.filter((_, i) => i !== idx));
-  }, []);
+  // handleDustDone removed - using CSS animations
 
   return (
     <div className="h-[100dvh] w-full bg-gradient-to-b from-[#0a0810] via-[#0c0a14] to-[#0a0810] flex flex-col overflow-hidden relative select-none">
 
-      {/* DUST PARTICLE EFFECTS */}
-      <CardDustEffect effects={dustEffects} onEffectDone={handleDustDone} />
+      {/* DUST PARTICLE EFFECTS - removed, using CSS animations now */}
 
       {/* CARD PLAY ANIMATION - full screen overlay */}
       {playAnim && (
@@ -646,7 +667,7 @@ export function GameBoard({ mode, onBack }: Props) {
           cardName={playAnim.name}
           cardEmoji={playAnim.emoji}
           cardColor={playAnim.color}
-          onComplete={() => setPlayAnim(null)}
+          onDone={() => setPlayAnim(null)}
         />
       )}
 
@@ -656,12 +677,12 @@ export function GameBoard({ mode, onBack }: Props) {
           cardName={deathAnim.name}
           cardEmoji={deathAnim.emoji}
           cardColor={deathAnim.color}
-          onComplete={() => setDeathAnim(null)}
+          onDone={() => setDeathAnim(null)}
         />
       )}
 
       {/* ═══ UNIFIED MESSAGE FEED — always left side, always readable ═══ */}
-      <MessageFeed messages={messages} />
+      <MessageFeed messages={messages} onDismiss={dismissMessage} />
 
       {/* TOP BAR */}
       <div className="flex items-center justify-between px-3 bg-black/80 z-20 shrink-0 border-b border-[#c9a84c]/15"
