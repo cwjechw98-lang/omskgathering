@@ -271,6 +271,12 @@ body {
     --hand-card-w: clamp(80px, 8vw, 140px);
   }
 }
+@media (max-width: 920px), (max-height: 740px) {
+  :root {
+    --field-card-w: clamp(62px, 16vw, 92px);
+    --hand-card-w: clamp(58px, 14vw, 88px);
+  }
+}
 
 /* ═══ CARD ANIMATION KEYFRAMES ═══ */
 /* ===== ИНДУСТРИАЛЬНЫЕ СТАНДАРТЫ АНИМАЦИЙ ===== */
@@ -307,6 +313,15 @@ body {
 }
 .card-in-field:not(:hover) {
   transition: transform 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
+}
+
+/* Touch devices: keep cards stable to avoid accidental zoom-jumps. */
+@media (hover: none), (pointer: coarse) {
+  .card-in-hand:hover,
+  .card-in-field:hover {
+    transform: none;
+    box-shadow: inherit;
+  }
 }
 
 /* 2. РАЗЫГРЫВАНИЕ КАРТЫ: 0.3-0.5 сек с overshoot */

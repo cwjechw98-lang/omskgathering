@@ -247,6 +247,101 @@ function testSnegElementalFreezesOnlyWhenHit(): void {
   expect((attAfterHit?.frozen ?? 0) >= 2, 'sneg should freeze attacker when elemental is damaged');
 }
 
+function testFirstStrikeKillsBeforeRetaliation(): void {
+  const attacker = makeCreature('first-striker', 'First Striker', 3, 2, ['first_strike']);
+  const defender = makeCreature('normal-def', 'Normal Defender', 2, 2);
+  const state = makeState(
+    makePlayer({ field: [attacker] }),
+    makePlayer({ field: [defender] }),
+    'player1'
+  );
+
+  const next = attackCreature(state, 'player1', attacker.uid, defender.uid);
+  const survivor = next.player1.field.find(c => c.uid === attacker.uid);
+  const deadDef = next.player2.graveyard.find(c => c.uid === defender.uid);
+
+  expect(Boolean(survivor), 'first striker should survive if defender dies before retaliation');
+  expect(Boolean(deadDef), 'defender should die to first strike hit');
+  expect((survivor?.currentHealth ?? 0) === 2, 'first striker should take no retaliation damage');
+}
+
+function testTrampleDealsOnlyExcessToHero(): void {
+  const trampler = makeCreature('trampler', 'Trampler', 6, 5, ['trample']);
+  const blocker = makeCreature('blocker', 'Blocker', 0, 3);
+  const state = makeState(
+    makePlayer({ field: [trampler] }),
+    makePlayer({ health: 30, maxHealth: 30, field: [blocker] }),
+    'player1'
+  );
+
+  const next = attackCreature(state, 'player1', trampler.uid, blocker.uid);
+  expect(next.player2.health === 27, `trample should deal 3 excess damage to hero, got ${30 - next.player2.health}`);
+}
+
+function testUnblockableBypassesDefenderToHitHero(): void {
+  const attacker = makeCreature('unblockable-att', 'Unblockable', 3, 3, ['unblockable']);
+  const defender = makeCreature('wall', 'Wall', 0, 5, ['defender']);
+  const state = makeState(
+    makePlayer({ field: [attacker] }),
+    makePlayer({ health: 20, maxHealth: 30, field: [defender] }),
+    'player1'
+  );
+
+  const next = attackPlayer(state, 'player1', attacker.uid);
+  expect(next.player2.health === 17, 'unblockable attacker should damage hero through defenders');
+}
+
+function testDefenderCannotAttackHeroOrCreature(): void {
+  const defenderAttacker = makeCreature('defender-attacker', 'Defender Attacker', 5, 5, ['defender']);
+  const enemy = makeCreature('enemy', 'Enemy', 1, 3);
+  const state = makeState(
+    makePlayer({ field: [defenderAttacker] }),
+    makePlayer({ health: 25, maxHealth: 30, field: [enemy] }),
+    'player1'
+  );
+
+  const heroResult = attackPlayer(state, 'player1', defenderAttacker.uid);
+  expect(heroResult === state, 'defender should not be able to attack hero via engine API');
+
+  const creatureResult = attackCreature(state, 'player1', defenderAttacker.uid, enemy.uid);
+  expect(creatureResult === state, 'defender should not be able to attack creatures via engine API');
+}
+
+function testVigilanceIsNotMandatoryDefender(): void {
+  const attacker = makeCreature('attacker-vs-vigilance', 'Attacker', 2, 2);
+  const vigilanceOnly = makeCreature('vigilance-only', 'Vigilance Only', 1, 4, ['vigilance']);
+  const state = makeState(
+    makePlayer({ field: [attacker] }),
+    makePlayer({ health: 22, maxHealth: 30, field: [vigilanceOnly] }),
+    'player1'
+  );
+
+  const next = attackPlayer(state, 'player1', attacker.uid);
+  expect(next.player2.health === 20, 'vigilance must not force attacks like defender');
+}
+
+function testCannotHitFlyingWithoutFlying(): void {
+  const groundAttacker = makeCreature('ground', 'Ground', 3, 3);
+  const flyingDefender = makeCreature('flying-def', 'Flying Defender', 1, 2, ['flying']);
+  const start = makeState(
+    makePlayer({ field: [groundAttacker] }),
+    makePlayer({ field: [flyingDefender] }),
+    'player1'
+  );
+
+  const blocked = attackCreature(start, 'player1', groundAttacker.uid, flyingDefender.uid);
+  expect(blocked === start, 'ground creature should not attack flying target');
+
+  const flyingAttacker = makeCreature('flying-att', 'Flying Attacker', 3, 3, ['flying']);
+  const start2 = makeState(
+    makePlayer({ field: [flyingAttacker] }),
+    makePlayer({ field: [flyingDefender] }),
+    'player1'
+  );
+  const allowed = attackCreature(start2, 'player1', flyingAttacker.uid, flyingDefender.uid);
+  expect(allowed !== start2, 'flying attacker should be able to hit flying defender');
+}
+
 function run(): void {
   const tests: Array<{ name: string; fn: () => void }> = [
     { name: 'Frozen defender does not retaliate and thaws on hit', fn: testFrozenDefenderNoRetaliationAndThaw },
@@ -258,6 +353,12 @@ function run(): void {
     { name: 'Ledyanoy Veter freezes for exactly two skipped enemy turns', fn: testLedyanoyVeterSkipsTwoTurns },
     { name: 'Student OmGTU ETB reveals top deck card in log', fn: testStudentOmgtuEntryEffectLogsTopDeckCard },
     { name: 'Sneg Elemental freezes attacker only when damaged', fn: testSnegElementalFreezesOnlyWhenHit },
+    { name: 'First strike kills before retaliation', fn: testFirstStrikeKillsBeforeRetaliation },
+    { name: 'Trample deals only excess damage to hero', fn: testTrampleDealsOnlyExcessToHero },
+    { name: 'Unblockable can hit hero through defender', fn: testUnblockableBypassesDefenderToHitHero },
+    { name: 'Defender cannot attack hero or creature', fn: testDefenderCannotAttackHeroOrCreature },
+    { name: 'Vigilance is not a mandatory defender', fn: testVigilanceIsNotMandatoryDefender },
+    { name: 'Flying rules block ground attacker', fn: testCannotHitFlyingWithoutFlying },
   ];
 
   for (const t of tests) {

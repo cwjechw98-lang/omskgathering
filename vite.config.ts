@@ -9,11 +9,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss(), viteSingleFile()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "src"),
+export default defineConfig(() => {
+  // GitHub Pages serves project sites from /<repo>/, so we set base dynamically in CI.
+  const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1];
+  const isGithubActions = process.env.GITHUB_ACTIONS === "true";
+  const base = isGithubActions && repoName ? `/${repoName}/` : "/";
+
+  return {
+    base,
+    plugins: [react(), tailwindcss(), viteSingleFile()],
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "src"),
+      },
     },
-  },
+  };
 });

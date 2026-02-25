@@ -83,7 +83,11 @@ function useMessageFeed() {
   return { messages, addMessage, clear, dismiss };
 }
 
-function MessageFeed({ messages, onDismiss }: { messages: GameMessage[]; onDismiss?: (id: number) => void }) {
+function MessageFeed({
+  messages,
+  onDismiss,
+  compact = false,
+}: { messages: GameMessage[]; onDismiss?: (id: number) => void; compact?: boolean }) {
   const feedRef = useRef<HTMLDivElement>(null);
   const [, forceUpdate] = useState(0);
 
@@ -103,8 +107,12 @@ function MessageFeed({ messages, onDismiss }: { messages: GameMessage[]; onDismi
   const now = Date.now();
 
   return (
-    <div className="absolute left-3 z-40 pointer-events-none"
-      style={{ top: 'clamp(55px, 7vh, 80px)', width: 'clamp(260px, 22vw, 380px)', maxHeight: 'clamp(200px, 35vh, 400px)' }}>
+    <div className={`absolute z-40 pointer-events-none ${compact ? 'left-2 right-2' : 'left-3'}`}
+      style={{
+        top: compact ? 'clamp(52px, 6.8vh, 76px)' : 'clamp(55px, 7vh, 80px)',
+        width: compact ? 'auto' : 'clamp(260px, 22vw, 380px)',
+        maxHeight: compact ? 'clamp(136px, 24vh, 200px)' : 'clamp(200px, 35vh, 400px)',
+      }}>
       <div ref={feedRef} className="flex flex-col gap-2 overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
         {messages.map(msg => {
           const age = now - msg.createdAt;
@@ -324,13 +332,15 @@ function HandCard({ card, selected, canPlay, isLand, onClick, onDragStart, onDra
 }
 
 /* ═══ CARD PREVIEW — compact sidebar, right side ═══ */
-function CardPreview({ card, owner, gs, onClose }: {
+function CardPreview({ card, owner, gs, onClose, compact = false }: {
   card: CardInstance; owner: 'player1' | 'player2'; gs: GameState; onClose: () => void;
+  compact?: boolean;
 }) {
   const opp = owner === 'player1' ? 'player2' : 'player1';
   const art = getCardCoverSources(card.data);
   return (
-    <div className="absolute top-12 right-2 z-40" style={{ width: 'clamp(200px, 17vw, 280px)' }}
+    <div className={`absolute z-40 ${compact ? 'left-2 right-2 bottom-2' : 'top-12 right-2'}`}
+      style={{ width: compact ? 'auto' : 'clamp(200px, 17vw, 280px)' }}
       onClick={e => e.stopPropagation()}>
       <div className="bg-[#0f0f18]/98 backdrop-blur-sm rounded-xl shadow-2xl border border-[#c9a84c]/30 overflow-hidden">
         <button onClick={onClose} className="absolute top-1 right-1 z-20 text-gray-400 hover:text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-700 text-sm transition">✕</button>
@@ -409,6 +419,7 @@ export function GameBoard({ mode, onBack }: Props) {
   const [damageAnimUid, setDamageAnimUid] = useState<string | null>(null);
   const [playAnim, setPlayAnim] = useState<{ name: string; emoji: string; color: string } | null>(null);
   const [deathAnim, setDeathAnim] = useState<{ name: string; emoji: string; color: string } | null>(null);
+  const [isCompactUI, setIsCompactUI] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
   const attackAnimTimerRef = useRef<number | null>(null);
   const damageAnimTimerRef = useRef<number | null>(null);
@@ -733,6 +744,13 @@ export function GameBoard({ mode, onBack }: Props) {
   ];
 
   // handleDustDone removed - using CSS animations
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 920px), (max-height: 740px), (pointer: coarse)');
+    const apply = () => setIsCompactUI(media.matches);
+    apply();
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, []);
 
   return (
     <div className="h-[100dvh] w-full bg-gradient-to-b from-[#0a0810] via-[#0c0a14] to-[#0a0810] flex flex-col overflow-hidden relative select-none">
@@ -760,7 +778,7 @@ export function GameBoard({ mode, onBack }: Props) {
       )}
 
       {/* ═══ UNIFIED MESSAGE FEED — always left side, always readable ═══ */}
-      <MessageFeed messages={messages} onDismiss={dismissMessage} />
+      {!showLog && <MessageFeed messages={messages} onDismiss={dismissMessage} compact={isCompactUI} />}
 
       {/* TOP BAR */}
       <div className="flex items-center justify-between px-3 bg-black/80 z-20 shrink-0 border-b border-[#c9a84c]/15"
@@ -791,7 +809,7 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* LOG — right side panel */}
       {showLog && (
         <div className="absolute top-12 right-2 z-40 bg-[#0f0f18]/98 backdrop-blur rounded-xl shadow-2xl border border-[#c9a84c]/20 max-h-[40vh] flex flex-col"
-          style={{ width: 'clamp(220px, 20vw, 320px)' }}>
+          style={{ width: isCompactUI ? 'min(96vw, 420px)' : 'clamp(220px, 20vw, 320px)', maxHeight: isCompactUI ? '52vh' : '40vh' }}>
           <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#c9a84c]/15">
             <span className="text-[#f0d68a] font-heading font-bold" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>📜 Хроника</span>
             <button onClick={() => setShowLog(false)} className="text-gray-500 hover:text-white text-sm">✕</button>
@@ -808,6 +826,7 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* PREVIEW — right side, never overlaps messages */}
       {inspected && !selectedAttacker && (
         <CardPreview card={inspected.card} owner={inspected.owner} gs={gs}
+          compact={isCompactUI}
           onClose={() => { setInspected(null); setSelectedHand(null); }} />
       )}
 
@@ -887,11 +906,11 @@ export function GameBoard({ mode, onBack }: Props) {
         {/* ═══ BATTLE LINE ═══ */}
         <div className="flex items-center gap-2 shrink-0 py-1">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/30 to-transparent" />
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className={`flex items-center gap-1.5 shrink-0 ${isCompactUI ? 'flex-wrap justify-center' : ''}`}>
             {selectedAttacker && (
               <>
                 <button onClick={clickAttackHero}
-                  className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white rounded-lg font-heading font-bold shadow-lg shadow-red-700/30 animate-pulse transition"
+                  className={`px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white rounded-lg font-heading font-bold shadow-lg shadow-red-700/30 animate-pulse transition ${isCompactUI ? 'min-w-[122px]' : ''}`}
                   style={{ fontSize: 'clamp(11px, 1.1vw, 15px)' }}
                   title="Атаковать героя напрямую">⚔️ В героя</button>
                 <button onClick={() => setSelectedAttacker(null)}
@@ -955,7 +974,7 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* ═══ PHASE + HINT BAR ═══ */}
       {myTurn && !gs.gameOver && (
         <div className="flex items-center gap-2 px-3 shrink-0 bg-black/60 border-t border-[#c9a84c]/10"
-          style={{ height: 'clamp(28px, 4vh, 40px)' }}>
+          style={{ height: isCompactUI ? 'clamp(30px, 5vh, 42px)' : 'clamp(28px, 4vh, 40px)' }}>
           <div className="flex items-center gap-0.5 shrink-0">
             {phases.map((p, i) => (
               <div key={p.id} className="flex items-center">
@@ -974,7 +993,8 @@ export function GameBoard({ mode, onBack }: Props) {
       )}
 
       {/* ═══ HAND ═══ */}
-      <div className="bg-black/70 px-2 py-1.5 shrink-0 border-t border-[#c9a84c]/10">
+      <div className="bg-black/70 px-2 py-1.5 shrink-0 border-t border-[#c9a84c]/10"
+        style={{ paddingBottom: isCompactUI ? 'max(0.375rem, env(safe-area-inset-bottom))' : undefined }}>
         <div className="flex justify-center gap-[clamp(3px,0.4vw,8px)] overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'thin' }}>
           {me.hand.length === 0 && <div className="text-gray-600 italic py-2 font-body" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>Рука пуста</div>}
           {me.hand.map(card => {
@@ -995,7 +1015,8 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* AI THINKING overlay */}
       {aiThinking && (
         <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-50 pointer-events-none">
-          <div className="bg-[#0f0f18]/95 rounded-2xl px-6 py-4 text-white flex flex-col items-center gap-2 shadow-2xl border border-[#c9a84c]/30">
+          <div className="bg-[#0f0f18]/95 rounded-2xl px-6 py-4 text-white flex flex-col items-center gap-2 shadow-2xl border border-[#c9a84c]/30"
+            style={{ width: isCompactUI ? 'min(92vw, 360px)' : undefined }}>
             <div style={{ fontSize: 'clamp(36px, 4vw, 56px)' }}>{AI_CHARACTER.avatarEmoji}</div>
             <span className="font-heading font-bold text-[#f0d68a]" style={{ fontSize: 'clamp(12px, 1.2vw, 18px)' }}>{AI_CHARACTER.name}</span>
             <span className="text-gray-500 font-body" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)' }}>размышляет о стратегии...</span>

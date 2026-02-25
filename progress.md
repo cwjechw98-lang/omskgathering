@@ -61,3 +61,11 @@ TODO update:
 - Mechanics matrix report saved to output/keeper-audit/mechanics-matrix-report.json (60/60 cards playable, keyword checks pass).
 - Post-fix UI report saved to output/keeper-audit/ui-keeper-report-post-fix.json.
 
+- Fixed GitHub Pages white-screen issue by adding dynamic Vite base path for Actions builds (`vite.config.ts`).
+- Expanded combat regression suite to 15 tests (first strike, trample excess, unblockable through defender, defender API guard, vigilance semantics, flying restrictions); `npm run test:regression` now 15/15 PASS.
+- Improved Keeper-mode adaptive UX in `GameBoard`: compact mode for small/touch viewports, mobile-safe log/message handling, and safer bottom safe-area behavior.
+- Updated vigilance wording in menu/rules to match engine mechanics (no forced defender behavior).
+- UI verification artifacts refreshed:
+- `output/keeper-audit/ui-post-fix-playwright/` (skill client smoke, no errors files).
+- `output/keeper-audit/ui-responsive-post-fix/` (desktop/mobile screenshots + `ui-responsive-report.json`, errors=[]).
+

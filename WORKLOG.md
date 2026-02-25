@@ -63,3 +63,10 @@
 - Re-ran regression suite after fix: `npm run test:regression` 9/9 PASS.
 - Captured post-fix Keeper UI smoke (`output/keeper-audit/ui-keeper-report-post-fix.json`, `05-after-defender-fix-keeper.png`) with no console/page errors.
 
+### 2026-02-25
+- Fixed GitHub Pages white-screen root cause by setting dynamic Vite `base` for Actions builds (`vite.config.ts`: `/${repo}/` when `GITHUB_ACTIONS=true`).
+- Expanded regression suite from 9 to 15 tests (`tests/regression/combat-regression.ts`): first strike, trample excess, unblockable-through-defender, defender API hard-stop, vigilance semantics, flying restrictions.
+- Polished Keeper UX/adaptive board (`src/components/GameBoard.tsx`, `src/index.css`): compact UI mode for mobile/coarse pointer, safer card sizing, touch hover suppression, safer log/message behavior.
+- Fixed rules/keyword wording drift for vigilance in menu/rules text (`src/components/MainMenu.tsx`) to match engine behavior.
+- Verification complete: `npm run test:regression` 15/15 PASS, `npm run build` PASS (including `GITHUB_ACTIONS=true` build), Playwright smoke artifacts with no console/page errors in `output/keeper-audit/ui-responsive-post-fix`.
+
