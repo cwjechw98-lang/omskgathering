@@ -1,0 +1,361 @@
+@import "tailwindcss";
+
+/* ═══ MTG-INSPIRED DESIGN SYSTEM ═══ */
+
+:root {
+  --card-w: clamp(80px, 10vw, 160px);
+  --card-h: calc(var(--card-w) * 1.4);
+  --field-card-w: clamp(72px, 8vw, 140px);
+  --field-card-h: calc(var(--field-card-w) * 1.35);
+  --hand-card-w: clamp(68px, 7.5vw, 130px);
+  --hand-card-h: calc(var(--hand-card-w) * 1.35);
+  --font-title: 'Cinzel Decorative', 'Cinzel', serif;
+  --font-heading: 'Cinzel', serif;
+  --font-body: 'Philosopher', sans-serif;
+  --gold: #c9a84c;
+  --gold-light: #f0d68a;
+  --gold-dark: #8b6914;
+}
+
+body {
+  margin: 0;
+  background: #0a0a0f;
+  color: #e0e0e0;
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+
+.font-title { font-family: var(--font-title); }
+.font-heading { font-family: var(--font-heading); }
+.font-body { font-family: var(--font-body); }
+.text-gold { color: var(--gold); }
+.text-gold-light { color: var(--gold-light); }
+.bg-gold { background-color: var(--gold); }
+.border-gold { border-color: var(--gold); }
+
+/* ═══ CARD FRAMES ═══ */
+.card-frame {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  transition: all 0.2s ease;
+}
+.card-frame:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+}
+.card-frame-mythic {
+  box-shadow: 0 0 12px rgba(255, 140, 0, 0.4), 0 2px 8px rgba(0,0,0,0.5);
+}
+.card-frame-rare {
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.25), 0 2px 8px rgba(0,0,0,0.5);
+}
+
+/* Card art backgrounds */
+.card-art-white { background: linear-gradient(135deg, #f5f0e1 0%, #d4c5a0 50%, #ebe3cc 100%); }
+.card-art-blue { background: linear-gradient(135deg, #1a3a5c 0%, #2a5f8f 50%, #1a4a6c 100%); }
+.card-art-black { background: linear-gradient(135deg, #1a1a2e 0%, #2d1b3d 50%, #151520 100%); }
+.card-art-red { background: linear-gradient(135deg, #5c1a1a 0%, #8f2a2a 50%, #6c1a1a 100%); }
+.card-art-green { background: linear-gradient(135deg, #1a3a1a 0%, #2a5f2a 50%, #1a4a1a 100%); }
+.card-art-colorless { background: linear-gradient(135deg, #3a3a4e 0%, #5a5a6e 50%, #3a3a4e 100%); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.08) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes cardGlow {
+  0%, 100% { box-shadow: 0 0 4px rgba(201, 168, 76, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(201, 168, 76, 0.6); }
+}
+.card-glow { animation: cardGlow 2s ease-in-out infinite; }
+
+/* ═══ FIRE & TORCH EFFECTS ═══ */
+@keyframes fireFlicker {
+  0%, 100% { opacity: 0.8; transform: scaleY(1) scaleX(1); }
+  25% { opacity: 1; transform: scaleY(1.1) scaleX(0.95); }
+  50% { opacity: 0.7; transform: scaleY(0.95) scaleX(1.05); }
+  75% { opacity: 0.9; transform: scaleY(1.05) scaleX(0.98); }
+}
+
+@keyframes fireLightPulse {
+  0%, 100% { 
+    box-shadow: 0 0 60px 20px rgba(255,100,0,0.08), 0 0 120px 40px rgba(255,60,0,0.04);
+  }
+  33% { 
+    box-shadow: 0 0 80px 30px rgba(255,120,0,0.1), 0 0 150px 50px rgba(255,80,0,0.05);
+  }
+  66% { 
+    box-shadow: 0 0 50px 15px rgba(255,80,0,0.06), 0 0 100px 35px rgba(255,40,0,0.03);
+  }
+}
+
+.fire-light {
+  animation: fireLightPulse 2s ease-in-out infinite;
+}
+
+/* ═══ TITLE EFFECTS ═══ */
+@keyframes titleGlow {
+  0%, 100% { 
+    text-shadow: 0 0 20px rgba(201,168,76,0.3), 0 0 40px rgba(201,168,76,0.1), 0 2px 4px rgba(0,0,0,0.8);
+  }
+  50% { 
+    text-shadow: 0 0 30px rgba(201,168,76,0.5), 0 0 60px rgba(201,168,76,0.2), 0 0 100px rgba(201,168,76,0.1), 0 2px 4px rgba(0,0,0,0.8);
+  }
+}
+.title-glow {
+  animation: titleGlow 3s ease-in-out infinite;
+}
+
+@keyframes subtitleShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.subtitle-shimmer {
+  background: linear-gradient(
+    90deg, 
+    rgba(201,168,76,0.5) 0%, 
+    rgba(240,214,138,0.9) 25%,
+    rgba(255,255,255,1) 50%,
+    rgba(240,214,138,0.9) 75%,
+    rgba(201,168,76,0.5) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: subtitleShimmer 4s linear infinite;
+}
+
+/* ═══ CINEMATIC INTRO EFFECTS ═══ */
+@keyframes cinematicFadeIn {
+  0% { opacity: 0; transform: scale(1.1) translateY(20px); filter: blur(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+@keyframes cinematicFadeOut {
+  0% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+  100% { opacity: 0; transform: scale(0.95) translateY(-20px); filter: blur(8px); }
+}
+.cinematic-in {
+  animation: cinematicFadeIn 0.8s ease-out forwards;
+}
+.cinematic-out {
+  animation: cinematicFadeOut 0.6s ease-in forwards;
+}
+
+@keyframes emojiFloat {
+  0% { transform: translateY(0) scale(1) rotate(0deg); }
+  25% { transform: translateY(-10px) scale(1.05) rotate(2deg); }
+  50% { transform: translateY(-5px) scale(1.1) rotate(0deg); }
+  75% { transform: translateY(-12px) scale(1.05) rotate(-2deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); }
+}
+.emoji-float {
+  animation: emojiFloat 3s ease-in-out infinite;
+}
+
+@keyframes lightningFlash {
+  0% { opacity: 0; }
+  5% { opacity: 0.8; }
+  10% { opacity: 0.2; }
+  15% { opacity: 0.9; }
+  20% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes runeRotate {
+  0% { transform: rotate(0deg); opacity: 0.1; }
+  50% { opacity: 0.3; }
+  100% { transform: rotate(360deg); opacity: 0.1; }
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 0.1; }
+  100% { transform: scale(0.8); opacity: 0.5; }
+}
+
+/* ═══ MENU EFFECTS ═══ */
+@keyframes floatObject {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.06; }
+  50% { transform: translateY(-20px) rotate(5deg); opacity: 0.1; }
+}
+
+@keyframes driftSlow {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(10px, -15px) rotate(3deg); }
+  50% { transform: translate(-5px, -25px) rotate(-2deg); }
+  75% { transform: translate(-15px, -10px) rotate(1deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.float-object {
+  animation: floatObject var(--dur, 6s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.drift-slow {
+  animation: driftSlow var(--dur, 15s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* ═══ CARD APPEAR ANIMATION (collection) ═══ */
+@keyframes cardAppear {
+  0% { opacity: 0; transform: translateY(30px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ═══ DRAG AND DROP ═══ */
+.cursor-grab { cursor: grab; }
+.cursor-grabbing { cursor: grabbing; }
+
+/* Line clamp utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Button hover effects */
+.btn-mythic {
+  position: relative;
+  overflow: hidden;
+}
+.btn-mythic::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, #ff6600, #ffaa00, #ff4400, #ffcc00, #ff6600);
+  background-size: 400% 400%;
+  animation: shimmer 3s linear infinite;
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.btn-mythic:hover::before {
+  opacity: 1;
+}
+
+/* ═══ RESPONSIVE SCALING ═══ */
+@media (min-width: 1600px) {
+  :root {
+    --card-w: 150px;
+    --field-card-w: 130px;
+    --hand-card-w: 120px;
+  }
+}
+@media (min-width: 2000px) {
+  :root {
+    --card-w: 170px;
+    --field-card-w: 150px;
+    --hand-card-w: 140px;
+  }
+}
+@media (min-height: 900px) {
+  :root {
+    --field-card-w: clamp(90px, 9vw, 150px);
+    --hand-card-w: clamp(80px, 8vw, 140px);
+  }
+}
+
+/* ═══ CARD ANIMATION KEYFRAMES ═══ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes particleExplode {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--end-x, 100px), var(--end-y, -100px)) scale(0);
+  }
+}
+
+@keyframes cardNameAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes emojiPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes sparkleFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-150%) scale(0.5);
+  }
+}
+
+@keyframes cardDissolve {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.95);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+    filter: blur(10px);
+  }
+}
+
+@keyframes cardAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
