@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "local-memory": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["C:\\MCP GPT CODE\\mcp_memory\\server.py"]
+    }
+  }
+}
