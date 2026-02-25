@@ -27,10 +27,8 @@ const COLOR_ART: Record<string, string> = {
   red: 'card-art-red', green: 'card-art-green', colorless: 'card-art-colorless',
 };
 
-// DustEffect type removed - using CSS animations
-
 /* ═══════════════════════════════════════════
-   UNIFIED MESSAGE SYSTEM — one consistent place
+   UNIFIED MESSAGE SYSTEM
    ═══════════════════════════════════════════ */
 type GameMessage = {
   id: number;
@@ -38,7 +36,7 @@ type GameMessage = {
   text: string;
   emoji: string;
   createdAt: number;
-  duration: number; // ms
+  duration: number;
 };
 
 let msgIdCounter = 0;
@@ -56,21 +54,20 @@ function useMessageFeed() {
     type: GameMessage['type'],
     text: string,
     emoji: string,
-    duration = 5000 // reduced from 12000
+    duration = 5000
   ) => {
     const id = ++msgIdCounter;
     const msg: GameMessage = { id, type, text, emoji, createdAt: Date.now(), duration };
-    setMessages(prev => [...prev.slice(-5), msg]); // keep last 5 (was 10)
+    setMessages(prev => [...prev.slice(-5), msg]);
   }, []);
 
-  // Auto-remove expired messages - faster check
   useEffect(() => {
     if (messages.length === 0) return;
     const interval = setInterval(() => {
       if (!mountedRef.current) return;
       const now = Date.now();
       setMessages(prev => prev.filter(m => now - m.createdAt < m.duration));
-    }, 200); // faster updates for smoother fade
+    }, 200);
     return () => clearInterval(interval);
   }, [messages.length]);
 
@@ -91,7 +88,6 @@ function MessageFeed({
   const feedRef = useRef<HTMLDivElement>(null);
   const [, forceUpdate] = useState(0);
 
-  // Force re-render every 100ms for smooth fade animation
   useEffect(() => {
     if (messages.length === 0) return;
     const interval = setInterval(() => forceUpdate(n => n + 1), 100);
@@ -116,7 +112,7 @@ function MessageFeed({
       <div ref={feedRef} className="flex flex-col gap-2 overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
         {messages.map(msg => {
           const age = now - msg.createdAt;
-          const fadeStart = msg.duration * 0.6; // start fading earlier
+          const fadeStart = msg.duration * 0.6;
           const opacity = age > fadeStart ? Math.max(0, 1 - (age - fadeStart) / (msg.duration * 0.4)) : 1;
           const isAI = msg.type === 'ai';
 
@@ -139,7 +135,6 @@ function MessageFeed({
                 padding: 'clamp(8px, 1vw, 14px)',
               }}>
 
-              {/* AI message — with avatar */}
               {isAI && (
                 <div className="flex items-start gap-2">
                   <div className="shrink-0 flex flex-col items-center">
@@ -156,7 +151,6 @@ function MessageFeed({
                 </div>
               )}
 
-              {/* Non-AI message */}
               {!isAI && (
                 <div className="flex items-start gap-2">
                   <span style={{ fontSize: 'clamp(16px, 1.8vw, 24px)' }}>{msg.emoji}</span>
@@ -170,7 +164,6 @@ function MessageFeed({
                   </p>
                 </div>
               )}
-              {/* Click to dismiss */}
               {onDismiss && (
                 <button 
                   onClick={() => onDismiss(msg.id)}
@@ -412,7 +405,6 @@ export function GameBoard({ mode, onBack }: Props) {
   const [aiThinking, setAiThinking] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [seenStoryEvents, setSeenStoryEvents] = useState<Set<number>>(new Set());
-  // dustEffects removed - using CSS animations
   const [dragCardUid, setDragCardUid] = useState<string | null>(null);
   const [dropZoneActive, setDropZoneActive] = useState(false);
   const [attackAnimUid, setAttackAnimUid] = useState<string | null>(null);
@@ -437,7 +429,6 @@ export function GameBoard({ mode, onBack }: Props) {
   const enemy = gs.player2;
   const cardBackSrc = getCardBackSource();
 
-  // Track card deaths for animations + death quotes
   useEffect(() => {
     const currentP1 = me.field.map(c => c.uid);
     const currentP2 = enemy.field.map(c => c.uid);
@@ -449,14 +440,12 @@ export function GameBoard({ mode, onBack }: Props) {
       const allDied = [...diedP1, ...diedP2];
 
       if (allDied.length > 0) {
-        // Search both graveyards for dead card data
         const allGraveCards = [...me.graveyard, ...enemy.graveyard];
         const deadCard = allGraveCards.find(c => allDied.includes(c.uid));
         if (deadCard && !deathAnim) {
           setDeathAnim({ name: deadCard.data.name, emoji: deadCard.data.emoji, color: deadCard.data.color });
         }
 
-        // Death quote message
         const recent = gs.log.slice(-5).join(' ');
         for (const [cardId, quote] of Object.entries(DEATH_QUOTES)) {
           if (recent.includes(cardId) || recent.toLowerCase().includes(cardId.replace(/_/g, ' '))) {
@@ -470,7 +459,6 @@ export function GameBoard({ mode, onBack }: Props) {
     prevFieldRef.current = { p1: currentP1, p2: currentP2 };
   }, [me.field, enemy.field]); // eslint-disable-line
 
-  // Story events via unified message feed
   useEffect(() => {
     const ev = STORY_EVENTS.find(e => e.turnTrigger === gs.turnNumber && !seenStoryEvents.has(e.turnTrigger));
     if (ev) {
@@ -572,7 +560,6 @@ export function GameBoard({ mode, onBack }: Props) {
     step();
   }, [triggerCombatAnims]);
 
-  // AI turn
   const runAI = useCallback(() => {
     if (mode !== 'ai' || gs.currentTurn !== 'player2' || gs.gameOver) return;
     if (aiTurnTimerRef.current) {
@@ -593,7 +580,6 @@ export function GameBoard({ mode, onBack }: Props) {
         lastCard?.data.id || '',
         result.state.player2.health, result.state.player1.health, result.state.turnNumber
       );
-      // AI comment: 6 seconds is enough
       addMessage('ai', lore, AI_CHARACTER.avatarEmoji, 6000);
       if (lastCard) showCardNarrative(lastCard.data.id);
       setAiThinking(false);
@@ -607,13 +593,11 @@ export function GameBoard({ mode, onBack }: Props) {
     }
   }, [gs.currentTurn, mode, gs.gameOver, runAI]);
 
-  // Play card (shared by click and drag)
   const doPlayCard = useCallback((uid: string) => {
     const card = me.hand.find(c => c.uid === uid);
     if (!card || !myTurn || gs.gameOver) return false;
     const next = playCard(gs, 'player1', uid);
     if (next !== gs) {
-      // Trigger play animation
       setPlayAnim({ name: card.data.name, emoji: card.data.emoji, color: card.data.color });
       setGs(next);
       setSelectedHand(null);
@@ -625,7 +609,6 @@ export function GameBoard({ mode, onBack }: Props) {
     return false;
   }, [gs, me.hand, myTurn, showCardNarrative, addMessage]);
 
-  // Drag & Drop
   const handleDragStart = (e: React.DragEvent, uid: string) => {
     setDragCardUid(uid);
     setSelectedHand(null);
@@ -658,7 +641,6 @@ export function GameBoard({ mode, onBack }: Props) {
     }
   };
 
-  // Handlers
   const clickHand = (uid: string) => {
     const card = me.hand.find(c => c.uid === uid);
     if (!card) return;
@@ -743,7 +725,6 @@ export function GameBoard({ mode, onBack }: Props) {
     { id: 'done', icon: '⏭️', label: 'Конец', active: phase === 'done', done: false },
   ];
 
-  // handleDustDone removed - using CSS animations
   useEffect(() => {
     const media = window.matchMedia('(max-width: 768px)');
     const apply = () => setIsCompactUI(media.matches);
@@ -755,9 +736,6 @@ export function GameBoard({ mode, onBack }: Props) {
   return (
     <div className="h-[100dvh] w-full bg-gradient-to-b from-[#0a0810] via-[#0c0a14] to-[#0a0810] flex flex-col overflow-hidden relative select-none">
 
-      {/* DUST PARTICLE EFFECTS - removed, using CSS animations now */}
-
-      {/* CARD PLAY ANIMATION - full screen overlay */}
       {playAnim && (
         <CardPlayAnimation
           cardName={playAnim.name}
@@ -767,7 +745,6 @@ export function GameBoard({ mode, onBack }: Props) {
         />
       )}
 
-      {/* CARD DEATH ANIMATION */}
       {deathAnim && (
         <CardDeathAnimation
           cardName={deathAnim.name}
@@ -777,10 +754,8 @@ export function GameBoard({ mode, onBack }: Props) {
         />
       )}
 
-      {/* ═══ UNIFIED MESSAGE FEED — always left side, always readable ═══ */}
       {!showLog && <MessageFeed messages={messages} onDismiss={dismissMessage} compact={isCompactUI} />}
 
-      {/* TOP BAR */}
       <div className="flex items-center justify-between px-3 bg-black/80 z-20 shrink-0 border-b border-[#c9a84c]/15"
         style={{ height: 'clamp(36px, 5vh, 48px)' }}>
         <button onClick={onBack} className="text-gray-500 hover:text-[#f0d68a] font-heading px-2 py-1 rounded hover:bg-[#1a1508] transition"
@@ -806,7 +781,6 @@ export function GameBoard({ mode, onBack }: Props) {
         </div>
       </div>
 
-      {/* LOG — right side panel */}
       {showLog && (
         <div className="absolute top-12 right-2 z-40 bg-[#0f0f18]/98 backdrop-blur rounded-xl shadow-2xl border border-[#c9a84c]/20 max-h-[40vh] flex flex-col"
           style={{ width: isCompactUI ? 'min(96vw, 420px)' : 'clamp(220px, 20vw, 320px)', maxHeight: isCompactUI ? '52vh' : '40vh' }}>
@@ -823,20 +797,17 @@ export function GameBoard({ mode, onBack }: Props) {
         </div>
       )}
 
-      {/* PREVIEW — right side, never overlaps messages */}
       {inspected && !selectedAttacker && (
         <CardPreview card={inspected.card} owner={inspected.owner} gs={gs}
           compact={isCompactUI}
           onClose={() => { setInspected(null); setSelectedHand(null); }} />
       )}
 
-      {/* ENEMY AREA */}
       <div className="px-3 py-1 shrink-0">
         <PlayerArea player={enemy} isCurrentPlayer={!isP1Turn}
           label={mode === 'ai' ? `${AI_CHARACTER.avatarEmoji} ${AI_CHARACTER.name}` : 'Игрок 2'} isTop />
       </div>
 
-      {/* Enemy hand (face down) */}
       <div className="flex justify-center gap-0.5 px-2 shrink-0" style={{ height: 'clamp(18px, 2vw, 28px)' }}>
         {enemy.hand.map((_, i) => (
           <div key={i} className="bg-gradient-to-b from-red-900/80 to-red-950 rounded border border-red-800/30 flex items-center justify-center relative overflow-hidden"
@@ -856,7 +827,6 @@ export function GameBoard({ mode, onBack }: Props) {
         <span className="text-gray-600 ml-0.5 self-center" style={{ fontSize: 'clamp(7px, 0.8vw, 10px)' }}>{enemy.hand.length}</span>
       </div>
 
-      {/* Enemy enchantments */}
       {enemy.enchantments.length > 0 && (
         <div className="flex justify-center gap-1 px-2 shrink-0">
           {enemy.enchantments.map(c => (
@@ -870,7 +840,6 @@ export function GameBoard({ mode, onBack }: Props) {
         </div>
       )}
 
-      {/* ═══ BATTLEFIELD (drop zone) ═══ */}
       <div className={`flex-1 flex flex-col justify-between min-h-0 relative px-2 py-1 transition-all duration-300 ${
         dropZoneActive ? 'bg-green-900/10 ring-2 ring-green-400/30 ring-inset rounded-xl' : ''
       }`}
@@ -879,7 +848,6 @@ export function GameBoard({ mode, onBack }: Props) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}>
 
-        {/* Drop zone indicator */}
         {dropZoneActive && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
             <div className="bg-green-500/10 border-2 border-dashed border-green-400/40 rounded-2xl px-8 py-4 backdrop-blur-sm">
@@ -888,7 +856,6 @@ export function GameBoard({ mode, onBack }: Props) {
           </div>
         )}
 
-        {/* Enemy field */}
         <div className="flex justify-center items-end gap-[clamp(4px,0.5vw,10px)] min-h-[var(--field-card-h)] py-1 flex-wrap content-end">
           {enemy.field.length === 0
             ? <div className="text-gray-700 italic font-body" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>Поле Хранителя пусто</div>
@@ -903,7 +870,6 @@ export function GameBoard({ mode, onBack }: Props) {
             ))}
         </div>
 
-        {/* ═══ BATTLE LINE ═══ */}
         <div className="flex items-center gap-2 shrink-0 py-1">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/30 to-transparent" />
           <div className={`flex items-center gap-1.5 shrink-0 ${isCompactUI ? 'flex-wrap justify-center' : ''}`}>
@@ -934,7 +900,6 @@ export function GameBoard({ mode, onBack }: Props) {
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/30 to-transparent" />
         </div>
 
-        {/* Own field */}
         <div className="flex justify-center items-start gap-[clamp(4px,0.5vw,10px)] min-h-[var(--field-card-h)] py-1 flex-wrap content-start">
           {me.field.length === 0
             ? <div className="text-gray-600 italic font-body" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>{me.hand.length > 0 ? '👇 Перетащите существ сюда' : 'Поле пусто'}</div>
@@ -953,7 +918,6 @@ export function GameBoard({ mode, onBack }: Props) {
         </div>
       </div>
 
-      {/* Own enchantments */}
       {me.enchantments.length > 0 && (
         <div className="flex justify-center gap-1 px-2 shrink-0">
           {me.enchantments.map(c => (
@@ -966,12 +930,10 @@ export function GameBoard({ mode, onBack }: Props) {
         </div>
       )}
 
-      {/* MY PLAYER AREA */}
       <div className="px-3 py-1 shrink-0">
         <PlayerArea player={me} isCurrentPlayer={isP1Turn} label="👤 Вы" />
       </div>
 
-      {/* ═══ PHASE + HINT BAR ═══ */}
       {myTurn && !gs.gameOver && (
         <div className="flex items-center gap-2 px-3 shrink-0 bg-black/60 border-t border-[#c9a84c]/10"
           style={{ height: isCompactUI ? 'clamp(30px, 5vh, 42px)' : 'clamp(28px, 4vh, 40px)' }}>
@@ -992,10 +954,10 @@ export function GameBoard({ mode, onBack }: Props) {
         </div>
       )}
 
-      {/* ═══ HAND ═══ */}
-      <div className="bg-black/70 px-2 py-1.5 shrink-0 border-t border-[#c9a84c]/10"
+      {/* ═══ ИСПРАВЛЕННЫЙ БЛОК РУКИ ═══ */}
+      <div className="bg-black/70 px-2 shrink-0 border-t border-[#c9a84c]/10 relative z-20"
         style={{ paddingBottom: isCompactUI ? 'max(0.375rem, env(safe-area-inset-bottom))' : undefined }}>
-        <div className="flex justify-center gap-[clamp(3px,0.4vw,8px)] overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'thin' }}>
+        <div className="flex justify-center gap-[clamp(3px,0.4vw,8px)] overflow-x-auto pt-6 pb-4 px-2" style={{ scrollbarWidth: 'thin' }}>
           {me.hand.length === 0 && <div className="text-gray-600 italic py-2 font-body" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>Рука пуста</div>}
           {me.hand.map(card => {
             const isLand = card.data.type === 'land';
@@ -1012,7 +974,6 @@ export function GameBoard({ mode, onBack }: Props) {
         </div>
       </div>
 
-      {/* AI THINKING overlay */}
       {aiThinking && (
         <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-50 pointer-events-none">
           <div className="bg-[#0f0f18]/95 rounded-2xl px-6 py-4 text-white flex flex-col items-center gap-2 shadow-2xl border border-[#c9a84c]/30"
@@ -1029,7 +990,6 @@ export function GameBoard({ mode, onBack }: Props) {
         </div>
       )}
 
-      {/* GAME OVER */}
       {gs.gameOver && (
         <div className="absolute inset-0 bg-black/85 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-gradient-to-br from-[#1a1508] to-[#0f0f18] rounded-2xl p-8 text-center shadow-2xl border border-[#c9a84c]/40 max-w-sm mx-4">
