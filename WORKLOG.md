@@ -51,3 +51,7 @@
 - Verified visual rendering via Playwright (`output/visual-covers`): collection and game board screenshots show loaded local covers and loaded card backs, no console/page errors.
 - Post-change checks passed: `npm run build` and `npm run test:regression` (9/9).
 
+### 2026-02-26
+- Added secret-safety defaults for image pipeline: `.env*` ignored in git and `.env.example` added.
+- `scripts/cache-card-images.mjs` now reads `.env` automatically (if present), so API key does not need to be passed inline in commands.
+

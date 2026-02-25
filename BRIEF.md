@@ -23,7 +23,8 @@
 - 
 
 ## Notes
-- 
+- Local card covers are cached in `public/cards`; map is in `src/data/localCardImages.ts`.
+- For recache, put `POLLINATIONS_API_KEY` in `.env` (see `.env.example`) and run `npm run cache:card-images`.
 
 ## Next Session Prompt
 - Paste in new chat:
