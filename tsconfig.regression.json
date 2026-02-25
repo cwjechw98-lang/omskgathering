@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": false,
+    "outDir": ".tmp-regression"
+  },
+  "include": ["tests/regression/**/*.ts", "src/game/**/*.ts", "src/data/cards.ts"]
+}

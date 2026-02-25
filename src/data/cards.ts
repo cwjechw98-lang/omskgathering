@@ -333,7 +333,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'mer_omska',
     name: 'Мэр Омска',
-    cost: 7, color: 'white', type: 'creature',
+    cost: 8, color: 'white', type: 'creature',
     attack: 4, health: 7,
     description: 'Бдительность. Все ваши существа получают +1/+1. При входе — 2 токена Чиновник 1/1.',
     flavor: '«Каждый Мэр Омска даёт Клятву Метро. Каждый нарушает. Но сила Клятвы копится — и однажды Мэр станет настолько могущественным, что метро ДЕЙСТВИТЕЛЬНО появится. Ну, когда-нибудь.»',
@@ -345,7 +345,7 @@ export const ALL_CARDS: CardData[] = [
     name: 'Лорд Кластера',
     cost: 7, color: 'blue', type: 'creature',
     attack: 5, health: 7,
-    description: 'Все ваши существа получают +1/+1. При входе — заморозьте 2 случайных врагов.',
+    description: 'Все ваши существа получают +1/+1. При входе — заморозьте 1 случайного врага.',
     flavor: '«Когда 300 мониторов включаются одновременно в полночь, кластер обретает коллективное сознание. Лорд Кластера — это цифровой бог, рождённый из миллионов строк студенческого кода.»',
     emoji: '🖥️', keywords: [], rarity: 'mythic',
     imageUrl: img('lord of computer cluster with 300 glowing monitors, digital god, matrix cyber lord, blue power', 123)
@@ -353,7 +353,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'drakon_irtysha',
     name: 'Дракон Иртыша',
-    cost: 8, color: 'red', type: 'creature',
+    cost: 9, color: 'red', type: 'creature',
     attack: 7, health: 7,
     description: 'Полёт, Растоптать. При входе — 3 урона всем врагам.',
     flavor: '«Тысячу лет назад шаман запечатал дракона подо льдом Иртыша. Печать слабеет каждую весну, когда река вскрывается. Однажды он вырвется — и небо над Омском окрасится пламенем.»',
@@ -377,7 +377,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'pivo_sibirskoe',
     name: 'Пиво «Сибирская Корона»',
-    cost: 1, color: 'green', type: 'spell',
+    cost: 2, color: 'green', type: 'spell',
     description: 'Потяните 2 карты.',
     flavor: '«Настоящее сибирское, из Омска!»',
     emoji: '🍺', rarity: 'common',
@@ -387,7 +387,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'segfault',
     name: 'Segmentation Fault',
     cost: 1, color: 'black', type: 'spell',
-    description: '🎲 Бросьте D6: 1-2 → 2 урона своему, 3-6 → 3 урона вражескому.',
+    description: '🎲 Бросьте D6: 1 → 2 урона своему, 2-6 → 3 урона вражескому.',
     flavor: '«Segfault (core dumped)»',
     emoji: '💀', rarity: 'uncommon',
     imageUrl: img('digital crash error screen explosion, segmentation fault, computer skull glitch art', 126)
@@ -422,7 +422,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'probka_lenina',
     name: 'Пробка на Ленина',
-    cost: 2, color: 'red', type: 'spell',
+    cost: 3, color: 'red', type: 'spell',
     description: 'Вражеские существа не могут атаковать в следующий ход.',
     flavor: '«8 утра. Проспект Маркса. Ад.»',
     emoji: '🚗', rarity: 'uncommon',
@@ -494,7 +494,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'moroz_50',
     name: 'Мороз -50°',
-    cost: 4, color: 'blue', type: 'spell',
+    cost: 5, color: 'blue', type: 'spell',
     description: 'Заморозьте все вражеские существа на 1 ход.',
     flavor: '«Синоптики обещали -30. Ха-ха.»',
     emoji: '🥶', rarity: 'rare',
@@ -504,7 +504,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'vzryv_gaza',
     name: 'Взрыв Бытового Газа',
     cost: 5, color: 'red', type: 'spell',
-    description: 'Нанесите 3 урона ВСЕМ существам.',
+    description: 'Нанесите 2 урона ВСЕМ существам.',
     flavor: '«Опять эти газовые трубы...»',
     emoji: '💥', rarity: 'rare',
     imageUrl: img('massive gas explosion destroying city block, fire everywhere, russian apartment building', 137)
@@ -513,7 +513,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'bozhestvenniy_svet',
     name: 'Божественный Свет',
     cost: 5, color: 'white', type: 'spell',
-    description: 'Восстановите 8 HP. Все ваши существа получают +1/+1 навсегда.',
+    description: 'Восстановите 4 HP. Все ваши существа получают +1/+1 навсегда.',
     flavor: '«Успенский собор сияет над городом.»',
     emoji: '✝️', rarity: 'rare',
     imageUrl: img('divine golden light from cathedral dome, healing all allies, Assumption Cathedral Omsk', 212)

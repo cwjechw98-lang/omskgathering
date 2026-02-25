@@ -148,6 +148,12 @@ function hasKeyword(card: CardInstance, kw: string): boolean {
   return card.keywords.includes(kw as any);
 }
 
+// Freeze counters are decremented at the start of owner's turn.
+// To skip N full turns, store N+1.
+function applyFreeze(card: CardInstance, turns: number) {
+  card.frozen = Math.max(card.frozen, turns + 1);
+}
+
 function isBlocker(c: CardInstance): boolean {
   // MTG-aligned: only Defender forces attacks to be redirected.
   // Vigilance in MTG just means "doesn't tap to attack" (we don't model tap),
@@ -219,7 +225,7 @@ export function playCard(
 
     // Omskaya Zima: enter frozen
     if (opponent.enchantments.some(c => c.data.id === 'omskaya_zima')) {
-      card.frozen = 1;
+      applyFreeze(card, 1);
       newState.log.push(`🌨️ ${card.data.name} входит замороженным из-за Омской Зимы!`);
     }
 
@@ -269,10 +275,20 @@ function applyEntryEffects(
     case 'irtysh_vodyanoy':
       if (opponent.field.length > 0) {
         const target = opponent.field[Math.floor(Math.random() * opponent.field.length)];
-        target.frozen = 2;
+        applyFreeze(target, 2);
         state.log.push(`🧜‍♂️ ${target.data.name} заморожен на 2 хода!`);
       }
       break;
+
+    case 'student_omgtu': {
+      const top = player.deck[0];
+      if (top) {
+        state.log.push(`🎓 Студент ОмГТУ изучает верх колоды: ${top.data.name}`);
+      } else {
+        state.log.push('🎓 Студент ОмГТУ: колода пуста.');
+      }
+      break;
+    }
 
     case 'marshrutchik':
       for (const c of [...player.field, ...opponent.field]) {
@@ -395,7 +411,7 @@ function applyEntryEffects(
     case 'blackhole': {
       const killed: string[] = [];
       for (const c of [...opponent.field, ...player.field]) {
-        if (c.uid !== card.uid && getEffectiveAttack(c, c === card ? player : (player.field.includes(c) ? player : opponent)) <= 2) {
+        if (getEffectiveAttack(c, player.field.includes(c) ? player : opponent) <= 2) {
           killed.push(c.data.name);
           c.currentHealth = -999;
         }
@@ -408,9 +424,9 @@ function applyEntryEffects(
 
     case 'cluster_lord': {
       const enemies = [...opponent.field];
-      for (let i = 0; i < 2 && enemies.length > 0; i++) {
+      for (let i = 0; i < 1 && enemies.length > 0; i++) {
         const idx = Math.floor(Math.random() * enemies.length);
-        enemies[idx].frozen = 2;
+        applyFreeze(enemies[idx], 2);
         state.log.push(`🖥️ ${enemies[idx].data.name} заморожен Лордом Кластера!`);
         enemies.splice(idx, 1);
       }
@@ -436,7 +452,7 @@ function applySpellEffect(
       const roll = rollDice(6);
       state.lastDiceRoll = { sides: 6, result: roll, reason: 'Segfault' };
       state.log.push(`🎲 Segfault: бросок D6 = ${roll}`);
-      if (roll <= 2) {
+      if (roll === 1) {
         if (player.field.length > 0) {
           const target = player.field[Math.floor(Math.random() * player.field.length)];
           target.currentHealth -= 2;
@@ -569,23 +585,23 @@ function applySpellEffect(
 
     case 'moroz_50':
       for (const c of opponent.field) {
-        c.frozen = Math.max(c.frozen, 1);
+        applyFreeze(c, 1);
       }
       state.log.push('🥶 Мороз -50°: все враги заморожены!');
       break;
 
     case 'vzryv_gaza':
       for (const c of [...player.field, ...opponent.field]) {
-        c.currentHealth -= 3;
+        c.currentHealth -= 2;
       }
-      state.log.push('💥 Взрыв газа: 3 урона ВСЕМ существам!');
+      state.log.push('💥 Взрыв газа: 2 урона ВСЕМ существам!');
       break;
 
     case 'ledyanoy_veter': {
       const targets = opponent.field.filter(c => !hasKeyword(c, 'hexproof'));
       if (targets.length > 0) {
         const target = targets[Math.floor(Math.random() * targets.length)];
-        target.frozen = 2;
+        applyFreeze(target, 2);
         state.log.push(`🌬️ Ледяной Ветер: ${target.data.name} заморожен на 2 хода!`);
       }
       drawCard(player, state.log);
@@ -606,13 +622,13 @@ function applySpellEffect(
     }
 
     case 'bozhestvenniy_svet':
-      player.health = Math.min(player.maxHealth, player.health + 8);
+      player.health = Math.min(player.maxHealth, player.health + 4);
       for (const c of player.field) {
         c.buffAttack += 1;
         c.buffHealth += 1;
         c.currentHealth += 1;
       }
-      state.log.push('✝️ Божественный Свет: +8 HP, всем существам +1/+1!');
+      state.log.push('✝️ Божественный Свет: +4 HP, всем существам +1/+1!');
       break;
   }
 }
@@ -655,6 +671,7 @@ export function attackPlayer(
   }
 
   const damage = getEffectiveAttack(attacker, player, opponent);
+  const opponentHealthBefore = opponent.health;
   opponent.health -= damage;
   
   attacker.hasAttacked = true;
@@ -663,8 +680,11 @@ export function attackPlayer(
 
   // Lifelink
   if (hasKeyword(attacker, 'lifelink')) {
-    player.health = Math.min(player.maxHealth, player.health + damage);
-    newState.log.push(`💖 Привязка к жизни: +${damage} HP!`);
+    const healed = Math.max(0, Math.min(damage, opponentHealthBefore));
+    if (healed > 0) {
+      player.health = Math.min(player.maxHealth, player.health + healed);
+      newState.log.push(`💖 Привязка к жизни: +${healed} HP!`);
+    }
   }
 
   // Tenevoy discard
@@ -727,34 +747,50 @@ export function attackCreature(
   }
 
   const atkDamage = getEffectiveAttack(attacker, player, opponent);
-  const defDamage = getEffectiveAttack(defender, opponent, player);
+  const defenderFrozen = defender.frozen > 0;
+  const defDamage = defenderFrozen ? 0 : getEffectiveAttack(defender, opponent, player);
   const defHealthBefore = getEffectiveHealth(defender, opponent);
+  const atkHealthBefore = getEffectiveHealth(attacker, player);
 
   let attackerDealtDamage = false;
   let defenderDealtDamage = false;
+  let attackerDamageDealt = 0;
+  let defenderDamageDealt = 0;
 
   // First Strike
   if (hasKeyword(attacker, 'first_strike') && !hasKeyword(defender, 'first_strike')) {
     defender.currentHealth -= atkDamage;
     attackerDealtDamage = true;
+    attackerDamageDealt = Math.min(atkDamage, defHealthBefore);
     if (defender.currentHealth > 0) {
-      attacker.currentHealth -= defDamage;
-      defenderDealtDamage = true;
+      if (defDamage > 0) {
+        attacker.currentHealth -= defDamage;
+        defenderDealtDamage = true;
+        defenderDamageDealt = Math.min(defDamage, atkHealthBefore);
+      }
     }
     newState.log.push(`⚡ Первый удар! ${attacker.data.name} бьёт на ${atkDamage} первым!`);
   } else if (hasKeyword(defender, 'first_strike') && !hasKeyword(attacker, 'first_strike')) {
-    attacker.currentHealth -= defDamage;
-    defenderDealtDamage = true;
+    if (defDamage > 0) {
+      attacker.currentHealth -= defDamage;
+      defenderDealtDamage = true;
+      defenderDamageDealt = Math.min(defDamage, atkHealthBefore);
+    }
     if (attacker.currentHealth > 0) {
       defender.currentHealth -= atkDamage;
       attackerDealtDamage = true;
+      attackerDamageDealt = Math.min(atkDamage, defHealthBefore);
     }
     newState.log.push(`⚡ ${defender.data.name} наносит первый удар на ${defDamage}!`);
   } else {
     defender.currentHealth -= atkDamage;
     attacker.currentHealth -= defDamage;
     attackerDealtDamage = true;
-    defenderDealtDamage = true;
+    attackerDamageDealt = Math.min(atkDamage, defHealthBefore);
+    if (defDamage > 0) {
+      defenderDealtDamage = true;
+      defenderDamageDealt = Math.min(defDamage, atkHealthBefore);
+    }
   }
 
   attacker.hasAttacked = true;
@@ -763,11 +799,11 @@ export function attackCreature(
 
   // Deathtouch
   if (hasKeyword(attacker, 'deathtouch') && attackerDealtDamage && atkDamage > 0) {
-    defender.currentHealth = -999;
+    defender.currentHealth = 0;
     newState.log.push(`☠️ Смертельное касание уничтожает ${defender.data.name}!`);
   }
   if (hasKeyword(defender, 'deathtouch') && defenderDealtDamage && defDamage > 0) {
-    attacker.currentHealth = -999;
+    attacker.currentHealth = 0;
     newState.log.push(`☠️ Смертельное касание уничтожает ${attacker.data.name}!`);
   }
 
@@ -783,20 +819,26 @@ export function attackCreature(
   }
 
   // Lifelink
-  if (hasKeyword(attacker, 'lifelink') && attackerDealtDamage && atkDamage > 0) {
-    player.health = Math.min(player.maxHealth, player.health + atkDamage);
-    newState.log.push(`💖 Привязка к жизни: +${atkDamage} HP!`);
+  if (hasKeyword(attacker, 'lifelink') && attackerDealtDamage && attackerDamageDealt > 0) {
+    player.health = Math.min(player.maxHealth, player.health + attackerDamageDealt);
+    newState.log.push(`💖 Привязка к жизни: +${attackerDamageDealt} HP!`);
   }
   
-  if (hasKeyword(defender, 'lifelink') && defenderDealtDamage && defDamage > 0) {
-    opponent.health = Math.min(opponent.maxHealth, opponent.health + defDamage);
-    newState.log.push(`💖 Привязка к жизни (защитник): +${defDamage} HP!`);
+  if (hasKeyword(defender, 'lifelink') && defenderDealtDamage && defenderDamageDealt > 0) {
+    opponent.health = Math.min(opponent.maxHealth, opponent.health + defenderDamageDealt);
+    newState.log.push(`💖 Привязка к жизни (защитник): +${defenderDamageDealt} HP!`);
   }
 
   // Sneg elemental freezes attacker
-  if (defender.data.id === 'sneg_elemental' && attacker.currentHealth > 0) {
-    attacker.frozen = 1;
+  if (defender.data.id === 'sneg_elemental' && attacker.currentHealth > 0 && attackerDamageDealt > 0) {
+    applyFreeze(attacker, 1);
     newState.log.push(`❄️ ${attacker.data.name} заморожен Элементалем!`);
+  }
+
+  // Frozen defenders do not retaliate; a hit breaks ice.
+  if (defenderFrozen && attackerDamageDealt > 0) {
+    defender.frozen = 0;
+    newState.log.push(`❄️ ${defender.data.name} оттаял от удара!`);
   }
 
   // Makefile-Golem: draw on kill
@@ -848,7 +890,7 @@ export function endTurn(state: GameState): GameState {
   // Probka effect
   if (newState.cantAttackNextTurn) {
     for (const card of nextPlayer.field) {
-      card.frozen = Math.max(card.frozen, 1);
+      applyFreeze(card, 1);
     }
     newState.cantAttackNextTurn = false;
     newState.log.push('🚗 Пробка: все существа заморожены на 1 ход!');

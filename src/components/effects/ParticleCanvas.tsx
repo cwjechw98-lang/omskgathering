@@ -12,9 +12,10 @@ interface Props {
   type?: 'embers' | 'snow' | 'magic' | 'smoke';
   density?: number;
   className?: string;
+  interactive?: boolean;
 }
 
-export function ParticleCanvas({ type = 'embers', density = 60, className = '' }: Props) {
+export function ParticleCanvas({ type = 'embers', density = 60, className = '', interactive = false }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particles = useRef<Particle[]>([]);
   const animRef = useRef<number>(0);
@@ -27,9 +28,10 @@ export function ParticleCanvas({ type = 'embers', density = 60, className = '' }
     if (!ctx) return;
 
     const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener('resize', resize);
@@ -114,7 +116,9 @@ export function ParticleCanvas({ type = 'embers', density = 60, className = '' }
       const rect = canvas.getBoundingClientRect();
       mouse.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
-    canvas.addEventListener('mousemove', handleMouse);
+    if (interactive) {
+      canvas.addEventListener('mousemove', handleMouse);
+    }
 
     let lastTime = 0;
     const animate = (time: number) => {
@@ -135,7 +139,7 @@ export function ParticleCanvas({ type = 'embers', density = 60, className = '' }
 
         // Mouse repulsion
         const mx = mouse.current.x, my = mouse.current.y;
-        if (mx >= 0) {
+        if (interactive && mx >= 0) {
           const dx = p.x - mx, dy = p.y - my;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 80 && dist > 0) {
@@ -212,14 +216,16 @@ export function ParticleCanvas({ type = 'embers', density = 60, className = '' }
     return () => {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
-      canvas.removeEventListener('mousemove', handleMouse);
+      if (interactive) {
+        canvas.removeEventListener('mousemove', handleMouse);
+      }
     };
-  }, [type, density]);
+  }, [type, density, interactive]);
 
   return (
     <canvas
       ref={canvasRef}
-      className={`absolute inset-0 w-full h-full pointer-events-auto ${className}`}
+      className={`absolute inset-0 w-full h-full pointer-events-none ${className}`}
       style={{ zIndex: 1 }}
     />
   );

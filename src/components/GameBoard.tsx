@@ -14,7 +14,7 @@ interface Props { mode: 'ai' | 'local' | 'online'; onBack: () => void }
 const KW: Record<string, string> = {
   haste: '⚡ Ускорение', defender: '🛡️ Защитник', flying: '🕊️ Полёт',
   trample: '🦶 Растоптать', lifelink: '💖 Привязка к жизни', deathtouch: '☠️ Смерт. касание',
-  vigilance: '👁️ Бдительность (Защитник, который атакует)', first_strike: '⚡ Первый удар',
+  vigilance: '👁️ Бдительность', first_strike: '⚡ Первый удар',
   hexproof: '🔒 Порчеустойчивость', unblockable: '👻 Неблокируемый',
 };
 const KWS: Record<string, string> = {
@@ -178,9 +178,9 @@ function MessageFeed({ messages, onDismiss }: { messages: GameMessage[]; onDismi
 }
 
 /* ═══ FIELD CARD ═══ */
-function FieldCard({ card, player, opponent, selected, isTarget, canAct, onClick, cardRef }: {
+function FieldCard({ card, player, opponent, selected, isTarget, canAct, attackAnim, damageAnim, onClick, cardRef }: {
   card: CardInstance; player: GameState['player1']; opponent?: GameState['player1'];
-  selected?: boolean; isTarget?: boolean; canAct?: boolean; onClick?: () => void;
+  selected?: boolean; isTarget?: boolean; canAct?: boolean; attackAnim?: boolean; damageAnim?: boolean; onClick?: () => void;
   cardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const atk = getEffectiveAttack(card, player, opponent);
@@ -192,13 +192,13 @@ function FieldCard({ card, player, opponent, selected, isTarget, canAct, onClick
 
   const borderCls = selected ? 'ring-2 ring-yellow-400 shadow-yellow-400/50 shadow-lg scale-105'
     : isTarget ? 'ring-2 ring-red-500 shadow-red-500/40 shadow-lg animate-pulse cursor-crosshair'
-    : canAct ? 'ring-2 ring-green-400/70 shadow-green-400/30 shadow-md hover:scale-105 cursor-pointer'
+    : canAct ? 'ring-2 ring-green-400/70 shadow-green-400/30 shadow-md cursor-pointer'
     : frozen ? 'ring-1 ring-cyan-400/50 opacity-70 cursor-pointer'
     : 'ring-1 ring-gray-600/40 hover:ring-gray-400/60 cursor-pointer';
 
   return (
     <div ref={cardRef} onClick={onClick}
-      className={`card-frame relative overflow-hidden transition-all duration-200 ${borderCls}`}
+      className={`card-frame card-in-field relative overflow-hidden transition-all duration-200 ${borderCls} ${attackAnim ? 'card-attack-animation' : ''} ${damageAnim ? 'card-damage-animation' : ''}`}
       style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)' }}
       title={`${card.data.name}\n${card.data.description}\n⚔${atk} ❤${hp}`}>
 
@@ -266,15 +266,15 @@ function HandCard({ card, selected, canPlay, isLand, onClick, onDragStart, onDra
     : canPlay && isLand
     ? 'border-[#c9a84c] shadow-[#c9a84c]/30 shadow-lg card-glow'
     : canPlay
-    ? 'border-green-500/60 shadow-green-500/15 shadow-md hover:-translate-y-3'
-    : 'border-gray-700/40 opacity-45 hover:-translate-y-1';
+    ? 'border-green-500/60 shadow-green-500/15 shadow-md'
+    : 'border-gray-700/40 opacity-45';
 
   return (
     <div onClick={onClick}
       draggable={canPlay}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`card-frame relative border-2 overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 shrink-0 rounded-lg ${borderCls} ${canPlay ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      className={`card-frame card-in-hand relative border-2 overflow-hidden cursor-pointer transition-all duration-200 shrink-0 rounded-lg ${borderCls} ${canPlay ? 'cursor-grab active:cursor-grabbing' : ''}`}
       style={{ width: 'var(--hand-card-w)', height: 'var(--hand-card-h)' }}
       title={`${card.data.name} (${card.data.cost}💎)\n${card.data.description}\n${canPlay ? '👆 Двойной клик или перетащите на поле' : '❌ Не хватает маны'}`}>
 
@@ -401,9 +401,14 @@ export function GameBoard({ mode, onBack }: Props) {
   // dustEffects removed - using CSS animations
   const [dragCardUid, setDragCardUid] = useState<string | null>(null);
   const [dropZoneActive, setDropZoneActive] = useState(false);
+  const [attackAnimUid, setAttackAnimUid] = useState<string | null>(null);
+  const [damageAnimUid, setDamageAnimUid] = useState<string | null>(null);
   const [playAnim, setPlayAnim] = useState<{ name: string; emoji: string; color: string } | null>(null);
   const [deathAnim, setDeathAnim] = useState<{ name: string; emoji: string; color: string } | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
+  const attackAnimTimerRef = useRef<number | null>(null);
+  const damageAnimTimerRef = useRef<number | null>(null);
+  const aiAnimTimerRef = useRef<number | null>(null);
   const prevFieldRef = useRef<{ p1: string[]; p2: string[] }>({ p1: [], p2: [] });
   const cardRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -494,6 +499,58 @@ export function GameBoard({ mode, onBack }: Props) {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [gs.log.length]);
 
+  const triggerCombatAnims = useCallback((attackerUid?: string, defenderUid?: string) => {
+    if (attackAnimTimerRef.current) {
+      window.clearTimeout(attackAnimTimerRef.current);
+      attackAnimTimerRef.current = null;
+    }
+    if (damageAnimTimerRef.current) {
+      window.clearTimeout(damageAnimTimerRef.current);
+      damageAnimTimerRef.current = null;
+    }
+
+    if (attackerUid) setAttackAnimUid(attackerUid);
+    if (defenderUid) setDamageAnimUid(defenderUid);
+
+    if (attackerUid) {
+      attackAnimTimerRef.current = window.setTimeout(() => {
+        setAttackAnimUid(null);
+      }, 650);
+    }
+    if (defenderUid) {
+      damageAnimTimerRef.current = window.setTimeout(() => {
+        setDamageAnimUid(null);
+      }, 250);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (attackAnimTimerRef.current) window.clearTimeout(attackAnimTimerRef.current);
+      if (damageAnimTimerRef.current) window.clearTimeout(damageAnimTimerRef.current);
+      if (aiAnimTimerRef.current) window.clearTimeout(aiAnimTimerRef.current);
+    };
+  }, []);
+
+  const runAIAnimations = useCallback((actions: { type: 'attack-hero' | 'attack-creature'; attackerUid: string; defenderUid?: string }[]) => {
+    if (!actions || actions.length === 0) return;
+    if (aiAnimTimerRef.current) {
+      window.clearTimeout(aiAnimTimerRef.current);
+      aiAnimTimerRef.current = null;
+    }
+    let idx = 0;
+    const step = () => {
+      const act = actions[idx];
+      if (!act) return;
+      triggerCombatAnims(act.attackerUid, act.type === 'attack-creature' ? act.defenderUid : undefined);
+      idx += 1;
+      if (idx < actions.length) {
+        aiAnimTimerRef.current = window.setTimeout(step, 750);
+      }
+    };
+    step();
+  }, [triggerCombatAnims]);
+
   // AI turn
   const runAI = useCallback(() => {
     if (mode !== 'ai' || gs.currentTurn !== 'player2' || gs.gameOver) return;
@@ -501,6 +558,9 @@ export function GameBoard({ mode, onBack }: Props) {
     setTimeout(() => {
       const result = aiTurn(gs);
       setGs(result.state);
+      if (result.actions && result.actions.length > 0) {
+        runAIAnimations(result.actions);
+      }
       const lastCard = result.state.player2.field[result.state.player2.field.length - 1];
       const lore = getAILoreComment(
         lastCard?.data.id || '',
@@ -610,6 +670,7 @@ export function GameBoard({ mode, onBack }: Props) {
       if (next !== gs) {
         setGs(next);
         addMessage('action', `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} → ${card.data.emoji} ${card.data.name}`, '⚔️', 5000);
+        triggerCombatAnims(selectedAttacker, uid);
         setSelectedAttacker(null);
         setInspected(null);
       }
@@ -625,6 +686,7 @@ export function GameBoard({ mode, onBack }: Props) {
     if (next !== gs) {
       setGs(next);
       addMessage('action', `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} наносит удар Хранителю!`, '💥', 5000);
+      triggerCombatAnims(selectedAttacker, undefined);
       setSelectedAttacker(null);
       setInspected(null);
     }
@@ -788,6 +850,8 @@ export function GameBoard({ mode, onBack }: Props) {
               <FieldCard key={card.uid} card={card} player={enemy} opponent={me}
                 isTarget={!!selectedAttacker}
                 selected={inspected?.card.uid === card.uid && !selectedAttacker}
+                attackAnim={attackAnimUid === card.uid}
+                damageAnim={damageAnimUid === card.uid}
                 cardRef={el => { if (el) cardRefsMap.current.set(card.uid, el); else cardRefsMap.current.delete(card.uid); }}
                 onClick={() => clickEnemyCreature(card.uid)} />
             ))}
@@ -834,6 +898,8 @@ export function GameBoard({ mode, onBack }: Props) {
                 <FieldCard key={card.uid} card={card} player={me} opponent={enemy}
                   selected={selectedAttacker === card.uid}
                   canAct={canAct}
+                  attackAnim={attackAnimUid === card.uid}
+                  damageAnim={damageAnimUid === card.uid}
                   cardRef={el => { if (el) cardRefsMap.current.set(card.uid, el); else cardRefsMap.current.delete(card.uid); }}
                   onClick={() => clickMyCreature(card.uid)} />
               );

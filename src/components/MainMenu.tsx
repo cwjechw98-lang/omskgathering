@@ -25,6 +25,14 @@ const COLOR_BG: Record<string, string> = {
 
 export function MainMenu({ onStartGame }: MainMenuProps) {
   const [screen, setScreen] = useState<'menu' | 'cards' | 'rules' | 'lore'>('menu');
+  const [liteFx, setLiteFx] = useState(false);
+
+  useEffect(() => {
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+    const lowCores = (navigator.hardwareConcurrency || 4) <= 4;
+    const lowMemory = ((navigator as Navigator & { deviceMemory?: number }).deviceMemory || 8) <= 4;
+    setLiteFx(prefersReduced || lowCores || lowMemory);
+  }, []);
 
   if (screen === 'cards') return <CardCollection onBack={() => setScreen('menu')} />;
   if (screen === 'rules') return <Rules onBack={() => setScreen('menu')} />;
@@ -35,7 +43,7 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_rgba(30,15,0,0.5)_0%,_rgba(5,5,10,1)_70%)]" />
       <div className="fixed inset-0 opacity-[0.02] pointer-events-none"
         style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(201,168,76,0.5) 35px, rgba(201,168,76,0.5) 36px)' }} />
-      <ParticleCanvas type="embers" density={50} className="fixed inset-0" />
+      <ParticleCanvas type="embers" density={liteFx ? 24 : 40} className="fixed inset-0" interactive={false} />
       <div className="fixed left-[10%] top-[30%] w-40 h-40 rounded-full fire-light pointer-events-none" />
       <div className="fixed right-[10%] top-[30%] w-40 h-40 rounded-full fire-light pointer-events-none" style={{ animationDelay: '1s' }} />
 
@@ -128,9 +136,16 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
 // ═══════════════════════════════════════
 function LoreScreen({ onBack }: { onBack: () => void }) {
   const [ch, setCh] = useState(0);
+  const [liteFx, setLiteFx] = useState(false);
+  useEffect(() => {
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+    const lowCores = (navigator.hardwareConcurrency || 4) <= 4;
+    const lowMemory = ((navigator as Navigator & { deviceMemory?: number }).deviceMemory || 8) <= 4;
+    setLiteFx(prefersReduced || lowCores || lowMemory);
+  }, []);
   return (
     <div className="min-h-[100dvh] bg-[#0a0a0f] relative overflow-y-auto">
-      <ParticleCanvas type="magic" density={30} className="fixed inset-0" />
+      <ParticleCanvas type="magic" density={liteFx ? 12 : 22} className="fixed inset-0" interactive={false} />
       <div className="max-w-3xl mx-auto p-4 pb-12 relative z-10">
         <div className="flex items-center justify-between mb-6">
           <button onClick={onBack} className="text-[#8a7a5a] hover:text-[#f0d68a] font-heading text-sm transition">← Назад</button>
@@ -195,6 +210,14 @@ function CardCollection({ onBack }: { onBack: () => void }) {
   const filtered = filter === 'all' ? displayCards : displayCards.filter(c => c.type === filter || c.color === filter);
   const detail = selectedCard ? displayCards.find(c => c.id === selectedCard) : null;
   const hasMore = visibleCount < filtered.length;
+  const [liteFx, setLiteFx] = useState(false);
+
+  useEffect(() => {
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+    const lowCores = (navigator.hardwareConcurrency || 4) <= 4;
+    const lowMemory = ((navigator as Navigator & { deviceMemory?: number }).deviceMemory || 8) <= 4;
+    setLiteFx(prefersReduced || lowCores || lowMemory);
+  }, []);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -208,7 +231,7 @@ function CardCollection({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="h-[100dvh] bg-[#0a0a0f] flex flex-col relative overflow-hidden">
-      <ParticleCanvas type="magic" density={15} className="pointer-events-none" />
+      <ParticleCanvas type="magic" density={liteFx ? 8 : 12} className="pointer-events-none" interactive={false} />
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-black/80 z-20 border-b border-[#c9a84c]/15 shrink-0">
