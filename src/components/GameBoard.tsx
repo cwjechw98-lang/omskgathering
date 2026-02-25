@@ -745,7 +745,7 @@ export function GameBoard({ mode, onBack }: Props) {
 
   // handleDustDone removed - using CSS animations
   useEffect(() => {
-    const media = window.matchMedia('(max-width: 920px), (max-height: 740px), (pointer: coarse)');
+    const media = window.matchMedia('(max-width: 768px)');
     const apply = () => setIsCompactUI(media.matches);
     apply();
     media.addEventListener('change', apply);
