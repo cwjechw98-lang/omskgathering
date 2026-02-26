@@ -333,8 +333,8 @@ function CardPreview({ card, owner, gs, onClose, compact = false }: {
   const art = getCardCoverSources(card.data);
   return (
     // 👇 Поменяли bottom-2 на bottom-36 👇
-    <div className={`absolute z-40 ${compact ? 'left-2 right-2 bottom-75' : 'top-12 right-2'}`}
-      style={{ width: compact ? 'auto' : 'clamp(250px, 17vw, 280px)' }}
+    <div className={`absolute z-40 ${compact ? 'left-2 right-2 bottom-100' : 'top-12 right-2'}`}
+      style={{ width: compact ? 'auto' : 'clamp(200px, 17vw, 280px)' }}
       onClick={e => e.stopPropagation()}>
       <div className="bg-[#0f0f18]/98 backdrop-blur-sm rounded-xl shadow-2xl border border-[#c9a84c]/30 overflow-hidden">
         <button onClick={onClose} className="absolute top-1 right-1 z-20 text-gray-400 hover:text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-700 text-sm transition">✕</button>
