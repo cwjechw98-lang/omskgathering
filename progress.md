@@ -95,10 +95,21 @@ TODO update:
 - ✅ npm run test:regression: PASS (51/51 tests)
 
 **Remaining Stages:**
-- ⏳ Stage 6: Arc Hand Layout
 - ⏳ Stage 7: Overlay for choose/discover
 - ⏳ Stage 8: Verify effects_info.md
 - ⏳ Stage 9: UX improvements
+
+**Stage 6: Arc Hand Layout** ✅
+- Implemented curved card arrangement
+- Arc rotations: -8° to +10° (mobile: -5° to +6°)
+- Hover: translateY(-30px) scale(1.15) derotate
+- Preserves all interactions (click, drag, double-click)
+
+**Quality Gates Stage 6:**
+- ✅ npm run lint: PASS (5 warnings, 0 errors)
+- ✅ npm run build: PASS (494 KB JS, 103 KB CSS)
+- ✅ npm run test: PASS (14/14 tests)
+- ✅ npm run test:regression: PASS (51/51 tests)
 
 
 - Switched Pollinations image pipeline to new authenticated endpoint (gen.pollinations.ai/image) with POLLINATIONS_API_KEY.
