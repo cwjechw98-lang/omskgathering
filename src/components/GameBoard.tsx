@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, type HTMLAttributes, type ReactNode } from 'react';
 import { GameState, CardInstance } from '../game/types';
 import {
   createInitialGameState,
@@ -258,6 +258,52 @@ function MessageFeed({
 }
 
 /* ═══ FIELD CARD — Refactored with shadcn/ui Card ═══ */
+function CardSlot({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        'relative shrink-0 w-[var(--field-card-w)] h-[var(--field-card-h)] pointer-events-auto',
+        className
+      )}
+      style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)' }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function CardContainer({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
+  return (
+    <div
+      {...props}
+      className={cn(
+        'relative w-full h-full transition-transform duration-200 ease-out transform-gpu origin-bottom',
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function CardVisual({ className, children }: { className?: string; children: ReactNode }) {
+  return (
+    <Card className={cn('relative w-full h-full overflow-hidden', className)}>
+      {children}
+    </Card>
+  );
+}
+
 function FieldCard({
   card,
   player,
@@ -290,29 +336,33 @@ function FieldCard({
   const art = getCardCoverSources(card.data);
 
   return (
-    <Card
+    <CardSlot>
+      <CardContainer
       ref={cardRef}
       onClick={onClick}
       className={cn(
-        "card-frame card-in-field relative overflow-hidden transition-all duration-200 cursor-pointer",
-        "w-[var(--field-card-w)] h-[var(--field-card-h)]",
+        'card-container card-field-container cursor-pointer',
         selected && "ring-2 ring-yellow-400 shadow-yellow-400/50 shadow-lg scale-105",
         isTarget && "ring-2 ring-red-500 shadow-red-500/40 shadow-lg animate-pulse cursor-crosshair",
-        canAct && "ring-2 ring-green-400/70 shadow-green-400/30 shadow-md",
+        canAct && "ring-2 ring-green-400/70 shadow-green-400/30 shadow-md hover:scale-105",
         frozen && "ring-1 ring-cyan-400/50 opacity-70",
         !selected && !isTarget && !canAct && !frozen && "ring-1 ring-gray-600/40 hover:ring-gray-400/60",
         attackAnim && "card-attack-animation",
-        damageAnim && "card-damage-animation",
-        card.data.rarity === 'mythic' && "card-frame-mythic",
-        card.data.rarity === 'rare' && "card-frame-rare"
+        damageAnim && "card-damage-animation"
       )}
-      style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)' }}
       role="button"
       tabIndex={0}
       aria-label={`${card.data.name}: ${atk} атака, ${hp} здоровье`}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       title={`${card.data.name}\n${card.data.description}\n⚔${atk} ❤${hp}`}
     >
+      <CardVisual
+        className={cn(
+          'card-frame card-in-field card-visual',
+          card.data.rarity === 'mythic' && 'card-frame-mythic',
+          card.data.rarity === 'rare' && 'card-frame-rare'
+        )}
+      >
       {/* Foil overlay */}
       {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
         <div className={`card-foil-overlay pointer-events-none z-50 ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
@@ -419,7 +469,9 @@ function FieldCard({
       </CardContent>
 
       {frozen && <div className="absolute inset-0 bg-cyan-300/15 pointer-events-none z-20" aria-hidden="true" />}
-    </Card>
+      </CardVisual>
+      </CardContainer>
+    </CardSlot>
   );
 }
 
@@ -444,26 +496,27 @@ function HandCard({
   const art = getCardCoverSources(card.data);
 
   return (
-    <Card
+    <CardSlot className="w-[var(--hand-card-w)] h-[var(--hand-card-h)]">
+      <CardContainer
       onClick={onClick}
       draggable={canPlay}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        "card-frame card-in-hand relative border-2 overflow-hidden cursor-pointer transition-all duration-200 shrink-0 rounded-lg",
+        'card-container card-hand-container cursor-pointer rounded-lg',
         selected && "border-yellow-400 shadow-yellow-400/50 shadow-lg -translate-y-4 scale-110 z-20",
-        canPlay && isLand && "border-[#c9a84c] shadow-[#c9a84c]/30 shadow-lg card-glow",
-        canPlay && !isLand && "border-green-500/60 shadow-green-500/15 shadow-md",
+        canPlay && isLand && "border-[#c9a84c] shadow-[#c9a84c]/30 shadow-lg card-glow hover:scale-105",
+        canPlay && !isLand && "border-green-500/60 shadow-green-500/15 shadow-md hover:scale-105",
         !canPlay && !selected && "border-gray-700/40 opacity-45",
         canPlay && "cursor-grab active:cursor-grabbing"
       )}
-      style={{ width: 'var(--hand-card-w)', height: 'var(--hand-card-h)' }}
       role="button"
       tabIndex={0}
       aria-label={`${card.data.name} (${card.data.cost} маны)`}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       title={`${card.data.name} (${card.data.cost}💎)\n${card.data.description}\n${canPlay ? '👆 Двойной клик или перетащите на поле' : '❌ Не хватает маны'}`}
     >
+      <CardVisual className="card-frame card-in-hand card-visual border-2">
       {/* Foil overlay */}
       {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
         <div className={`card-foil-overlay pointer-events-none z-50 ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
@@ -571,7 +624,9 @@ function HandCard({
           aria-hidden="true"
         />
       )}
-    </Card>
+      </CardVisual>
+      </CardContainer>
+    </CardSlot>
   );
 }
 

@@ -139,3 +139,9 @@ TODO update:
 - Added `UI_REFACTOR_PLAN.md` with full current-state UI analysis.
 - Mapped component responsibilities and risk boundaries (UI-only changes vs engine-coupled interaction points).
 - No gameplay code touched on this step by design.
+
+- 2026-03-05 UI stabilization checkpoint (mod.md, stage 2):
+- Implemented `CardSlot -> CardContainer -> CardVisual` architecture in active board card rendering (`GameBoard.tsx`).
+- `CardVisual` now acts as strict clipping layer (`overflow: hidden`), while hover/scale behavior is moved to container layer.
+- No engine mechanics changed; UI-only structural refactor.
+- Quality checks remained green: unit/regression/build pass; lint without errors.

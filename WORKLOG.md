@@ -225,3 +225,17 @@
   - responsibility map (board/cards/hand/hero/buttons/overlays/effects),
   - safe-to-change UI zones vs engine-coupled zones.
 - No code changes in this stage (analysis only), as required by stage constraints.
+
+### 2026-03-05
+- UI stabilization (mod.md) — Stage 2 complete.
+- Refactored active card rendering in `src/components/GameBoard.tsx` to unified structure:
+  - `CardSlot` (fixed slot size / position wrapper),
+  - `CardContainer` (hover/drag/scale layer),
+  - `CardVisual` (visual content layer with `overflow: hidden`).
+- Applied structure to both field and hand cards in live board component.
+- Ensured scaling/hover transforms are handled by `CardContainer`; visual clipping stays in `CardVisual`.
+- Validation:
+  - `npm run lint` -> 0 errors (warnings only),
+  - `npm run test` -> PASS,
+  - `npm run test:regression` -> 51/51 PASS,
+  - `npm run build` -> PASS (local Node warning unchanged).
