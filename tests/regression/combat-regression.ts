@@ -690,6 +690,51 @@ function testBabkaRetaliatesWhenBuffed(): void {
   expect((nextEnemy?.currentHealth ?? 0) === 2, 'buffed babka should deal 1 retaliation damage');
 }
 
+function testKeeperAttackReceivesRetaliationWhenDefenderNotFrozen(): void {
+  const keeperAttacker = makeCreature('keeper-attacker', 'Keeper Attacker', 3, 4);
+  keeperAttacker.summoningSickness = false;
+  const playerDefender = makeCreature('player-defender', 'Player Defender', 2, 4);
+  playerDefender.summoningSickness = false;
+
+  const state = makeState(
+    makePlayer({ field: [playerDefender] }),
+    makePlayer({ field: [keeperAttacker] }),
+    'player2'
+  );
+
+  const next = attackCreature(state, 'player2', keeperAttacker.uid, playerDefender.uid);
+  const nextKeeper = next.player2.field.find((c) => c.uid === keeperAttacker.uid);
+  const nextPlayer = next.player1.field.find((c) => c.uid === playerDefender.uid);
+
+  expect(Boolean(nextKeeper), 'keeper attacker should remain on field');
+  expect(Boolean(nextPlayer), 'player defender should remain on field');
+  expect((nextKeeper?.currentHealth ?? 0) === 2, 'keeper attacker must receive retaliation damage');
+  expect((nextPlayer?.currentHealth ?? 0) === 1, 'player defender should take incoming combat damage');
+}
+
+function testKeeperAttackIntoFrozenDefenderGetsNoRetaliation(): void {
+  const keeperAttacker = makeCreature('keeper-attacker-2', 'Keeper Attacker 2', 3, 4);
+  keeperAttacker.summoningSickness = false;
+  const playerDefender = makeCreature('player-frozen-defender', 'Player Frozen Defender', 2, 4);
+  playerDefender.frozen = 1;
+  playerDefender.summoningSickness = false;
+
+  const state = makeState(
+    makePlayer({ field: [playerDefender] }),
+    makePlayer({ field: [keeperAttacker] }),
+    'player2'
+  );
+
+  const next = attackCreature(state, 'player2', keeperAttacker.uid, playerDefender.uid);
+  const nextKeeper = next.player2.field.find((c) => c.uid === keeperAttacker.uid);
+  const nextPlayer = next.player1.field.find((c) => c.uid === playerDefender.uid);
+
+  expect(Boolean(nextKeeper), 'keeper attacker should remain on field');
+  expect(Boolean(nextPlayer), 'frozen defender should remain on field');
+  expect((nextKeeper?.currentHealth ?? 0) === 4, 'frozen defender should not retaliate');
+  expect((nextPlayer?.frozen ?? -1) === 0, 'frozen defender should thaw after taking damage');
+}
+
 function run(): void {
   const tests: Array<{ name: string; fn: () => void }> = [
     { name: 'Frozen defender does not retaliate and thaws on hit', fn: testFrozenDefenderNoRetaliationAndThaw },
@@ -736,6 +781,8 @@ function run(): void {
     { name: 'Land play limited to 1 per turn', fn: testLandPlayLimitedToOnePerTurn },
     { name: 'Babka can attack when buffed', fn: testBabkaCanAttackWhenBuffed },
     { name: 'Babka retaliates when buffed', fn: testBabkaRetaliatesWhenBuffed },
+    { name: 'Keeper attack gets retaliation when defender is not frozen', fn: testKeeperAttackReceivesRetaliationWhenDefenderNotFrozen },
+    { name: 'Keeper attack gets no retaliation when defender is frozen', fn: testKeeperAttackIntoFrozenDefenderGetsNoRetaliation },
   ];
 
   for (const t of tests) {

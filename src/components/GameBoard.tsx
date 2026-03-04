@@ -1076,10 +1076,11 @@ export function GameBoard({ mode, onBack }: Props) {
     if (!card) return;
     if (selectedAttacker && myTurn && !gs.gameOver) {
       const attackerCard = me.field.find((c) => c.uid === selectedAttacker);
+      if (!attackerCard) return;
       const next = attackCreature(gs, 'player1', selectedAttacker, uid);
       if (next !== gs) {
         // Calculate damage for visual feedback
-        const atk = getEffectiveAttack(attackerCard!, me, enemy);
+        const atk = getEffectiveAttack(attackerCard, me, enemy);
         const defenderRef = cardRefsMap.current.get(uid);
         if (defenderRef) {
           const rect = defenderRef.getBoundingClientRect();
@@ -1107,10 +1108,11 @@ export function GameBoard({ mode, onBack }: Props) {
   const clickAttackHero = () => {
     if (!myTurn || !selectedAttacker || gs.gameOver) return;
     const attackerCard = me.field.find((c) => c.uid === selectedAttacker);
+    if (!attackerCard) return;
     const next = attackPlayer(gs, 'player1', selectedAttacker);
     if (next !== gs) {
       // Calculate damage for visual feedback - target enemy hero area
-      const atk = getEffectiveAttack(attackerCard!, me, enemy);
+      const atk = getEffectiveAttack(attackerCard, me, enemy);
       const enemyHeroElement = document.querySelector('[data-enemy-hero]');
       if (enemyHeroElement) {
         const rect = enemyHeroElement.getBoundingClientRect();

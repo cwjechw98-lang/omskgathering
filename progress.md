@@ -89,3 +89,10 @@ TODO update:
 - Fixed Babka (`babka_semechki`) rule inconsistency: buffed attack now participates in both attack and retaliation flows.
 - Regression suite expanded for this class of issue (buffed 0-attack creatures).
 - Current status: regression 39/39 pass, unit tests pass, lint has 0 errors.
+
+- 2026-03-04 verification checkpoint (post latest commit review):
+- Read latest commit (`d804b12`) first, then validated combat symmetry for Keeper -> player and player -> Keeper.
+- No core engine asymmetry found; frozen defenders correctly deal 0 retaliation and thaw after hit.
+- Added two Keeper-direction regression tests to lock expected behavior and prevent future drift.
+- Fixed unrelated strict-lint breakage in `GameBoard.tsx` (`no-non-null-assertion`).
+- Current status: regression 41/41 pass, lint has no errors.

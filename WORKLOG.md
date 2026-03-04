@@ -100,3 +100,13 @@
   - `Babka can attack when buffed`
   - `Babka retaliates when buffed`
 - Verification: `npm run test:regression` 39/39 PASS, `npm run test` PASS, `npm run lint` no errors.
+
+### 2026-03-04
+- Reviewed latest upstream commit `d804b12` (visual effects/UI polish) before verification as requested.
+- Investigated reported Keeper combat inconsistency using battle log examples and engine paths (`attackCreature`, AI attack flow).
+- Conclusion: `0⚔` retaliation in provided log is expected when defender is frozen (`defenderFrozen => defDamage = 0`), followed by thaw on hit.
+- Added explicit bidirectional regressions for Keeper-origin attacks in `tests/regression/combat-regression.ts`:
+  - Keeper attack gets retaliation when defender is not frozen.
+  - Keeper attack gets no retaliation when defender is frozen.
+- Also fixed two strict lint blockers introduced after last commit (`src/components/GameBoard.tsx` non-null assertions).
+- Verification after changes: `npm run test:regression` 41/41 PASS, `npm run lint` 0 errors (warnings only).
