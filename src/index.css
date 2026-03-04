@@ -824,3 +824,395 @@ body {
     filter: blur(0);
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   NEW VISUAL EFFECTS (2026-03-04)
+   ═══════════════════════════════════════════════════════ */
+
+/* === HOLOGRAPHIC FOIL FOR MYTHIC/RARE === */
+@keyframes holoShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes holoShimmer {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.4; }
+}
+.card-foil-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255,0,150,0.4) 0%,
+    rgba(0,255,255,0.4) 25%,
+    rgba(255,255,0,0.4) 50%,
+    rgba(0,255,255,0.4) 75%,
+    rgba(255,0,150,0.4) 100%
+  );
+  background-size: 200% 200%;
+  animation: holoShift 4s ease infinite, holoShimmer 2s ease-in-out infinite;
+  mix-blend-mode: color-dodge;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.card-frame-mythic:hover .card-foil-overlay,
+.card-frame-rare:hover .card-foil-overlay {
+  opacity: 1;
+}
+.card-frame-mythic .card-foil-overlay {
+  opacity: 0.5;
+}
+.card-frame-rare .card-foil-overlay {
+  opacity: 0.3;
+}
+
+/* === DAMAGE NUMBERS === */
+@keyframes damageFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  20% {
+    transform: translateY(-10px) scale(1.2) rotate(-5deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.8) rotate(5deg);
+  }
+}
+.damage-number {
+  position: absolute;
+  font-family: var(--font-heading);
+  font-weight: bold;
+  font-size: clamp(20px, 2.5vw, 32px);
+  color: #ff4444;
+  text-shadow: 
+    0 0 10px rgba(255,0,0,0.8),
+    0 0 20px rgba(255,0,0,0.4),
+    0 2px 4px rgba(0,0,0,0.8);
+  animation: damageFloat 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  pointer-events: none;
+  z-index: 200;
+  white-space: nowrap;
+}
+.damage-number.heal {
+  color: #44ff44;
+  text-shadow: 
+    0 0 10px rgba(0,255,0,0.8),
+    0 0 20px rgba(0,255,0,0.4),
+    0 2px 4px rgba(0,0,0,0.8);
+}
+.damage-number.buff {
+  color: #4488ff;
+  text-shadow: 
+    0 0 10px rgba(0,136,255,0.8),
+    0 0 20px rgba(0,136,255,0.4),
+    0 2px 4px rgba(0,0,0,0.8);
+}
+
+/* === LOW HEALTH WARNING === */
+@keyframes dangerVignette {
+  0%, 100% { 
+    box-shadow: inset 0 0 50px 20px rgba(255,0,0,0.3);
+  }
+  50% { 
+    box-shadow: inset 0 0 100px 40px rgba(255,0,0,0.5);
+  }
+}
+.low-health-warning {
+  animation: dangerVignette 1.5s ease-in-out infinite;
+}
+@keyframes dangerPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+.low-health-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(255,0,0,0.4) 100%);
+  pointer-events: none;
+  z-index: 1000;
+  animation: dangerPulse 1s ease-in-out infinite;
+}
+
+/* === TURN TRANSITION BANNER === */
+@keyframes turnBannerSlide {
+  0% {
+    transform: translateX(-100%) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  80% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%) scale(0.8);
+    opacity: 0;
+  }
+}
+.turn-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: clamp(16px, 2vw, 24px) clamp(32px, 4vw, 48px);
+  background: linear-gradient(135deg, rgba(20,10,30,0.95) 0%, rgba(40,20,10,0.95) 100%);
+  border: 2px solid rgba(201,168,76,0.6);
+  border-radius: 16px;
+  box-shadow: 
+    0 0 40px rgba(201,168,76,0.4),
+    0 0 80px rgba(201,168,76,0.2),
+    inset 0 0 40px rgba(201,168,76,0.1);
+  z-index: 9999;
+  animation: turnBannerSlide 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.turn-banner-text {
+  font-family: var(--font-title);
+  font-size: clamp(24px, 4vw, 48px);
+  font-weight: bold;
+  color: #f0d68a;
+  text-shadow: 
+    0 0 20px rgba(201,168,76,0.6),
+    0 0 40px rgba(201,168,76,0.3),
+    0 4px 8px rgba(0,0,0,0.8);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.turn-banner-sub {
+  font-family: var(--font-body);
+  font-size: clamp(12px, 1.5vw, 16px);
+  color: rgba(201,168,76,0.7);
+  letter-spacing: 0.2em;
+}
+
+/* === BUTTON RIPPLE EFFECT === */
+@keyframes rippleExpand {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+.btn-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%);
+  animation: rippleExpand 0.6s ease-out forwards;
+  pointer-events: none;
+}
+.btn-mythic::before,
+.btn-gold::before,
+.btn-blue::before,
+.btn-purple::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.btn-mythic:hover::before,
+.btn-gold:hover::before,
+.btn-blue:hover::before,
+.btn-purple:hover::before {
+  opacity: 1;
+}
+
+/* === MANA DRAIN PARTICLES === */
+@keyframes manaDrain {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.2) translateY(-30px);
+    opacity: 0;
+  }
+}
+.mana-drain-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #60a5fa 0%, #2563eb 100%);
+  box-shadow: 0 0 8px rgba(59,130,246,0.8);
+  animation: manaDrain 0.4s ease-out forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* === CARD DRAW ARC === */
+@keyframes drawArc {
+  0% {
+    opacity: 0;
+    transform: translateX(100px) translateY(-50px) scale(0.5);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-20px) translateY(0) scale(1);
+  }
+}
+.draw-arc-trail {
+  position: absolute;
+  width: 100px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(59,130,246,0.6);
+  box-shadow: 0 0 20px rgba(59,130,246,0.4);
+  animation: drawArc 0.35s ease-out forwards;
+  pointer-events: none;
+  z-index: 150;
+}
+
+/* === KEYWORD TOOLTIP === */
+.keyword-tooltip {
+  position: relative;
+}
+.keyword-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  background: rgba(10,10,15,0.95);
+  border: 1px solid rgba(201,168,76,0.4);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-family: var(--font-body);
+  color: #e0e0e0;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.keyword-tooltip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-8px);
+}
+
+/* === ENHANCED CARD GLOW ON HOVER === */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 12px rgba(201,168,76,0.4),
+      0 0 24px rgba(201,168,76,0.2),
+      0 4px 12px rgba(0,0,0,0.5);
+  }
+  50% {
+    box-shadow: 
+      0 0 20px rgba(201,168,76,0.6),
+      0 0 40px rgba(201,168,76,0.3),
+      0 8px 20px rgba(0,0,0,0.6);
+  }
+}
+.card-glow-enhanced {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* === GRAVEYARD STACK EFFECT === */
+.graveyard-stack {
+  position: relative;
+}
+.graveyard-stack::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(50,50,60,0.3) 0px,
+    rgba(50,50,60,0.3) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* === COMBAT SHAKE === */
+@keyframes combatShake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-4px, 2px); }
+  20% { transform: translate(4px, -2px); }
+  30% { transform: translate(-4px, -2px); }
+  40% { transform: translate(4px, 2px); }
+  50% { transform: translate(-4px, 2px); }
+  60% { transform: translate(4px, -2px); }
+  70% { transform: translate(-4px, -2px); }
+  80% { transform: translate(4px, 2px); }
+  90% { transform: translate(-4px, -2px); }
+}
+.combat-shake {
+  animation: combatShake 0.3s linear;
+}
+
+/* === VICTORY/DEFEAT OVERLAY === */
+@keyframes victoryFlash {
+  0% {
+    opacity: 0;
+    background: rgba(255,215,0,0);
+  }
+  10% {
+    opacity: 1;
+    background: rgba(255,215,0,0.4);
+  }
+  100% {
+    opacity: 0;
+    background: rgba(255,215,0,0);
+  }
+}
+@keyframes defeatFlash {
+  0% {
+    opacity: 0;
+    background: rgba(100,0,0,0);
+  }
+  10% {
+    opacity: 1;
+    background: rgba(100,0,0,0.5);
+  }
+  100% {
+    opacity: 0;
+    background: rgba(100,0,0,0);
+  }
+}
+.victory-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10000;
+  animation: victoryFlash 2s ease-out forwards;
+}
+.defeat-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10000;
+  animation: defeatFlash 2s ease-out forwards;
+}

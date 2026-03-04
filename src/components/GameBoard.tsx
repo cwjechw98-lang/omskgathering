@@ -341,7 +341,12 @@ function FieldCard({
         {card.keywords.length > 0 && (
           <div className="flex flex-wrap gap-px">
             {card.keywords.slice(0, 4).map((k) => (
-              <span key={k} title={KW[k]} style={{ fontSize: 'clamp(7px, 0.8vw, 12px)' }}>
+              <span 
+                key={k} 
+                className="keyword-tooltip"
+                data-tooltip={KW[k]}
+                style={{ fontSize: 'clamp(7px, 0.8vw, 12px)' }}
+              >
                 {KWS[k]}
               </span>
             ))}
@@ -379,6 +384,11 @@ function FieldCard({
       </div>
 
       {frozen && <div className="absolute inset-0 bg-cyan-300/15 pointer-events-none z-20" />}
+      
+      {/* Holographic foil for mythic/rare cards */}
+      {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
+        <div className={`card-foil-overlay ${card.data.rarity === 'mythic' ? 'card-frame-mythic' : 'card-frame-rare'}`} />
+      )}
     </div>
   );
 }
@@ -506,6 +516,11 @@ function HandCard({
           className={`absolute top-1 right-1 rounded-full animate-pulse z-20 ${isLand ? 'bg-[#c9a84c]' : 'bg-green-400'}`}
           style={{ width: 'clamp(4px, 0.5vw, 8px)', height: 'clamp(4px, 0.5vw, 8px)' }}
         />
+      )}
+      
+      {/* Holographic foil for mythic/rare cards */}
+      {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
+        <div className={`card-foil-overlay ${card.data.rarity === 'mythic' ? 'card-frame-mythic' : 'card-frame-rare'}`} />
       )}
     </div>
   );
@@ -695,6 +710,15 @@ export function GameBoard({ mode, onBack }: Props) {
     null
   );
   const [isCompactUI, setIsCompactUI] = useState(false);
+  const [damageNumbers, setDamageNumbers] = useState<
+    Array<{ id: number; value: number; x: number; y: number; type: 'damage' | 'heal' | 'buff' }>
+  >([]);
+  const [targetingLine, setTargetingLine] = useState<{
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+  } | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const attackAnimTimerRef = useRef<number | null>(null);
   const damageAnimTimerRef = useRef<number | null>(null);
@@ -828,6 +852,15 @@ export function GameBoard({ mode, onBack }: Props) {
         setDamageAnimUid(null);
       }, 250);
     }
+  }, []);
+
+  // Spawn damage number popup
+  const showDamageNumber = useCallback((value: number, x: number, y: number, type: 'damage' | 'heal' | 'buff' = 'damage') => {
+    const id = Date.now() + Math.random();
+    setDamageNumbers(prev => [...prev, { id, value, x, y, type }]);
+    setTimeout(() => {
+      setDamageNumbers(prev => prev.filter(dn => dn.id !== id));
+    }, 800);
   }, []);
 
   useEffect(() => {
@@ -1014,14 +1047,27 @@ export function GameBoard({ mode, onBack }: Props) {
       if (selectedAttacker === uid) {
         setSelectedAttacker(null);
         setInspected(null);
+        setTargetingLine(null);
       } else {
         setSelectedAttacker(uid);
         setSelectedHand(null);
         setInspected(null);
+        // Show targeting line from attacker
+        const attackerRef = cardRefsMap.current.get(uid);
+        if (attackerRef) {
+          const rect = attackerRef.getBoundingClientRect();
+          setTargetingLine({
+            startX: rect.left + rect.width / 2,
+            startY: rect.top + rect.height / 2,
+            endX: rect.left + rect.width / 2,
+            endY: rect.top + rect.height / 2,
+          });
+        }
       }
     } else {
       setInspected({ card, owner: 'player1' });
       setSelectedAttacker(null);
+      setTargetingLine(null);
     }
   };
 
@@ -1032,6 +1078,14 @@ export function GameBoard({ mode, onBack }: Props) {
       const attackerCard = me.field.find((c) => c.uid === selectedAttacker);
       const next = attackCreature(gs, 'player1', selectedAttacker, uid);
       if (next !== gs) {
+        // Calculate damage for visual feedback
+        const atk = getEffectiveAttack(attackerCard!, me, enemy);
+        const defenderRef = cardRefsMap.current.get(uid);
+        if (defenderRef) {
+          const rect = defenderRef.getBoundingClientRect();
+          showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage');
+        }
+        
         setGs(next);
         addMessage(
           'action',
@@ -1042,6 +1096,7 @@ export function GameBoard({ mode, onBack }: Props) {
         triggerCombatAnims(selectedAttacker, uid);
         setSelectedAttacker(null);
         setInspected(null);
+        setTargetingLine(null);
       }
       return;
     }
@@ -1054,6 +1109,14 @@ export function GameBoard({ mode, onBack }: Props) {
     const attackerCard = me.field.find((c) => c.uid === selectedAttacker);
     const next = attackPlayer(gs, 'player1', selectedAttacker);
     if (next !== gs) {
+      // Calculate damage for visual feedback - target enemy hero area
+      const atk = getEffectiveAttack(attackerCard!, me, enemy);
+      const enemyHeroElement = document.querySelector('[data-enemy-hero]');
+      if (enemyHeroElement) {
+        const rect = enemyHeroElement.getBoundingClientRect();
+        showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage');
+      }
+      
       setGs(next);
       addMessage(
         'action',
@@ -1064,6 +1127,7 @@ export function GameBoard({ mode, onBack }: Props) {
       triggerCombatAnims(selectedAttacker, undefined);
       setSelectedAttacker(null);
       setInspected(null);
+      setTargetingLine(null);
     }
   };
 
@@ -1255,6 +1319,7 @@ export function GameBoard({ mode, onBack }: Props) {
           isCurrentPlayer={!isP1Turn}
           label={mode === 'ai' ? `${AI_CHARACTER.avatarEmoji} ${AI_CHARACTER.name}` : 'Игрок 2'}
           isTop
+          dataEnemyHero
         />
       </div>
 
@@ -1557,24 +1622,11 @@ export function GameBoard({ mode, onBack }: Props) {
       </div>
 
       {showTurnTransition && (
-        <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-[60] pointer-events-none transition-opacity duration-300">
-          <div className="bg-gradient-to-br from-[#1a1508] to-[#0f0f18] rounded-2xl px-8 py-6 text-center shadow-2xl border border-[#c9a84c]/40 animate-pulse">
-            <div style={{ fontSize: 'clamp(48px, 5vw, 72px)' }} className="mb-2">
-              {AI_CHARACTER.avatarEmoji}
-            </div>
-            <h2
-              className="font-heading text-[#f0d68a] mb-1 font-bold tracking-wider"
-              style={{ fontSize: 'clamp(16px, 2vw, 24px)' }}
-            >
-              ХОД ХРАНИТЕЛЯ
-            </h2>
-            <p
-              className="text-[#c9a84c]/60 font-body italic"
-              style={{ fontSize: 'clamp(10px, 1vw, 14px)' }}
-            >
-              {AI_CHARACTER.title}
-            </p>
+        <div className="turn-banner z-[10000]">
+          <div className="turn-banner-text">
+            {AI_CHARACTER.avatarEmoji} ХОД ХРАНИТЕЛЯ
           </div>
+          <div className="turn-banner-sub">{AI_CHARACTER.title}</div>
         </div>
       )}
 
@@ -1674,6 +1726,56 @@ export function GameBoard({ mode, onBack }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Damage Numbers Overlay */}
+      {damageNumbers.map((dn) => (
+        <div
+          key={dn.id}
+          className={`damage-number ${dn.type === 'heal' ? 'heal' : dn.type === 'buff' ? 'buff' : ''}`}
+          style={{
+            left: dn.x,
+            top: dn.y,
+            position: 'fixed',
+            zIndex: 10000,
+          }}
+        >
+          {dn.type === 'heal' ? '+' : ''}{dn.value}
+        </div>
+      ))}
+
+      {/* Targeting Line */}
+      {targetingLine && selectedAttacker && (
+        <svg
+          className="pointer-events-none fixed inset-0 z-[9999]"
+          style={{ width: '100vw', height: '100vh' }}
+        >
+          <line
+            x1={targetingLine.startX}
+            y1={targetingLine.startY}
+            x2={targetingLine.endX}
+            y2={targetingLine.endY}
+            stroke="url(#targetingGradient)"
+            strokeWidth="3"
+            strokeDasharray="8,4"
+            className="targeting-line"
+            style={{
+              filter: 'drop-shadow(0 0 8px rgba(255,100,0,0.8))',
+            }}
+          />
+          <defs>
+            <linearGradient id="targetingGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="rgba(255,100,0,0)" />
+              <stop offset="50%" stopColor="rgba(255,100,0,0.9)" />
+              <stop offset="100%" stopColor="rgba(255,100,0,0)" />
+            </linearGradient>
+          </defs>
+        </svg>
+      )}
+
+      {/* Low Health Warning */}
+      {me.health <= 10 && me.health > 0 && (
+        <div className="low-health-overlay" />
+      )}
     </div>
   );
 }

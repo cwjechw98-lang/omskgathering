@@ -5,9 +5,10 @@ interface PlayerAreaProps {
   isCurrentPlayer: boolean;
   label: string;
   isTop?: boolean;
+  dataEnemyHero?: boolean;
 }
 
-export function PlayerArea({ player, isCurrentPlayer, label }: PlayerAreaProps) {
+export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: PlayerAreaProps) {
   const healthPercent = Math.max(0, (player.health / player.maxHealth) * 100);
   const healthColor =
     player.health > 20
@@ -20,6 +21,7 @@ export function PlayerArea({ player, isCurrentPlayer, label }: PlayerAreaProps) 
 
   return (
     <div
+      data-enemy-hero={dataEnemyHero ? 'true' : undefined}
       className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-colors ${
         isCurrentPlayer
           ? 'bg-[#1a1508]/50 border-[#c9a84c]/30'

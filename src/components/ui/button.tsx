@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 cursor-pointer",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 cursor-pointer overflow-hidden relative",
   {
     variants: {
       variant: {
@@ -50,13 +50,45 @@ function Button({
     asChild?: boolean;
   }) {
   const Comp = asChild ? Slot : 'button';
+  const [ripples, setRipples] = React.useState<Array<{ id: number; x: number; y: number }>>([]);
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const id = Date.now();
+    
+    setRipples((prev) => [...prev, { id, x, y }]);
+    setTimeout(() => {
+      setRipples((prev) => prev.filter((r) => r.id !== id));
+    }, 600);
+    
+    props.onClick?.(e);
+  };
 
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      onClick={handleClick}
       {...props}
-    />
+    >
+      {props.children}
+      {ripples.map((ripple) => (
+        <span
+          key={ripple.id}
+          className="btn-ripple"
+          style={{
+            left: ripple.x,
+            top: ripple.y,
+            width: '100px',
+            height: '100px',
+            marginLeft: '-50px',
+            marginTop: '-50px',
+          }}
+        />
+      ))}
+    </Comp>
   );
 }
 
