@@ -98,3 +98,8 @@ TODO update:
 - Current status: regression 41/41 pass, lint has no errors.
 
 - Log marker (2026-03-04): confirmed commit `baeafab` recorded and remote push state checked.
+
+- Pollinations generation checkpoint (2026-03-04):
+- 10 new card arts generated and normalized (source_raw + final_400x300).
+- Final runtime set aligns with existing card asset profile (400x300 JPG, ~24KB average).
+- Concepts/prompt package remains in `output/new-card-set-2026-03-04/` for easy import into `cards.ts`.

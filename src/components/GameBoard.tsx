@@ -34,6 +34,10 @@ import {
 } from './ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from './ui/sheet';
 import { Button } from './ui/button';
+import { Card, CardContent } from './ui/card';
+import { Badge } from './ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface Props {
   mode: 'ai' | 'local' | 'online';
@@ -253,7 +257,7 @@ function MessageFeed({
   );
 }
 
-/* ═══ FIELD CARD ═══ */
+/* ═══ FIELD CARD — Refactored with shadcn/ui Card ═══ */
 function FieldCard({
   card,
   player,
@@ -285,25 +289,38 @@ function FieldCard({
   const isDef = card.keywords.includes('defender');
   const art = getCardCoverSources(card.data);
 
-  const borderCls = selected
-    ? 'ring-2 ring-yellow-400 shadow-yellow-400/50 shadow-lg scale-105'
-    : isTarget
-      ? 'ring-2 ring-red-500 shadow-red-500/40 shadow-lg animate-pulse cursor-crosshair'
-      : canAct
-        ? 'ring-2 ring-green-400/70 shadow-green-400/30 shadow-md cursor-pointer'
-        : frozen
-          ? 'ring-1 ring-cyan-400/50 opacity-70 cursor-pointer'
-          : 'ring-1 ring-gray-600/40 hover:ring-gray-400/60 cursor-pointer';
-
   return (
-    <div
+    <Card
       ref={cardRef}
       onClick={onClick}
-      className={`card-frame card-in-field relative overflow-hidden transition-all duration-200 ${borderCls} ${attackAnim ? 'card-attack-animation' : ''} ${damageAnim ? 'card-damage-animation' : ''}`}
+      className={cn(
+        "card-frame card-in-field relative overflow-hidden transition-all duration-200 cursor-pointer",
+        "w-[var(--field-card-w)] h-[var(--field-card-h)]",
+        selected && "ring-2 ring-yellow-400 shadow-yellow-400/50 shadow-lg scale-105",
+        isTarget && "ring-2 ring-red-500 shadow-red-500/40 shadow-lg animate-pulse cursor-crosshair",
+        canAct && "ring-2 ring-green-400/70 shadow-green-400/30 shadow-md",
+        frozen && "ring-1 ring-cyan-400/50 opacity-70",
+        !selected && !isTarget && !canAct && !frozen && "ring-1 ring-gray-600/40 hover:ring-gray-400/60",
+        attackAnim && "card-attack-animation",
+        damageAnim && "card-damage-animation",
+        card.data.rarity === 'mythic' && "card-frame-mythic",
+        card.data.rarity === 'rare' && "card-frame-rare"
+      )}
       style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)' }}
+      role="button"
+      tabIndex={0}
+      aria-label={`${card.data.name}: ${atk} атака, ${hp} здоровье`}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       title={`${card.data.name}\n${card.data.description}\n⚔${atk} ❤${hp}`}
     >
-      <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} />
+      {/* Foil overlay */}
+      {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
+        <div className={`card-foil-overlay pointer-events-none z-50 ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
+      )}
+
+      {/* Art background */}
+      <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} aria-hidden="true" />
+      
       {art.src && (
         <img
           src={art.src}
@@ -312,88 +329,101 @@ function FieldCard({
           className="absolute inset-0 w-full h-full object-cover opacity-40"
           loading="lazy"
           onError={(e) => handleImageErrorWithFallback(e.currentTarget)}
+          aria-hidden="true"
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" />
+      
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" aria-hidden="true" />
 
-      <div className="relative z-10 flex flex-col h-full p-[clamp(2px,0.4vw,6px)]">
+      <CardContent className="relative z-10 flex flex-col h-full p-[clamp(2px,0.4vw,6px)] text-white">
+        {/* Top row: Emoji + Cost */}
         <div className="flex justify-between items-start">
-          <span style={{ fontSize: 'clamp(16px, 2.2vw, 32px)' }}>{card.data.emoji}</span>
-          <span
-            className="bg-blue-600/90 text-white rounded-full flex items-center justify-center font-bold font-heading shadow"
-            style={{
-              width: 'clamp(14px, 1.8vw, 24px)',
-              height: 'clamp(14px, 1.8vw, 24px)',
-              fontSize: 'clamp(8px, 1vw, 13px)',
-            }}
+          <Tooltip>
+            <TooltipTrigger>
+              <span style={{ fontSize: 'clamp(16px, 2.2vw, 32px)' }} aria-hidden="true">
+                {card.data.emoji}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">{card.data.name}</TooltipContent>
+          </Tooltip>
+          
+          <Badge 
+            variant="secondary" 
+            className="bg-blue-600/90 text-white font-bold font-heading shadow min-w-[24px] h-6 px-1.5 flex items-center justify-center"
+            aria-label={`Цена: ${card.data.cost} маны`}
           >
             {card.data.cost}
-          </span>
+          </Badge>
         </div>
 
-        <div
+        {/* Card name */}
+        <h3
           className="font-heading text-white font-bold truncate mt-auto"
           style={{ fontSize: 'clamp(6px, 0.85vw, 11px)' }}
         >
           {card.data.name}
-        </div>
+        </h3>
 
+        {/* Keywords с tooltip */}
         {card.keywords.length > 0 && (
           <div className="flex flex-wrap gap-px">
             {card.keywords.slice(0, 4).map((k) => (
-              <span 
-                key={k} 
-                className="keyword-tooltip"
-                data-tooltip={KW[k]}
-                style={{ fontSize: 'clamp(7px, 0.8vw, 12px)' }}
-              >
-                {KWS[k]}
-              </span>
+              <Tooltip key={k}>
+                <TooltipTrigger>
+                  <Badge variant="keyword" style={{ fontSize: 'clamp(7px, 0.8vw, 12px)' }}>
+                    {KWS[k]}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>{KW[k]}</TooltipContent>
+              </Tooltip>
             ))}
           </div>
         )}
 
+        {/* Status icons */}
         <div className="flex items-center gap-0.5" style={{ fontSize: 'clamp(7px, 0.8vw, 11px)' }}>
-          {frozen && <span title="Заморожен">❄️</span>}
-          {sick && <span title="Болезнь призыва">💤</span>}
-          {attacked && !sick && <span title="Атаковал">✅</span>}
-          {isDef && <span title="Защитник">🛡️</span>}
+          {frozen && <span title="Заморожен" aria-label="Заморожен">❄️</span>}
+          {sick && <span title="Болезнь призыва" aria-label="Болезнь призыва">💤</span>}
+          {attacked && !sick && <span title="Атаковал" aria-label="Атаковал">✅</span>}
+          {isDef && <span title="Защитник" aria-label="Защитник">🛡️</span>}
           {canAct && (
-            <span className="text-green-400 animate-pulse" title="Может атаковать">
+            <span className="text-green-400 animate-pulse" title="Может атаковать" aria-label="Может атаковать">
               ⚔️
             </span>
           )}
         </div>
 
+        {/* Stats */}
         {card.data.type === 'creature' && (
           <div className="flex justify-between items-end mt-auto">
-            <span
+            <Badge 
+              variant="destructive"
               className="bg-red-700/90 text-white rounded px-1 font-bold font-heading"
               style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}
+              aria-label={`${atk} атака`}
             >
               {atk}⚔
-            </span>
-            <span
-              className={`rounded px-1 font-bold font-heading text-white ${hp <= card.maxHealth / 2 ? 'bg-red-600/90' : 'bg-green-700/90'}`}
+            </Badge>
+            <Badge 
+              className={cn(
+                "rounded px-1 font-bold font-heading text-white",
+                hp <= card.maxHealth / 2 ? "bg-red-600/90" : "bg-green-700/90"
+              )}
               style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}
+              aria-label={`${hp} здоровье из ${card.maxHealth}`}
             >
               {hp}❤
-            </span>
+            </Badge>
           </div>
         )}
-      </div>
+      </CardContent>
 
-      {frozen && <div className="absolute inset-0 bg-cyan-300/15 pointer-events-none z-20" />}
-      
-      {/* Holographic foil for mythic/rare cards */}
-      {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
-        <div className={`card-foil-overlay ${card.data.rarity === 'mythic' ? 'card-frame-mythic' : 'card-frame-rare'}`} />
-      )}
-    </div>
+      {frozen && <div className="absolute inset-0 bg-cyan-300/15 pointer-events-none z-20" aria-hidden="true" />}
+    </Card>
   );
 }
 
-/* ═══ HAND CARD (with drag support) ═══ */
+/* ═══ HAND CARD — Refactored with shadcn/ui Card ═══ */
 function HandCard({
   card,
   selected,
@@ -411,26 +441,36 @@ function HandCard({
   onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: (e: React.DragEvent) => void;
 }) {
-  const borderCls = selected
-    ? 'border-yellow-400 shadow-yellow-400/50 shadow-lg -translate-y-4 scale-110 z-20'
-    : canPlay && isLand
-      ? 'border-[#c9a84c] shadow-[#c9a84c]/30 shadow-lg card-glow'
-      : canPlay
-        ? 'border-green-500/60 shadow-green-500/15 shadow-md'
-        : 'border-gray-700/40 opacity-45';
   const art = getCardCoverSources(card.data);
 
   return (
-    <div
+    <Card
       onClick={onClick}
       draggable={canPlay}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`card-frame card-in-hand relative border-2 overflow-hidden cursor-pointer transition-all duration-200 shrink-0 rounded-lg ${borderCls} ${canPlay ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      className={cn(
+        "card-frame card-in-hand relative border-2 overflow-hidden cursor-pointer transition-all duration-200 shrink-0 rounded-lg",
+        selected && "border-yellow-400 shadow-yellow-400/50 shadow-lg -translate-y-4 scale-110 z-20",
+        canPlay && isLand && "border-[#c9a84c] shadow-[#c9a84c]/30 shadow-lg card-glow",
+        canPlay && !isLand && "border-green-500/60 shadow-green-500/15 shadow-md",
+        !canPlay && !selected && "border-gray-700/40 opacity-45",
+        canPlay && "cursor-grab active:cursor-grabbing"
+      )}
       style={{ width: 'var(--hand-card-w)', height: 'var(--hand-card-h)' }}
+      role="button"
+      tabIndex={0}
+      aria-label={`${card.data.name} (${card.data.cost} маны)`}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       title={`${card.data.name} (${card.data.cost}💎)\n${card.data.description}\n${canPlay ? '👆 Двойной клик или перетащите на поле' : '❌ Не хватает маны'}`}
     >
-      <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} />
+      {/* Foil overlay */}
+      {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
+        <div className={`card-foil-overlay pointer-events-none z-50 ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
+      )}
+
+      <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} aria-hidden="true" />
+      
       {art.src && (
         <img
           src={art.src}
@@ -440,89 +480,98 @@ function HandCard({
           loading="lazy"
           draggable={false}
           onError={(e) => handleImageErrorWithFallback(e.currentTarget)}
+          aria-hidden="true"
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80" />
+      
+      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80" aria-hidden="true" />
 
-      <div className="relative z-10 flex flex-col h-full p-[clamp(2px,0.3vw,5px)]">
+      <CardContent className="relative z-10 flex flex-col h-full p-[clamp(2px,0.3vw,5px)] text-white">
+        {/* Top row: Emoji + Cost */}
         <div className="flex justify-between items-start">
-          <span style={{ fontSize: 'clamp(14px, 1.8vw, 28px)' }}>{card.data.emoji}</span>
-          <span
-            className={`rounded-full flex items-center justify-center font-bold font-heading ${
-              isLand
-                ? 'bg-[#c9a84c] text-black'
-                : canPlay
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-700 text-gray-400'
-            }`}
-            style={{
-              width: 'clamp(14px, 1.6vw, 22px)',
-              height: 'clamp(14px, 1.6vw, 22px)',
-              fontSize: 'clamp(8px, 0.9vw, 12px)',
-            }}
+          <span style={{ fontSize: 'clamp(14px, 1.8vw, 28px)' }} aria-hidden="true">
+            {card.data.emoji}
+          </span>
+          <Badge
+            variant={isLand ? "default" : canPlay ? "default" : "secondary"}
+            className={cn(
+              "rounded-full flex items-center justify-center font-bold font-heading min-w-[22px] h-[22px] px-1.5",
+              isLand && "bg-[#c9a84c] text-black",
+              canPlay && !isLand && "bg-blue-500 text-white",
+              !canPlay && !isLand && "bg-gray-700 text-gray-400"
+            )}
+            style={{ fontSize: 'clamp(8px, 0.9vw, 12px)' }}
+            aria-label={`Цена: ${card.data.cost} маны`}
           >
             {card.data.cost}
-          </span>
+          </Badge>
         </div>
 
-        <div
+        {/* Card name */}
+        <h3
           className="font-heading text-white font-bold leading-tight mt-auto"
           style={{ fontSize: 'clamp(5px, 0.7vw, 9px)' }}
         >
           {card.data.name}
-        </div>
+        </h3>
 
+        {/* Stats */}
         {card.data.type === 'creature' && (
           <div className="flex justify-between items-end mt-0.5">
-            <span
-              className="text-red-300 font-bold font-heading"
+            <Badge
+              variant="destructive"
+              className="bg-red-700/90 text-red-300 font-bold font-heading rounded px-1"
               style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}
+              aria-label={`${card.data.attack} атака`}
             >
               {card.data.attack}⚔
-            </span>
-            <span
-              className="text-green-300 font-bold font-heading"
+            </Badge>
+            <Badge
+              className="bg-green-700/90 text-green-300 font-bold font-heading rounded px-1"
               style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}
+              aria-label={`${card.data.health} здоровье`}
             >
               {card.data.health}❤
-            </span>
+            </Badge>
           </div>
         )}
+        
         {card.data.type === 'land' && (
           <div
             className="text-[#c9a84c] font-bold text-center"
             style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}
+            aria-label="Земля"
           >
             🏔️
           </div>
         )}
+        
         {card.data.type === 'spell' && (
-          <div className="text-blue-300 text-center" style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}>
+          <div className="text-blue-300 text-center" style={{ fontSize: 'clamp(8px, 1vw, 12px)' }} aria-label="Заклинание">
             ✨
           </div>
         )}
+        
         {card.data.type === 'enchantment' && (
           <div
             className="text-purple-300 text-center"
             style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}
+            aria-label="Наложение"
           >
             🔮
           </div>
         )}
-      </div>
+      </CardContent>
 
+      {/* Playable indicator */}
       {canPlay && !selected && (
         <div
           className={`absolute top-1 right-1 rounded-full animate-pulse z-20 ${isLand ? 'bg-[#c9a84c]' : 'bg-green-400'}`}
           style={{ width: 'clamp(4px, 0.5vw, 8px)', height: 'clamp(4px, 0.5vw, 8px)' }}
+          aria-hidden="true"
         />
       )}
-      
-      {/* Holographic foil for mythic/rare cards */}
-      {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
-        <div className={`card-foil-overlay ${card.data.rarity === 'mythic' ? 'card-frame-mythic' : 'card-frame-rare'}`} />
-      )}
-    </div>
+    </Card>
   );
 }
 

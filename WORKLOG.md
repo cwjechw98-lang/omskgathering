@@ -115,3 +115,9 @@
 - Log update requested by user.
 - Latest verified changes were committed as `baeafab` (keeper combat symmetry verification, new regressions, GameBoard lint fix).
 - Remote status at push check: repository reported up-to-date.
+
+### 2026-03-04
+- Switched card-art generation workflow to Pollinations API as requested.
+- Generated 10 new lore card arts to `output/new-card-set-2026-03-04/source_raw/` via `gen.pollinations.ai` using project-style prompts.
+- Normalized all 10 outputs to game runtime format (`400x300` JPG) in `output/new-card-set-2026-03-04/final_400x300/` with `scripts/normalize-card-art.py`.
+- Produced final stats file: `output/new-card-set-2026-03-04/final_stats.csv` (all images are 400x300; avg size ~24.3KB).
