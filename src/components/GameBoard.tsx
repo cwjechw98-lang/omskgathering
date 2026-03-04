@@ -1730,10 +1730,11 @@ export function GameBoard({ mode, onBack }: Props) {
               !gs.gameOver &&
               (isLand ? me.landsPlayed < me.maxLandsPerTurn : card.data.cost <= me.mana);
             const arcIndex = Math.min(index, 9); // Max 10 cards with arc
+            const isDragging = dragCardUid === card.uid;
             return (
               <div
                 key={card.uid}
-                className="hand-card-in-arc"
+                className={`hand-card-in-arc ${isDragging ? 'is-dragging' : ''}`}
                 data-arc-index={arcIndex}
               >
                 <HandCard

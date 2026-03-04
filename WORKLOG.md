@@ -124,6 +124,39 @@
 - ✅ npm run test: PASS (14/14 tests)
 - ✅ npm run test:regression: PASS (51/51 tests)
 
+**Stage 9: UX Improvements** ✅
+- Button "Конец хода" already centered (moved in Stage 4)
+- Double-click to play cards: already supported via `if (selectedHand === uid)`
+- Drag interactions improved:
+  - Added `is-dragging` class to hand cards during drag
+  - Card maintains hover state while dragging (CSS: `.is-dragging`)
+  - Drag preview shows full card during drag operation
+- All existing effects preserved:
+  - ✅ Holographic foil (mythic/rare)
+  - ✅ Low HP vignette (≤10 HP)
+  - ✅ Mana particles
+  - ✅ Targeting line
+  - ✅ Attack lane highlights
+  - ✅ Arc hand layout
+  - ✅ Modal overlay ready for choose/discover
+
+**Quality Gates Stage 9:**
+- ✅ npm run lint: PASS (5 warnings, 0 errors)
+- ✅ npm run build: PASS (494 KB JS, 104 KB CSS)
+- ✅ npm run test: PASS (14/14 tests)
+- ✅ npm run test:regression: PASS (51/51 tests)
+
+**All mod.md Stages Complete:**
+- ✅ Stage 1: UI Analysis
+- ✅ Stage 2: Card Architecture
+- ✅ Stage 3: Z-index System
+- ✅ Stage 4: Board Slots (7 slots)
+- ✅ Stage 5: Attack Lanes (visual highlight)
+- ✅ Stage 6: Arc Hand Layout
+- ✅ Stage 7: Modal Overlay
+- ✅ Stage 8: Verify effects_info.md
+- ✅ Stage 9: UX Improvements
+
 **Commits:**
 - `00d0404` Refactor PlayerArea with shadcn/ui components
 - `49f184b` Refactor FieldCard and HandCard with shadcn/ui Card
