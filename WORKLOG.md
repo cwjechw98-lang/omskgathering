@@ -2,6 +2,50 @@
 
 ## Session Log
 
+### 2026-03-04 — UI/UX Audit & Refactoring Day
+
+**UI/UX Audit:**
+- Captured 10 screenshots across desktop/tablet/mobile viewports
+- Created comprehensive UI_UX_AUDIT_2026-03-04.md with 15 issues (P0-P3 priority)
+- Identified critical accessibility issues: low contrast (1.5:1), small touch targets (6px), mobile text illegibility (5px)
+
+**shadcn/ui Refactoring:**
+- Installed 8 shadcn/ui components: card, progress, badge, tooltip, tabs, scroll-area, separator, alert
+- Refactored PlayerArea → Card + Progress + Badge + Tooltip with ARIA labels
+- Refactored FieldCard → Card + Badge + Tooltip with keyboard navigation
+- Refactored HandCard → Card + Badge preserving drag-and-drop
+- Added custom badge variants: mana-available, mana-spent, keyword, rarity
+- Added progress variants: success (green), warning (yellow), danger (red + pulse)
+- Wrapped App with TooltipProvider
+
+**Visual Effects Added:**
+- Holographic foil overlay for mythic/rare cards
+- Damage number popups during combat
+- Targeting line SVG for attack selection
+- Low health warning vignette (≤10 HP)
+- Button ripple click effect
+- Turn transition banner
+- Keyword tooltips on hover
+
+**Mobile Responsiveness Fixes:**
+- Fixed MainMenu button overlap - added flex-shrink-0, truncate, adaptive sizing
+- Fixed GameBoard action button overlap - moved below enemy PlayerArea
+- Removed duplicate "Конец хода" buttons from center field
+- Hide torch effects on mobile (hidden sm:block)
+- Reduced rune/logo sizes for mobile screens
+
+**Verified:**
+- ✅ 10 new cards present in cards.ts (Кофемашина, Бабка, Гопник, etc.)
+- ✅ Build passes (493 KB JS, 98 KB CSS)
+- ✅ Pushed 3 commits to origin/main
+
+**Commits:**
+- `00d0404` Refactor PlayerArea with shadcn/ui components
+- `49f184b` Refactor FieldCard and HandCard with shadcn/ui Card
+- `0fc11a3` Fix mobile responsiveness and button overlap issues
+
+---
+
 ### 2026-02-26
 - Added session memory protocol to BRIEF.md (memory_tail on start, memory_append + WORKLOG on end)
 - MCP memory server validated in VS Code (memory_append success)
