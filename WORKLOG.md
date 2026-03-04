@@ -181,6 +181,21 @@
 - No breaking changes introduced
 - Game mechanics verified working correctly
 
+**ui-fix.md: Layout Stabilization** ✅
+- Created effects-layer CSS with position: fixed
+- Added .game-grid > * { min-height: 0; } to prevent stretching
+- Added fixed heights for board zones (.enemy-board, .player-board, .hero-zone)
+- Created EffectsContext for centralized effect state management
+- Created EffectsLayer component to render effects outside game grid
+- Effects (damage numbers, targeting line, low HP warning) now render in overlay layer
+- Visual effects no longer affect grid layout
+
+Files modified:
+- src/index.css: +25 lines (effects-layer CSS, grid protection)
+- src/App.tsx: +10 lines (EffectsProvider wrapper)
+- src/contexts/EffectsContext.tsx: new file (72 lines)
+- src/components/EffectsLayer.tsx: new file (67 lines)
+
 ---
 
 ### 2026-02-26

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { TooltipProvider } from './components/ui/tooltip';
+import { EffectsProvider } from './contexts/EffectsContext';
+import { EffectsLayer } from './components/EffectsLayer';
 import { MainMenu } from './components/MainMenu';
 import { GameBoard } from './components/GameBoard';
 import { StoryIntro } from './components/StoryIntro';
@@ -26,20 +28,30 @@ function App() {
   };
 
   if (screen === 'intro') {
-    return <StoryIntro onComplete={onIntroComplete} />;
+    return (
+      <EffectsProvider>
+        <StoryIntro onComplete={onIntroComplete} />
+      </EffectsProvider>
+    );
   }
 
   if (screen === 'game') {
     return (
       <TooltipProvider>
-        <GameBoard mode={gameMode} onBack={() => setScreen('menu')} />
+        <EffectsProvider>
+          <GameBoard mode={gameMode} onBack={() => setScreen('menu')} />
+          <EffectsLayer />
+        </EffectsProvider>
       </TooltipProvider>
     );
   }
 
   return (
     <TooltipProvider>
-      <MainMenu onStartGame={startGame} />
+      <EffectsProvider>
+        <MainMenu onStartGame={startGame} />
+        <EffectsLayer />
+      </EffectsProvider>
     </TooltipProvider>
   );
 }
