@@ -95,8 +95,20 @@ TODO update:
 - ✅ npm run test:regression: PASS (51/51 tests)
 
 **Remaining Stages:**
-- ⏳ Stage 8: Verify effects_info.md
 - ⏳ Stage 9: UX improvements
+
+**Stage 8: Verify effects_info.md** ✅
+- Reviewed effects_info.md for accuracy
+- Fixed z-index bug: `z-index(board)` → `var(--z-board)`
+- Verified all effects use correct z-layers
+- Confirmed effects don't break layout
+- No new effects added
+
+**Quality Gates Stage 8:**
+- ✅ npm run lint: PASS (5 warnings, 0 errors)
+- ✅ npm run build: PASS (494 KB JS, 104 KB CSS)
+- ✅ npm run test: PASS (14/14 tests)
+- ✅ npm run test:regression: PASS (51/51 tests)
 
 **Stage 7: Modal Overlay for Choose/Discover** ✅
 - Created ModalOverlay component
