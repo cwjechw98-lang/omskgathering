@@ -1374,6 +1374,48 @@ export function GameBoard({ mode, onBack }: Props) {
         />
       </div>
 
+      {/* Action buttons - moved below enemy player area for better mobile UX */}
+      <div className="flex items-center justify-center gap-2 shrink-0 py-1 px-2">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/20 to-transparent" />
+        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-center">
+          {selectedAttacker && (
+            <>
+              <button
+                onClick={clickAttackHero}
+                className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white rounded-lg font-heading font-bold shadow-lg shadow-red-700/30 animate-pulse transition whitespace-nowrap"
+                style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}
+                title="Атаковать героя напрямую"
+              >
+                ⚔️ В героя
+              </button>
+              <button
+                onClick={() => setSelectedAttacker(null)}
+                className="px-2 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition font-heading"
+                style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}
+                title="Отменить выбор"
+              >
+                ✕
+              </button>
+            </>
+          )}
+          {myTurn && !gs.gameOver && !selectedAttacker && (
+            <button
+              onClick={clickEndTurn}
+              className={`px-3 py-1.5 rounded-lg font-heading font-bold shadow-lg transition hover:scale-105 border whitespace-nowrap ${
+                phase === 'done'
+                  ? 'bg-gradient-to-r from-[#8b6914] to-[#c9a84c] hover:from-[#a07a1a] hover:to-[#d4b85a] text-white border-[#c9a84c]/50 animate-pulse shadow-[#c9a84c]/30'
+                  : 'bg-[#1a1a2a] hover:bg-[#2a2a3a] text-gray-400 border-gray-700/50'
+              }`}
+              style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}
+              title={phase === 'done' ? 'Нет действий — завершите ход' : 'Завершить ход досрочно'}
+            >
+              Конец хода ⏭️
+            </button>
+          )}
+        </div>
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/20 to-transparent" />
+      </div>
+
       <div
         className="flex justify-center gap-0.5 px-2 shrink-0"
         style={{ height: 'clamp(18px, 2vw, 28px)' }}
@@ -1476,48 +1518,6 @@ export function GameBoard({ mode, onBack }: Props) {
               />
             ))
           )}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 py-1">
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/30 to-transparent" />
-          <div
-            className={`flex items-center gap-1.5 shrink-0 ${isCompactUI ? 'flex-wrap justify-center' : ''}`}
-          >
-            {selectedAttacker && (
-              <>
-                <button
-                  onClick={clickAttackHero}
-                  className={`px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white rounded-lg font-heading font-bold shadow-lg shadow-red-700/30 animate-pulse transition ${isCompactUI ? 'min-w-[122px]' : ''}`}
-                  style={{ fontSize: 'clamp(11px, 1.1vw, 15px)' }}
-                  title="Атаковать героя напрямую"
-                >
-                  ⚔️ В героя
-                </button>
-                <button
-                  onClick={() => setSelectedAttacker(null)}
-                  className="px-2 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition font-heading"
-                  style={{ fontSize: 'clamp(11px, 1.1vw, 15px)' }}
-                >
-                  ✕
-                </button>
-              </>
-            )}
-            {myTurn && !gs.gameOver && !selectedAttacker && (
-              <button
-                onClick={clickEndTurn}
-                className={`px-4 py-1.5 rounded-lg font-heading font-bold shadow-lg transition hover:scale-105 border ${
-                  phase === 'done'
-                    ? 'bg-gradient-to-r from-[#8b6914] to-[#c9a84c] hover:from-[#a07a1a] hover:to-[#d4b85a] text-white border-[#c9a84c]/50 animate-pulse shadow-[#c9a84c]/30'
-                    : 'bg-[#1a1a2a] hover:bg-[#2a2a3a] text-gray-400 border-gray-700/50'
-                }`}
-                style={{ fontSize: 'clamp(11px, 1.1vw, 15px)' }}
-                title={phase === 'done' ? 'Нет действий — завершите ход' : 'Завершить ход досрочно'}
-              >
-                Конец хода ⏭️
-              </button>
-            )}
-          </div>
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/30 to-transparent" />
         </div>
 
         <div className="flex justify-center items-start gap-[clamp(4px,0.5vw,10px)] min-h-[var(--field-card-h)] py-1 flex-wrap content-start">

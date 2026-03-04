@@ -99,21 +99,21 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
         </div>
       ))}
 
-      <div className="relative z-10 flex flex-col items-center">
-        <div className="relative flex items-center justify-center mb-6">
-          <div className="relative -mr-4 mt-8">
+      <div className="relative z-10 flex flex-col items-center w-full max-w-md mx-auto">
+        <div className="relative flex items-center justify-center mb-4 md:mb-6 flex-shrink-0">
+          <div className="relative -mr-4 mt-8 hidden sm:block">
             <Torch side="left" />
           </div>
-          <div className="text-center px-8 relative">
+          <div className="text-center px-4 md:px-8 relative">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div
-                className="w-48 h-48 md:w-64 md:h-64 rounded-full border border-[#c9a84c]/10"
+                className="w-40 h-40 md:w-64 md:h-64 rounded-full border border-[#c9a84c]/10"
                 style={{ animation: 'runeRotate 30s linear infinite' }}
               >
                 {['🜁', '🜂', '🜃', '🜄', '⛧', '☉', '☽', '♆'].map((r, i) => (
                   <span
                     key={i}
-                    className="absolute text-[#c9a84c]/20 text-lg"
+                    className="absolute text-[#c9a84c]/20 text-sm md:text-lg"
                     style={{
                       left: `${50 + 45 * Math.cos((i * Math.PI) / 4)}%`,
                       top: `${50 + 45 * Math.sin((i * Math.PI) / 4)}%`,
@@ -125,45 +125,46 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
                 ))}
               </div>
             </div>
-            <div className="mb-3">
-              <div className="inline-block p-3 rounded-full border border-[#c9a84c]/30 bg-black/60 backdrop-blur-sm">
-                <span className="text-5xl md:text-6xl emoji-float inline-block">🃏</span>
+            <div className="mb-2 md:mb-3">
+              <div className="inline-block p-2 md:p-3 rounded-full border border-[#c9a84c]/30 bg-black/60 backdrop-blur-sm">
+                <span className="text-4xl md:text-6xl emoji-float inline-block">🃏</span>
               </div>
             </div>
-            <h1 className="font-title text-6xl md:text-8xl lg:text-9xl tracking-wider text-gold-light title-glow select-none">
+            <h1 className="font-title text-5xl md:text-7xl lg:text-9xl tracking-wider text-gold-light title-glow select-none">
               OMSK
             </h1>
-            <div className="flex items-center gap-4 justify-center my-2">
-              <div className="h-px w-12 md:w-20 bg-gradient-to-r from-transparent to-[#c9a84c]/50" />
-              <span className="font-heading text-base md:text-xl tracking-[0.4em] subtitle-shimmer select-none">
+            <div className="flex items-center gap-2 md:gap-4 justify-center my-2">
+              <div className="h-px w-8 md:w-20 bg-gradient-to-r from-transparent to-[#c9a84c]/50" />
+              <span className="font-heading text-xs md:text-lg tracking-[0.4em] subtitle-shimmer select-none">
                 THE GATHERING
               </span>
-              <div className="h-px w-12 md:w-20 bg-gradient-to-l from-transparent to-[#c9a84c]/50" />
+              <div className="h-px w-8 md:w-20 bg-gradient-to-l from-transparent to-[#c9a84c]/50" />
             </div>
-            <p className="font-body text-[#8a7a5a] mt-3 text-sm md:text-base max-w-md mx-auto italic leading-relaxed">
+            <p className="font-body text-[#8a7a5a] mt-2 md:mt-3 text-xs md:text-sm max-w-xs md:max-w-md mx-auto italic leading-relaxed hidden xs:block">
               «Под слоем асфальта, под недостроенным метро,
-              <br />
+              <br className="hidden sm:block" />
               пульсирует древняя сила...»
             </p>
           </div>
-          <div className="relative -ml-4 mt-8">
+          <div className="relative -ml-4 mt-8 hidden sm:block">
             <Torch side="right" />
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 w-full max-w-sm">
+        {/* Adaptive button container */}
+        <div className="flex flex-col gap-2 md:gap-3 w-full px-2 md:px-0 flex-shrink-0">
           <Button
             variant="mythic"
             size="xl"
             onClick={() => onStartGame('ai')}
-            className="w-full rounded-xl gap-4"
+            className="w-full rounded-xl gap-2 md:gap-4 py-3 md:py-4"
           >
-            <span className="text-3xl emoji-float inline-block" style={{ animationDelay: '0.5s' }}>
+            <span className="text-2xl md:text-3xl emoji-float inline-block flex-shrink-0" style={{ animationDelay: '0.5s' }}>
               🗿
             </span>
-            <div className="text-left">
-              <div className="font-bold text-lg">Против Хранителя</div>
-              <div className="text-xs text-red-300/70 font-body">
+            <div className="text-left min-w-0 flex-1">
+              <div className="font-bold text-sm md:text-lg truncate">Против Хранителя</div>
+              <div className="text-xs text-red-300/70 font-body hidden sm:block truncate">
                 Сразитесь с Древним Духом Города
               </div>
             </div>
@@ -172,27 +173,30 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
             variant="blue"
             size="lg"
             onClick={() => onStartGame('local')}
-            className="w-full rounded-xl gap-3"
+            className="w-full rounded-xl gap-2 md:gap-3 py-2.5 md:py-3"
           >
-            <span className="text-2xl">👥</span> Два Игрока
+            <span className="text-xl md:text-2xl flex-shrink-0">👥</span>
+            <span className="truncate">Два Игрока</span>
           </Button>
           <div className="h-px bg-gradient-to-r from-transparent via-[#c9a84c]/20 to-transparent my-1" />
           <Button
             variant="gold"
             size="lg"
             onClick={() => setScreen('lore')}
-            className="w-full rounded-xl gap-3"
+            className="w-full rounded-xl gap-2 md:gap-3 py-2.5 md:py-3"
           >
-            📜 Легенда Омска
+            <span className="flex-shrink-0">📜</span>
+            <span className="truncate">Легенда Омска</span>
           </Button>
           <Button
             variant="purple"
             size="lg"
             onClick={() => setScreen('cards')}
-            className="w-full rounded-xl gap-3"
+            className="w-full rounded-xl gap-2 md:gap-3 py-2.5 md:py-3"
           >
-            📖 Коллекция{' '}
-            <span className="font-body text-xs text-purple-400/60 ml-1">
+            <span className="flex-shrink-0">📖</span>
+            <span className="truncate">Коллекция</span>
+            <span className="font-body text-xs text-purple-400/60 ml-1 hidden sm:inline">
               ({ALL_CARDS.filter((c) => c.id !== 'chinovnik').length} карт)
             </span>
           </Button>
@@ -200,17 +204,18 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
             variant="nav"
             size="default"
             onClick={() => setScreen('rules')}
-            className="w-full rounded-xl bg-[#12121e] hover:bg-[#1e1e30] text-sm gap-2"
+            className="w-full rounded-xl bg-[#12121e] hover:bg-[#1e1e30] text-sm gap-2 py-2 md:py-2.5"
           >
-            📋 Правила Игры
+            <span className="flex-shrink-0">📋</span>
+            <span className="truncate">Правила Игры</span>
           </Button>
         </div>
 
-        <div className="mt-6 text-center relative z-10">
-          <p className="font-body text-[#5a4a30] text-xs italic">
+        <div className="mt-4 md:mt-6 text-center relative z-10 flex-shrink-0 px-4">
+          <p className="font-body text-[#5a4a30] text-[10px] md:text-xs italic">
             «Ты не можешь покинуть Омск. Никто не может.»
           </p>
-          <p className="font-heading text-[#3a3020] text-[10px] mt-1 tracking-widest">
+          <p className="font-heading text-[#3a3020] text-[9px] md:text-[10px] mt-1 tracking-widest">
             OMSK: THE GATHERING © MMXXVI
           </p>
         </div>
