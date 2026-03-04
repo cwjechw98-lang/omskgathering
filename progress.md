@@ -134,3 +134,8 @@ TODO update:
   - `npm run test` -> pass,
   - `npm run lint` -> 0 errors (warnings only),
   - `npm run build` -> pass (local Node warning retained).
+
+- 2026-03-05 UI stabilization checkpoint (mod.md, stage 1):
+- Added `UI_REFACTOR_PLAN.md` with full current-state UI analysis.
+- Mapped component responsibilities and risk boundaries (UI-only changes vs engine-coupled interaction points).
+- No gameplay code touched on this step by design.

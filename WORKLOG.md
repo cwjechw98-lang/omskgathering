@@ -216,3 +216,12 @@
   - `npm run test` -> PASS.
   - `npm run lint` -> 0 errors (5 existing warnings).
   - `npm run build` -> PASS (local Node warning 20.18.1 remains).
+
+### 2026-03-05
+- UI stabilization (mod.md) — Stage 1 complete.
+- Created `UI_REFACTOR_PLAN.md` with full audit of current UI architecture:
+  - component structure and rendering paths,
+  - absolute/fixed positioning map,
+  - responsibility map (board/cards/hand/hero/buttons/overlays/effects),
+  - safe-to-change UI zones vs engine-coupled zones.
+- No code changes in this stage (analysis only), as required by stage constraints.
