@@ -145,3 +145,8 @@ TODO update:
 - `CardVisual` now acts as strict clipping layer (`overflow: hidden`), while hover/scale behavior is moved to container layer.
 - No engine mechanics changed; UI-only structural refactor.
 - Quality checks remained green: unit/regression/build pass; lint without errors.
+- 2026-03-05 mod.md stage 3:
+- Centralized z-layer system finalized for active board/effects.
+- Replaced remaining hardcoded render zIndex in GameBoard damage popups.
+- Normalized CSS effect z-index usage to layer tokens (hover/card-effects/combat-effects/overlay).
+- Validation: lint 0 errors (warnings only), test pass, regression 51/51 pass, build pass.

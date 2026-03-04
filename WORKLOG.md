@@ -239,3 +239,19 @@
   - `npm run test` -> PASS,
   - `npm run test:regression` -> 51/51 PASS,
   - `npm run build` -> PASS (local Node warning unchanged).
+
+### 2026-03-05
+- UI stabilization (mod.md) — Stage 3 complete.
+- Finalized centralized z-layer usage on game board/effects:
+  - wired `z-layer-*` classes in active GameBoard overlays/effects,
+  - removed remaining hardcoded `zIndex` from damage popup render,
+  - normalized CSS effect layers to design tokens (`--z-card-effects`, `--z-combat-effects`, `--z-overlay`, `--z-hover`).
+- Verified layering rules:
+  - hover cards rise without layout break,
+  - combat/effect layers stay below UI,
+  - overlays remain on top.
+- Validation:
+  - `npm run lint` -> 0 errors (warnings only),
+  - `npm run test` -> PASS,
+  - `npm run test:regression` -> 51/51 PASS,
+  - `npm run build` -> PASS (local Node warning unchanged).

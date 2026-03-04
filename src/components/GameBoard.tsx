@@ -158,7 +158,7 @@ function MessageFeed({
 
   return (
     <div
-      className={`absolute z-40 pointer-events-none ${compact ? 'left-2 right-2' : 'left-3'}`}
+      className={`absolute z-layer-ui pointer-events-none ${compact ? 'left-2 right-2' : 'left-3'}`}
       style={{
         top: compact ? 'clamp(52px, 6.8vh, 76px)' : 'clamp(55px, 7vh, 80px)',
         width: compact ? 'auto' : 'clamp(260px, 22vw, 380px)',
@@ -365,7 +365,7 @@ function FieldCard({
       >
       {/* Foil overlay */}
       {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
-        <div className={`card-foil-overlay pointer-events-none z-50 ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
+        <div className={`card-foil-overlay pointer-events-none z-layer-card-effects ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
       )}
 
       {/* Art background */}
@@ -385,7 +385,7 @@ function FieldCard({
       
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" aria-hidden="true" />
 
-      <CardContent className="relative z-10 flex flex-col h-full p-[clamp(2px,0.4vw,6px)] text-white">
+      <CardContent className="relative z-layer-cards flex flex-col h-full p-[clamp(2px,0.4vw,6px)] text-white">
         {/* Top row: Emoji + Cost */}
         <div className="flex justify-between items-start">
           <Tooltip>
@@ -468,7 +468,7 @@ function FieldCard({
         )}
       </CardContent>
 
-      {frozen && <div className="absolute inset-0 bg-cyan-300/15 pointer-events-none z-20" aria-hidden="true" />}
+      {frozen && <div className="absolute inset-0 bg-cyan-300/15 pointer-events-none z-layer-card-effects" aria-hidden="true" />}
       </CardVisual>
       </CardContainer>
     </CardSlot>
@@ -504,7 +504,7 @@ function HandCard({
       onDragEnd={onDragEnd}
       className={cn(
         'card-container card-hand-container cursor-pointer rounded-lg',
-        selected && "border-yellow-400 shadow-yellow-400/50 shadow-lg -translate-y-4 scale-110 z-20",
+        selected && "border-yellow-400 shadow-yellow-400/50 shadow-lg -translate-y-4 scale-110 z-layer-hover",
         canPlay && isLand && "border-[#c9a84c] shadow-[#c9a84c]/30 shadow-lg card-glow hover:scale-105",
         canPlay && !isLand && "border-green-500/60 shadow-green-500/15 shadow-md hover:scale-105",
         !canPlay && !selected && "border-gray-700/40 opacity-45",
@@ -519,7 +519,7 @@ function HandCard({
       <CardVisual className="card-frame card-in-hand card-visual border-2">
       {/* Foil overlay */}
       {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
-        <div className={`card-foil-overlay pointer-events-none z-50 ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
+        <div className={`card-foil-overlay pointer-events-none z-layer-card-effects ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
       )}
 
       <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} aria-hidden="true" />
@@ -539,7 +539,7 @@ function HandCard({
       
       <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80" aria-hidden="true" />
 
-      <CardContent className="relative z-10 flex flex-col h-full p-[clamp(2px,0.3vw,5px)] text-white">
+      <CardContent className="relative z-layer-cards flex flex-col h-full p-[clamp(2px,0.3vw,5px)] text-white">
         {/* Top row: Emoji + Cost */}
         <div className="flex justify-between items-start">
           <span style={{ fontSize: 'clamp(14px, 1.8vw, 28px)' }} aria-hidden="true">
@@ -619,7 +619,7 @@ function HandCard({
       {/* Playable indicator */}
       {canPlay && !selected && (
         <div
-          className={`absolute top-1 right-1 rounded-full animate-pulse z-20 ${isLand ? 'bg-[#c9a84c]' : 'bg-green-400'}`}
+          className={`absolute top-1 right-1 rounded-full animate-pulse z-layer-card-effects ${isLand ? 'bg-[#c9a84c]' : 'bg-green-400'}`}
           style={{ width: 'clamp(4px, 0.5vw, 8px)', height: 'clamp(4px, 0.5vw, 8px)' }}
           aria-hidden="true"
         />
@@ -649,14 +649,14 @@ function CardPreview({
   return (
     // 👇 Поменяли bottom-2 на bottom-36 👇
     <div
-      className={`absolute z-40 ${compact ? 'left-2 right-2 bottom-100' : 'top-12 right-2'}`}
+      className={`absolute z-layer-ui ${compact ? 'left-2 right-2 bottom-100' : 'top-12 right-2'}`}
       style={{ width: compact ? 'auto' : 'clamp(200px, 17vw, 280px)' }}
       onClick={(e) => e.stopPropagation()}
     >
       <div className="bg-[#0f0f18]/98 backdrop-blur-sm rounded-xl shadow-2xl border border-[#c9a84c]/30 overflow-hidden">
         <button
           onClick={onClose}
-          className="absolute top-1 right-1 z-20 text-gray-400 hover:text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-700 text-sm transition"
+          className="absolute top-1 right-1 z-layer-ui text-gray-400 hover:text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-700 text-sm transition"
         >
           ✕
         </button>
@@ -684,7 +684,7 @@ function CardPreview({
           </div>
         </div>
 
-        <div className="p-3 -mt-2 relative z-10">
+        <div className="p-3 -mt-2 relative z-layer-cards">
           <div className="flex items-start gap-2 mb-1.5">
             <div className="flex-1 min-w-0">
               <div
@@ -1320,7 +1320,7 @@ export function GameBoard({ mode, onBack }: Props) {
       )}
 
       <div
-        className="flex items-center justify-between px-3 bg-black/80 z-20 shrink-0 border-b border-[#c9a84c]/15"
+        className="flex items-center justify-between px-3 bg-black/80 z-layer-ui shrink-0 border-b border-[#c9a84c]/15"
         style={{ height: 'clamp(36px, 5vh, 48px)' }}
       >
         <button
@@ -1494,7 +1494,7 @@ export function GameBoard({ mode, onBack }: Props) {
                 onError={(e) => handleImageErrorWithFallback(e.currentTarget)}
               />
             )}
-            <span className="relative z-10">🂠</span>
+            <span className="relative z-layer-cards">🂠</span>
           </div>
         ))}
         <span
@@ -1534,7 +1534,7 @@ export function GameBoard({ mode, onBack }: Props) {
         onDrop={handleDrop}
       >
         {dropZoneActive && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-layer-ui">
             <div className="bg-green-500/10 border-2 border-dashed border-green-400/40 rounded-2xl px-8 py-4 backdrop-blur-sm">
               <p
                 className="text-green-300 font-heading animate-pulse"
@@ -1688,7 +1688,7 @@ export function GameBoard({ mode, onBack }: Props) {
 
       {/* ═══ ИСПРАВЛЕННЫЙ БЛОК РУКИ ═══ */}
       <div
-        className="bg-black/70 px-2 shrink-0 border-t border-[#c9a84c]/10 relative z-20"
+        className="bg-black/70 px-2 shrink-0 border-t border-[#c9a84c]/10 relative z-layer-ui"
         style={{
           paddingBottom: isCompactUI ? 'max(0.375rem, env(safe-area-inset-bottom))' : undefined,
         }}
@@ -1728,7 +1728,7 @@ export function GameBoard({ mode, onBack }: Props) {
       </div>
 
       {showTurnTransition && (
-        <div className="turn-banner z-[10000]">
+        <div className="turn-banner z-layer-overlay">
           <div className="turn-banner-text">
             {AI_CHARACTER.avatarEmoji} ХОД ХРАНИТЕЛЯ
           </div>
@@ -1737,7 +1737,7 @@ export function GameBoard({ mode, onBack }: Props) {
       )}
 
       {aiThinking && (
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-50 pointer-events-none transition-opacity duration-500">
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-layer-overlay pointer-events-none transition-opacity duration-500">
           <div
             className="bg-[#0f0f18]/95 rounded-2xl px-6 py-4 text-white flex flex-col items-center gap-2 shadow-2xl border border-[#c9a84c]/30"
             style={{ width: isCompactUI ? 'min(92vw, 360px)' : undefined }}
@@ -1837,12 +1837,11 @@ export function GameBoard({ mode, onBack }: Props) {
       {damageNumbers.map((dn) => (
         <div
           key={dn.id}
-          className={`damage-number ${dn.type === 'heal' ? 'heal' : dn.type === 'buff' ? 'buff' : ''}`}
+          className={`damage-number z-layer-overlay ${dn.type === 'heal' ? 'heal' : dn.type === 'buff' ? 'buff' : ''}`}
           style={{
             left: dn.x,
             top: dn.y,
             position: 'fixed',
-            zIndex: 10000,
           }}
         >
           {dn.type === 'heal' ? '+' : ''}{dn.value}
@@ -1852,7 +1851,7 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* Targeting Line */}
       {targetingLine && selectedAttacker && (
         <svg
-          className="pointer-events-none fixed inset-0 z-[9999]"
+          className="pointer-events-none fixed inset-0 z-layer-combat-effects"
           style={{ width: '100vw', height: '100vh' }}
         >
           <line
