@@ -83,6 +83,28 @@
 - ✅ npm run test: PASS (14/14 tests)
 - ✅ npm run test:regression: PASS (51/51 tests)
 
+**Stage 7: Modal Overlay for Choose/Discover** ✅
+- Created `src/components/ui/modal-overlay.tsx` component
+- Features:
+  - Dark background with backdrop blur (rgba(0,0,0,0.7) + blur(4px))
+  - Blocks interaction with game board (pointer-events)
+  - Click outside to close (configurable)
+  - ESC key to close
+  - Prevents body scroll when open
+  - Accessible: role="dialog", aria-modal="true"
+- CSS in index.css:
+  - `.modal-overlay` — full screen overlay with fade-in
+  - `.modal-overlay-content` — centered content box with gold border
+  - `.modal-overlay-close` — close button (✕) with hover effect
+  - Animations: overlayFadeIn, modalSlideIn
+- Ready for integration with choose/discover/look-top modes
+
+**Quality Gates Stage 7:**
+- ✅ npm run lint: PASS (5 warnings, 0 errors)
+- ✅ npm run build: PASS (494 KB JS, 104 KB CSS)
+- ✅ npm run test: PASS (14/14 tests)
+- ✅ npm run test:regression: PASS (51/51 tests)
+
 **Commits:**
 - `00d0404` Refactor PlayerArea with shadcn/ui components
 - `49f184b` Refactor FieldCard and HandCard with shadcn/ui Card
