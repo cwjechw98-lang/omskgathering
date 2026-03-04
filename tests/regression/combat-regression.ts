@@ -656,6 +656,40 @@ function testLandPlayLimitedToOnePerTurn(): void {
   expect(afterSecond === afterFirst, 'second land play should be rejected');
 }
 
+function testBabkaCanAttackWhenBuffed(): void {
+  const babka = makeCreature('babka_semechki', 'Babka', 0, 3);
+  babka.buffAttack = 1;
+  babka.summoningSickness = false;
+
+  const state = makeState(
+    makePlayer({ field: [babka] }),
+    makePlayer({ health: 20, maxHealth: 30 }),
+    'player1'
+  );
+
+  const next = attackPlayer(state, 'player1', babka.uid);
+  expect(next !== state, 'buffed babka should be able to attack');
+  expect(next.player2.health === 19, `buffed babka should deal 1 damage, got ${next.player2.health}`);
+}
+
+function testBabkaRetaliatesWhenBuffed(): void {
+  const babka = makeCreature('babka_semechki', 'Babka', 0, 3);
+  babka.buffAttack = 1;
+  const enemyAttacker = makeCreature('enemy-att', 'Enemy Attacker', 2, 3);
+  enemyAttacker.summoningSickness = false;
+
+  const state = makeState(
+    makePlayer({ field: [babka] }),
+    makePlayer({ field: [enemyAttacker] }),
+    'player2'
+  );
+
+  const next = attackCreature(state, 'player2', enemyAttacker.uid, babka.uid);
+  const nextEnemy = next.player2.field.find((c) => c.uid === enemyAttacker.uid);
+  expect(Boolean(nextEnemy), 'enemy attacker should survive combat');
+  expect((nextEnemy?.currentHealth ?? 0) === 2, 'buffed babka should deal 1 retaliation damage');
+}
+
 function run(): void {
   const tests: Array<{ name: string; fn: () => void }> = [
     { name: 'Frozen defender does not retaliate and thaws on hit', fn: testFrozenDefenderNoRetaliationAndThaw },
@@ -700,6 +734,8 @@ function run(): void {
     { name: 'Deck exhaustion deals 2 damage', fn: testDeckExhaustionDealsDamage },
     { name: 'Win condition on hero death', fn: testWinConditionOnHeroDeath },
     { name: 'Land play limited to 1 per turn', fn: testLandPlayLimitedToOnePerTurn },
+    { name: 'Babka can attack when buffed', fn: testBabkaCanAttackWhenBuffed },
+    { name: 'Babka retaliates when buffed', fn: testBabkaRetaliatesWhenBuffed },
   ];
 
   for (const t of tests) {

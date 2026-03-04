@@ -84,3 +84,8 @@ TODO update:
 - Current quality gate state: `lint` no errors, `test` pass, `test:regression` 37/37 pass, `build` pass.
 - CI quality workflow is in place; deploy workflow Node version pinned for deterministic runs.
 - Latest smoke artifacts available in `output/keeper-audit/ui-post-fix-playwright/`.
+
+- 2026-03-04 hotfix checkpoint:
+- Fixed Babka (`babka_semechki`) rule inconsistency: buffed attack now participates in both attack and retaliation flows.
+- Regression suite expanded for this class of issue (buffed 0-attack creatures).
+- Current status: regression 39/39 pass, unit tests pass, lint has 0 errors.

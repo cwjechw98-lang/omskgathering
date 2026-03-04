@@ -91,3 +91,12 @@
 - Added CI workflow `.github/workflows/quality-gate.yml` and pinned deploy workflow Node to `22.12.0`.
 - Refreshed E2E smoke artifacts at `output/keeper-audit/ui-post-fix-playwright/` with zero console/page errors.
 - Local verification status: lint (0 errors), unit tests pass, regression pass (37/37), build pass (Node version warning remains locally).
+
+### 2026-03-04
+- Hotfix: resolved Babka combat inconsistency.
+- Root cause: `babka_semechki` had `defender`, so attack API correctly rejected attacks even after attack buffs.
+- Fix: removed `defender` from Babka card definition and updated card text accordingly.
+- Added regression coverage in `tests/regression/combat-regression.ts`:
+  - `Babka can attack when buffed`
+  - `Babka retaliates when buffed`
+- Verification: `npm run test:regression` 39/39 PASS, `npm run test` PASS, `npm run lint` no errors.

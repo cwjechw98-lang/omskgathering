@@ -143,10 +143,10 @@ export const ALL_CARDS: CardData[] = [
     type: 'creature',
     attack: 0,
     health: 3,
-    description: 'Защитник. В начале хода восстановите 1 HP себе и бабке.',
+    description: 'В начале хода восстановите 1 HP себе и бабке.',
     flavor: '«Семечки, семечки! Свежие, калёные!»',
     emoji: '🌻',
-    keywords: ['defender'],
+    keywords: [],
     rarity: 'common',
     imageUrl: img(
       'old russian grandmother selling sunflower seeds on street bench, magical aura, dark fantasy',
