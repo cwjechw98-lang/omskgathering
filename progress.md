@@ -96,3 +96,5 @@ TODO update:
 - Added two Keeper-direction regression tests to lock expected behavior and prevent future drift.
 - Fixed unrelated strict-lint breakage in `GameBoard.tsx` (`no-non-null-assertion`).
 - Current status: regression 41/41 pass, lint has no errors.
+
+- Log marker (2026-03-04): confirmed commit `baeafab` recorded and remote push state checked.

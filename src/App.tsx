@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { TooltipProvider } from './components/ui/tooltip';
 import { MainMenu } from './components/MainMenu';
 import { GameBoard } from './components/GameBoard';
 import { StoryIntro } from './components/StoryIntro';
@@ -29,10 +30,18 @@ function App() {
   }
 
   if (screen === 'game') {
-    return <GameBoard mode={gameMode} onBack={() => setScreen('menu')} />;
+    return (
+      <TooltipProvider>
+        <GameBoard mode={gameMode} onBack={() => setScreen('menu')} />
+      </TooltipProvider>
+    );
   }
 
-  return <MainMenu onStartGame={startGame} />;
+  return (
+    <TooltipProvider>
+      <MainMenu onStartGame={startGame} />
+    </TooltipProvider>
+  );
 }
 
 export default App;

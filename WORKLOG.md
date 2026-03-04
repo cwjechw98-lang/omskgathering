@@ -110,3 +110,8 @@
   - Keeper attack gets no retaliation when defender is frozen.
 - Also fixed two strict lint blockers introduced after last commit (`src/components/GameBoard.tsx` non-null assertions).
 - Verification after changes: `npm run test:regression` 41/41 PASS, `npm run lint` 0 errors (warnings only).
+
+### 2026-03-04
+- Log update requested by user.
+- Latest verified changes were committed as `baeafab` (keeper combat symmetry verification, new regressions, GameBoard lint fix).
+- Remote status at push check: repository reported up-to-date.
