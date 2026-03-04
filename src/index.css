@@ -978,7 +978,7 @@ body {
   );
   transform: translateX(-50%);
   pointer-events: none;
-  z-index: z-index(board);
+  z-index: var(--z-board);
 }
 
 /* ═══════════════════════════════════════════════════════

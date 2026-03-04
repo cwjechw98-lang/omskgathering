@@ -105,6 +105,25 @@
 - ✅ npm run test: PASS (14/14 tests)
 - ✅ npm run test:regression: PASS (51/51 tests)
 
+**Stage 8: Verify effects_info.md** ✅
+- Reviewed effects_info.md for accuracy
+- Verified z-index system:
+  - All effects use correct z-layer classes
+  - Fixed bug: `z-index: z-index(board)` → `var(--z-board)`
+- Confirmed effects don't break layout:
+  - Card animations: z-layer-card-effects (40)
+  - Combat effects: z-layer-combat-effects (50)
+  - Overlays: z-layer-overlay (80)
+  - Hover states: z-layer-hover (70)
+- No new effects added (per mod.md requirement)
+- All existing effects documented and working
+
+**Quality Gates Stage 8:**
+- ✅ npm run lint: PASS (5 warnings, 0 errors)
+- ✅ npm run build: PASS (494 KB JS, 104 KB CSS)
+- ✅ npm run test: PASS (14/14 tests)
+- ✅ npm run test:regression: PASS (51/51 tests)
+
 **Commits:**
 - `00d0404` Refactor PlayerArea with shadcn/ui components
 - `49f184b` Refactor FieldCard and HandCard with shadcn/ui Card
