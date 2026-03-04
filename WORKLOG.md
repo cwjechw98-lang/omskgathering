@@ -196,6 +196,26 @@ Files modified:
 - src/contexts/EffectsContext.tsx: new file (72 lines)
 - src/components/EffectsLayer.tsx: new file (67 lines)
 
+**determ.md: Deterministic Replay System** ✅
+- Created src/game/replay.ts with ReplayAction structure
+- Created src/game/replayRunner.ts with runReplay function
+- Implemented 6 action types: PLAY_CARD, ATTACK_CREATURE, ATTACK_PLAYER, END_TURN, DRAW_CARD, PLAY_LAND
+- Created validateReplay function for action validation
+- Created tests/regression/replay-regression.test.ts with 6 tests
+- All tests pass: determinism verified, validation works
+- Uses existing engine functions (playCard, attackCreature, attackPlayer, endTurn)
+- No changes to game mechanics
+
+Files created:
+- src/game/replay.ts: ReplayAction type, ReplayLog structure
+- src/game/replayRunner.ts: runReplay, applyReplayAction, validateReplay
+- tests/regression/replay-regression.test.ts: 6 replay tests
+
+Quality gates:
+- npm run test: 20/20 PASS (including 6 replay tests)
+- npm run test:regression: 51/51 PASS
+- npm run build: PASS
+
 ---
 
 ### 2026-02-26
