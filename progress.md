@@ -95,9 +95,22 @@ TODO update:
 - ✅ npm run test:regression: PASS (51/51 tests)
 
 **Remaining Stages:**
-- ⏳ Stage 7: Overlay for choose/discover
 - ⏳ Stage 8: Verify effects_info.md
 - ⏳ Stage 9: UX improvements
+
+**Stage 7: Modal Overlay for Choose/Discover** ✅
+- Created ModalOverlay component
+- Dark background with backdrop blur
+- Blocks interaction with game board
+- Click outside / ESC to close
+- Accessible (role="dialog", aria-modal)
+- Ready for choose/discover/look-top modes
+
+**Quality Gates Stage 7:**
+- ✅ npm run lint: PASS (5 warnings, 0 errors)
+- ✅ npm run build: PASS (494 KB JS, 104 KB CSS)
+- ✅ npm run test: PASS (14/14 tests)
+- ✅ npm run test:regression: PASS (51/51 tests)
 
 **Stage 6: Arc Hand Layout** ✅
 - Implemented curved card arrangement
