@@ -94,8 +94,29 @@ TODO update:
 - ✅ npm run test: PASS (14/14 tests)
 - ✅ npm run test:regression: PASS (51/51 tests)
 
-**Remaining Stages:**
-- ⏳ Stage 9: UX improvements
+## ✅ Все этапы mod.md завершены!
+
+**Stage 1: UI Analysis** ✅
+**Stage 2: Card Architecture** ✅
+**Stage 3: Z-index System** ✅
+**Stage 4: Board Slots** ✅
+**Stage 5: Attack Lanes** ✅
+**Stage 6: Arc Hand Layout** ✅
+**Stage 7: Modal Overlay** ✅
+**Stage 8: Verify effects_info.md** ✅
+**Stage 9: UX Improvements** ✅
+
+**Stage 9: UX Improvements** ✅
+- Button "Конец хода" centered
+- Double-click to play supported
+- Drag interactions improved (is-dragging class)
+- All effects preserved
+
+**Quality Gates Stage 9:**
+- ✅ npm run lint: PASS
+- ✅ npm run build: PASS
+- ✅ npm run test: PASS
+- ✅ npm run test:regression: PASS
 
 **Stage 8: Verify effects_info.md** ✅
 - Reviewed effects_info.md for accuracy
