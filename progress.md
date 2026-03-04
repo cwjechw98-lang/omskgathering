@@ -47,6 +47,46 @@ TODO update:
 - Run `npm run cache:card-images` from a network/location where pollinations.ai is reachable, then verify local files under public/cards and generated src/data/localCardImages.ts.
 - If 530 persists, switch image source/provider (or use pre-generated local assets) and keep resolver as-is.
 
+---
+
+## 2026-03-04 — UI Stabilization (mod.md)
+
+**Stage 1: UI Analysis** ✅
+- Created UI_REFACTOR_PLAN.md with component analysis
+- Identified absolute positioning issues
+- Mapped component responsibilities
+
+**Stage 2: Card Architecture** ✅
+- Introduced CardSlot/CardContainer/CardVisual structure
+- CardContainer handles hover/drag/scale
+- CardVisual handles artwork/text/foil/glow
+- Added overflow: hidden to CardVisual
+
+**Stage 3: Z-index System** ✅
+- Centralized z-layers in index.css
+- Layers: background, board, cardSlots, cards, cardEffects, combatEffects, ui, hover, overlay
+- Verified effects don't overlap UI
+
+**Stage 4: Board Slots** ✅
+- Implemented 7-slot board layout
+- CSS: `grid-template-columns: repeat(7, 1fr)`
+- Placeholder with dashed border and 🏔️ icon
+- Auto-hide placeholder when card present
+- Responsive gap: clamp(4px, 0.5vw, 10px)
+
+**Quality Gates:**
+- ✅ npm run lint (5 warnings, 0 errors)
+- ✅ npm run build (494 KB JS, 100 KB CSS)
+- ⏳ npm run test (pending)
+- ⏳ npm run test:regression (pending)
+
+**Next Stages:**
+- Stage 5: Attack Lanes (visual highlight)
+- Stage 6: Arc Hand Layout
+- Stage 7: Overlay for choose/discover
+- Stage 8: Verify effects_info.md
+- Stage 9: UX improvements
+
 
 - Switched Pollinations image pipeline to new authenticated endpoint (gen.pollinations.ai/image) with POLLINATIONS_API_KEY.
 - Added resume behavior to scripts/cache-card-images.mjs (skip existing files, incremental map writes).

@@ -1546,71 +1546,80 @@ export function GameBoard({ mode, onBack }: Props) {
           </div>
         )}
 
-        <div className="flex justify-center items-end gap-[clamp(4px,0.5vw,10px)] min-h-[var(--field-card-h)] py-1 flex-wrap content-end">
-          {enemy.field.length === 0 ? (
-            <div
-              className="text-gray-700 italic font-body"
-              style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
-            >
-              Поле Хранителя пусто
-            </div>
-          ) : (
-            enemy.field.map((card) => (
-              <FieldCard
-                key={card.uid}
-                card={card}
-                player={enemy}
-                opponent={me}
-                isTarget={!!selectedAttacker}
-                selected={inspected?.card.uid === card.uid && !selectedAttacker}
-                attackAnim={attackAnimUid === card.uid}
-                damageAnim={damageAnimUid === card.uid}
-                cardRef={(el) => {
-                  if (el) cardRefsMap.current.set(card.uid, el);
-                  else cardRefsMap.current.delete(card.uid);
-                }}
-                onClick={() => clickEnemyCreature(card.uid)}
-              />
-            ))
-          )}
+        {/* Enemy field with 7 slots */}
+        <div className="board-slots py-1">
+          {Array.from({ length: 7 }).map((_, slotIndex) => {
+            const card = enemy.field[slotIndex];
+            return (
+              <div
+                key={slotIndex}
+                className="board-slot"
+                data-slot-index={slotIndex}
+                data-player="enemy"
+              >
+                {card ? (
+                  <FieldCard
+                    card={card}
+                    player={enemy}
+                    opponent={me}
+                    isTarget={!!selectedAttacker}
+                    selected={inspected?.card.uid === card.uid && !selectedAttacker}
+                    attackAnim={attackAnimUid === card.uid}
+                    damageAnim={damageAnimUid === card.uid}
+                    cardRef={(el) => {
+                      if (el) cardRefsMap.current.set(card.uid, el);
+                      else cardRefsMap.current.delete(card.uid);
+                    }}
+                    onClick={() => clickEnemyCreature(card.uid)}
+                  />
+                ) : (
+                  <div className="board-slot-placeholder" aria-hidden="true" />
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        <div className="flex justify-center items-start gap-[clamp(4px,0.5vw,10px)] min-h-[var(--field-card-h)] py-1 flex-wrap content-start">
-          {me.field.length === 0 ? (
-            <div
-              className="text-gray-600 italic font-body"
-              style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
-            >
-              {me.hand.length > 0 ? '👇 Перетащите существ сюда' : 'Поле пусто'}
-            </div>
-          ) : (
-            me.field.map((card) => {
-              const canAct =
-                myTurn &&
-                !card.summoningSickness &&
-                !card.hasAttacked &&
-                card.frozen <= 0 &&
-                !card.keywords.includes('defender') &&
-                !gs.gameOver;
-              return (
-                <FieldCard
-                  key={card.uid}
-                  card={card}
-                  player={me}
-                  opponent={enemy}
-                  selected={selectedAttacker === card.uid}
-                  canAct={canAct}
-                  attackAnim={attackAnimUid === card.uid}
-                  damageAnim={damageAnimUid === card.uid}
-                  cardRef={(el) => {
-                    if (el) cardRefsMap.current.set(card.uid, el);
-                    else cardRefsMap.current.delete(card.uid);
-                  }}
-                  onClick={() => clickMyCreature(card.uid)}
-                />
-              );
-            })
-          )}
+        {/* Player field with 7 slots */}
+        <div className="board-slots py-1">
+          {Array.from({ length: 7 }).map((_, slotIndex) => {
+            const card = me.field[slotIndex];
+            const canAct =
+              myTurn &&
+              card &&
+              !card.summoningSickness &&
+              !card.hasAttacked &&
+              card.frozen <= 0 &&
+              !card.keywords.includes('defender') &&
+              !gs.gameOver;
+            return (
+              <div
+                key={slotIndex}
+                className="board-slot"
+                data-slot-index={slotIndex}
+                data-player="player"
+              >
+                {card ? (
+                  <FieldCard
+                    card={card}
+                    player={me}
+                    opponent={enemy}
+                    selected={selectedAttacker === card.uid}
+                    canAct={canAct}
+                    attackAnim={attackAnimUid === card.uid}
+                    damageAnim={damageAnimUid === card.uid}
+                    cardRef={(el) => {
+                      if (el) cardRefsMap.current.set(card.uid, el);
+                      else cardRefsMap.current.delete(card.uid);
+                    }}
+                    onClick={() => clickMyCreature(card.uid)}
+                  />
+                ) : (
+                  <div className="board-slot-placeholder" aria-hidden="true" />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

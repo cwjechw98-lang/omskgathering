@@ -34,15 +34,32 @@
 - Hide torch effects on mobile (hidden sm:block)
 - Reduced rune/logo sizes for mobile screens
 
+**mod.md Stages Completed:**
+- Stage 1: UI Analysis (UI_REFACTOR_PLAN.md)
+- Stage 2: Card Architecture (CardSlot/CardContainer/CardVisual)
+- Stage 3: Z-index System (centralized z-layers)
+- Stage 4: Board Slots (7 slots per side with CSS grid)
+
+**Stage 4 Details:**
+- Implemented 7-slot board layout using CSS grid
+- Added `.board-slots` with `grid-template-columns: repeat(7, 1fr)`
+- Added `.board-slot` placeholder with dashed border and 🏔️ icon
+- Slots auto-hide placeholder when card is present
+- Responsive gap sizing for mobile
+- Both enemy and player fields use slot system
+
 **Verified:**
 - ✅ 10 new cards present in cards.ts (Кофемашина, Бабка, Гопник, etc.)
-- ✅ Build passes (493 KB JS, 98 KB CSS)
-- ✅ Pushed 3 commits to origin/main
+- ✅ Build passes (494 KB JS, 100 KB CSS)
+- ✅ Lint passes (5 warnings, 0 errors)
+- ✅ Pushed commits to origin/main
 
 **Commits:**
 - `00d0404` Refactor PlayerArea with shadcn/ui components
 - `49f184b` Refactor FieldCard and HandCard with shadcn/ui Card
 - `0fc11a3` Fix mobile responsiveness and button overlap issues
+- `1f1a61b` Update WORKLOG.md with 2026-03-04 session summary
+- `a662122` Add effects_info.md — documentation of all visual effects
 
 ---
 

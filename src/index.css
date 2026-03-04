@@ -878,6 +878,57 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
+   BOARD SLOTS — 7 slot layout (Stage 4)
+   ═══════════════════════════════════════════════════════ */
+.board-slots {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: clamp(4px, 0.5vw, 10px);
+  width: 100%;
+  max-width: 100%;
+}
+
+.board-slot {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.board-slot:has(.card-frame) {
+  background: transparent;
+  border: none;
+}
+
+.board-slot-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.board-slot-placeholder::before {
+  content: '🏔️';
+  font-size: clamp(24px, 3vw, 40px);
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+/* Responsive: fewer visible slots on mobile */
+@media (max-width: 768px) {
+  .board-slots {
+    gap: clamp(2px, 0.3vw, 6px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
    NEW VISUAL EFFECTS (2026-03-04)
    ═══════════════════════════════════════════════════════ */
 
