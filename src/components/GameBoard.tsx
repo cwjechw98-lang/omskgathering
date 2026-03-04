@@ -794,6 +794,7 @@ export function GameBoard({ mode, onBack }: Props) {
   const [gs, setGs] = useState<GameState>(createInitialGameState);
   const [selectedHand, setSelectedHand] = useState<string | null>(null);
   const [selectedAttacker, setSelectedAttacker] = useState<string | null>(null);
+  const [selectedAttackerSlot, setSelectedAttackerSlot] = useState<number | null>(null);
   const [inspected, setInspected] = useState<{
     card: CardInstance;
     owner: 'player1' | 'player2';
@@ -1138,6 +1139,8 @@ export function GameBoard({ mode, onBack }: Props) {
   const clickMyCreature = (uid: string) => {
     const card = me.field.find((c) => c.uid === uid);
     if (!card) return;
+    const slotIndex = me.field.indexOf(card);
+    
     if (!myTurn || gs.gameOver) {
       setInspected({ card, owner: 'player1' });
       return;
@@ -1150,10 +1153,12 @@ export function GameBoard({ mode, onBack }: Props) {
     if (canAct) {
       if (selectedAttacker === uid) {
         setSelectedAttacker(null);
+        setSelectedAttackerSlot(null);
         setInspected(null);
         setTargetingLine(null);
       } else {
         setSelectedAttacker(uid);
+        setSelectedAttackerSlot(slotIndex);
         setSelectedHand(null);
         setInspected(null);
         // Show targeting line from attacker
@@ -1171,6 +1176,7 @@ export function GameBoard({ mode, onBack }: Props) {
     } else {
       setInspected({ card, owner: 'player1' });
       setSelectedAttacker(null);
+      setSelectedAttackerSlot(null);
       setTargetingLine(null);
     }
   };
@@ -1200,6 +1206,7 @@ export function GameBoard({ mode, onBack }: Props) {
         );
         triggerCombatAnims(selectedAttacker, uid);
         setSelectedAttacker(null);
+        setSelectedAttackerSlot(null);
         setInspected(null);
         setTargetingLine(null);
       }
@@ -1232,6 +1239,7 @@ export function GameBoard({ mode, onBack }: Props) {
       );
       triggerCombatAnims(selectedAttacker, undefined);
       setSelectedAttacker(null);
+      setSelectedAttackerSlot(null);
       setInspected(null);
       setTargetingLine(null);
     }
@@ -1550,10 +1558,12 @@ export function GameBoard({ mode, onBack }: Props) {
         <div className="board-slots py-1">
           {Array.from({ length: 7 }).map((_, slotIndex) => {
             const card = enemy.field[slotIndex];
+            const isTarget = !!selectedAttacker;
+            
             return (
               <div
                 key={slotIndex}
-                className="board-slot"
+                className={`board-slot ${isTarget ? 'is-valid-target' : ''} ${slotIndex === selectedAttackerSlot ? 'is-attacking' : ''}`}
                 data-slot-index={slotIndex}
                 data-player="enemy"
               >
@@ -1592,10 +1602,12 @@ export function GameBoard({ mode, onBack }: Props) {
               card.frozen <= 0 &&
               !card.keywords.includes('defender') &&
               !gs.gameOver;
+            const isAttacking = selectedAttacker && card ? selectedAttacker === card.uid : false;
+            
             return (
               <div
                 key={slotIndex}
-                className="board-slot"
+                className={`board-slot ${isAttacking ? 'is-attacking' : ''}`}
                 data-slot-index={slotIndex}
                 data-player="player"
               >

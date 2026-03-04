@@ -54,6 +54,20 @@
 - ✅ npm run test: PASS (9/9 tests)
 - ✅ npm run test:regression: PASS (51/51 tests)
 
+**Stage 5: Attack Lanes** ✅
+- Added CSS classes for lane highlighting: `.is-attacking`, `.is-target`, `.is-valid-target`
+- Added pulse animations for attacking and target slots
+- Slot glows orange when creature attacks from it
+- Enemy slot shows green dashed border when valid target
+- Added `selectedAttackerSlot` state to track which slot is attacking
+- Visual feedback only (no mechanic changes)
+
+**Quality Gates Stage 5:**
+- ✅ npm run lint: PASS (5 warnings, 0 errors)
+- ✅ npm run build: PASS (494 KB JS, 101 KB CSS)
+- ✅ npm run test: PASS (14/14 tests)
+- ✅ npm run test:regression: PASS (51/51 tests)
+
 **Commits:**
 - `00d0404` Refactor PlayerArea with shadcn/ui components
 - `49f184b` Refactor FieldCard and HandCard with shadcn/ui Card

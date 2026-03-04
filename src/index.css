@@ -929,6 +929,59 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
+   ATTACK LANES — visual highlight (Stage 5)
+   ═══════════════════════════════════════════════════════ */
+.board-slot.is-attacking {
+  background: rgba(255, 100, 0, 0.15);
+  border: 2px solid rgba(255, 100, 0, 0.5);
+  box-shadow: 0 0 20px rgba(255, 100, 0, 0.4);
+  animation: lanePulse 1s ease-in-out infinite;
+}
+
+.board-slot.is-target {
+  background: rgba(255, 0, 0, 0.2);
+  border: 2px solid rgba(255, 0, 0, 0.6);
+  box-shadow: 0 0 25px rgba(255, 0, 0, 0.5);
+  animation: targetPulse 0.8s ease-in-out infinite;
+}
+
+.board-slot.is-valid-target {
+  background: rgba(0, 255, 0, 0.1);
+  border: 2px dashed rgba(0, 255, 0, 0.4);
+  cursor: crosshair;
+}
+
+@keyframes lanePulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 100, 0, 0.4); }
+  50% { box-shadow: 0 0 30px rgba(255, 100, 0, 0.6); }
+}
+
+@keyframes targetPulse {
+  0%, 100% { box-shadow: 0 0 25px rgba(255, 0, 0, 0.5); }
+  50% { box-shadow: 0 0 40px rgba(255, 0, 0, 0.7); }
+}
+
+/* Lane connector line */
+.attack-lane-connector {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 100, 0, 0.3) 20%,
+    rgba(255, 100, 0, 0.5) 50%,
+    rgba(255, 100, 0, 0.3) 80%,
+    transparent 100%
+  );
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: z-index(board);
+}
+
+/* ═══════════════════════════════════════════════════════
    NEW VISUAL EFFECTS (2026-03-04)
    ═══════════════════════════════════════════════════════ */
 
