@@ -157,10 +157,25 @@
 - ✅ Stage 8: Verify effects_info.md
 - ✅ Stage 9: UX Improvements
 
-**Commits:**
-- `00d0404` Refactor PlayerArea with shadcn/ui components
-- `49f184b` Refactor FieldCard and HandCard with shadcn/ui Card
-- `0fc11a3` Fix mobile responsiveness and button overlap issues
+**testmod.md: Property-Based Testing** ✅
+- Installed fast-check@4.5.3
+- Created tests/property/engine.invariants.property.test.ts
+- Implemented 5 property tests (500 runs each):
+  1. HP существ никогда не может быть меньше 0
+  2. Существа с HP = 0 должны удаляться с поля
+  3. Существо не может атаковать более одного раза за ход
+  4. Размер колоды не может быть отрицательным
+  5. Mana игрока не может быть отрицательной
+- Uses fast-check for random data generation:
+  - Random creatures with attack/health/keywords
+  - Random keyword combinations
+  - Random action sequences
+- All tests pass: 5/5 property tests + 14 total tests
+- Does not modify existing unit/regression tests
+
+---
+
+### 2026-02-26
 - `1f1a61b` Update WORKLOG.md with 2026-03-04 session summary
 - `a662122` Add effects_info.md — documentation of all visual effects
 
