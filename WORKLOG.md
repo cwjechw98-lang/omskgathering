@@ -121,3 +121,17 @@
 - Generated 10 new lore card arts to `output/new-card-set-2026-03-04/source_raw/` via `gen.pollinations.ai` using project-style prompts.
 - Normalized all 10 outputs to game runtime format (`400x300` JPG) in `output/new-card-set-2026-03-04/final_400x300/` with `scripts/normalize-card-art.py`.
 - Produced final stats file: `output/new-card-set-2026-03-04/final_stats.csv` (all images are 400x300; avg size ~24.3KB).
+
+### 2026-03-04
+- Reviewed latest card-refactor commits before integration check:
+  - `00d0404` (PlayerArea + shadcn/ui primitives),
+  - `49f184b` (FieldCard/HandCard migration in GameBoard).
+- Revalidated project structure: `src/components/game/*` and `src/components/ui/*` are present and wired.
+- Found and fixed post-refactor test regression:
+  - `tests/components/GameBoard.smoke.test.tsx` failed with `Tooltip must be used within TooltipProvider`.
+  - Added `TooltipProvider` wrapper to smoke test render helper.
+- Verification after fix:
+  - `npm run lint`: 0 errors (5 existing warnings),
+  - `npm run test`: PASS,
+  - `npm run test:regression`: 41/41 PASS,
+  - `npm run build`: PASS (local Node warning 20.18.1 < 20.19).

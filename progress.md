@@ -103,3 +103,14 @@ TODO update:
 - 10 new card arts generated and normalized (source_raw + final_400x300).
 - Final runtime set aligns with existing card asset profile (400x300 JPG, ~24KB average).
 - Concepts/prompt package remains in `output/new-card-set-2026-03-04/` for easy import into `cards.ts`.
+
+- 2026-03-04 review + stabilization checkpoint:
+- Read recent refactor commits `00d0404` and `49f184b` to confirm scope and affected files.
+- Confirmed split structure remains coherent (`src/components/game/*`, `src/components/ui/*`).
+- Fixed smoke-test break introduced by new tooltip usage:
+  - wrapped `GameBoard` render in `TooltipProvider` within `tests/components/GameBoard.smoke.test.tsx`.
+- Current gate status after fix:
+  - `npm run lint` -> 0 errors (warnings only),
+  - `npm run test` -> pass,
+  - `npm run test:regression` -> 41/41 pass,
+  - `npm run build` -> pass (local Node version warning retained).
