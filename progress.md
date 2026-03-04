@@ -80,12 +80,25 @@ TODO update:
 - ⏳ npm run test (pending)
 - ⏳ npm run test:regression (pending)
 
-**Next Stages:**
-- Stage 5: Attack Lanes (visual highlight)
-- Stage 6: Arc Hand Layout
-- Stage 7: Overlay for choose/discover
-- Stage 8: Verify effects_info.md
-- Stage 9: UX improvements
+**Stage 5: Attack Lanes** ✅
+- Added visual lane highlighting
+- .is-attacking: orange glow for attacking slot
+- .is-target: red glow for targeted creature
+- .is-valid-target: green dashed for empty enemy slot
+- Pulse animations for visual feedback
+- No mechanic changes (visual only)
+
+**Quality Gates Stage 5:**
+- ✅ npm run lint: PASS (5 warnings, 0 errors)
+- ✅ npm run build: PASS (494 KB JS, 101 KB CSS)
+- ✅ npm run test: PASS (14/14 tests)
+- ✅ npm run test:regression: PASS (51/51 tests)
+
+**Remaining Stages:**
+- ⏳ Stage 6: Arc Hand Layout
+- ⏳ Stage 7: Overlay for choose/discover
+- ⏳ Stage 8: Verify effects_info.md
+- ⏳ Stage 9: UX improvements
 
 
 - Switched Pollinations image pipeline to new authenticated endpoint (gen.pollinations.ai/image) with POLLINATIONS_API_KEY.
