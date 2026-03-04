@@ -69,3 +69,18 @@ TODO update:
 - `output/keeper-audit/ui-post-fix-playwright/` (skill client smoke, no errors files).
 - `output/keeper-audit/ui-responsive-post-fix/` (desktop/mobile screenshots + `ui-responsive-report.json`, errors=[]).
 
+
+- 2026-03-04 recovery cycle:
+- Installed missing test stack (`vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `happy-dom`).
+- Added tests: `tests/game/engine.turns.test.ts`, `tests/game/engine.combat.test.ts`, `tests/components/GameBoard.smoke.test.tsx`.
+- Fixed strict lint blockers while keeping rules strict (no purity/set-state-in-effect/non-null errors left).
+- Introduced engine modular facade: `src/game/engine.ts` now re-exports from `state/buffs/effects/combat/turns`, implementation preserved in `src/game/engine.impl.ts`.
+- Added CI quality gate workflow (`.github/workflows/quality-gate.yml`) and pinned deploy Node to `22.12.0`.
+- E2E smoke artifacts refreshed in `output/keeper-audit/ui-post-fix-playwright/` (`shot-0.png`, `shot-1.png`, `smoke-menu-to-game.png`, `ui-smoke-report.json`).
+- Full checks now pass locally: `npm run lint` (0 errors), `npm run test` (9 passed), `npm run test:regression` (37/37), `npm run build` (passes with local Node version warning).
+
+- Logging checkpoint (2026-03-04):
+- Updated WORKLOG with recovery-cycle implementation details and verification status.
+- Current quality gate state: `lint` no errors, `test` pass, `test:regression` 37/37 pass, `build` pass.
+- CI quality workflow is in place; deploy workflow Node version pinned for deterministic runs.
+- Latest smoke artifacts available in `output/keeper-audit/ui-post-fix-playwright/`.

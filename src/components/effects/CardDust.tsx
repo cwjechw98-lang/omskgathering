@@ -15,7 +15,7 @@ const colorMap: Record<string, string> = {
   black: '#a855f7',
   white: '#fbbf24',
   colorless: '#9ca3af',
-  land: '#78716c'
+  land: '#78716c',
 };
 
 // ===== РОЗЫГРЫШ КАРТЫ: 0.3-0.5 сек с overshoot =====
@@ -23,7 +23,7 @@ export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
   cardName,
   cardEmoji,
   cardColor,
-  onDone
+  onDone,
 }) => {
   const mountedRef = useRef(true);
   const [phase, setPhase] = useState<'show' | 'hide'>('show');
@@ -31,12 +31,12 @@ export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
 
   useEffect(() => {
     mountedRef.current = true;
-    
+
     // Показываем 0.5 сек (карта летит на поле 0.4с + 0.1с пауза)
     const hideTimer = setTimeout(() => {
       if (mountedRef.current) setPhase('hide');
     }, 500);
-    
+
     // Полностью убираем через 0.7 сек
     const doneTimer = setTimeout(() => {
       if (mountedRef.current) onDone();
@@ -46,7 +46,7 @@ export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
     const dismiss = () => {
       if (mountedRef.current) onDone();
     };
-    
+
     window.addEventListener('click', dismiss);
     window.addEventListener('keydown', dismiss);
     window.addEventListener('touchstart', dismiss);
@@ -73,7 +73,7 @@ export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
         pointerEvents: 'auto',
         cursor: 'pointer',
         backgroundColor: phase === 'show' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0)',
-        transition: 'background-color 0.2s ease-out'
+        transition: 'background-color 0.2s ease-out',
       }}
     >
       {/* Карта с overshoot анимацией */}
@@ -85,7 +85,7 @@ export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
           alignItems: 'center',
           gap: '12px',
           opacity: phase === 'show' ? 1 : 0,
-          transition: 'opacity 0.15s ease-in'
+          transition: 'opacity 0.15s ease-in',
         }}
       >
         {/* Emoji карты */}
@@ -93,12 +93,12 @@ export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
           style={{
             fontSize: '72px',
             filter: `drop-shadow(0 0 20px ${color})`,
-            animation: 'emojiPulse 0.3s ease-out'
+            animation: 'emojiPulse 0.3s ease-out',
           }}
         >
           {cardEmoji}
         </div>
-        
+
         {/* Название */}
         <div
           style={{
@@ -108,7 +108,7 @@ export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
             color: '#fff',
             textShadow: `0 0 20px ${color}, 0 0 40px ${color}`,
             textAlign: 'center',
-            maxWidth: '300px'
+            maxWidth: '300px',
           }}
         >
           ⚡ {cardName}
@@ -118,9 +118,9 @@ export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
           {Array.from({ length: 20 }).map((_, i) => {
             const angle = (i / 20) * 360;
-            const distance = 80 + Math.random() * 60;
-            const x = Math.cos(angle * Math.PI / 180) * distance;
-            const y = Math.sin(angle * Math.PI / 180) * distance;
+            const distance = 80 + ((i * 37) % 60);
+            const x = Math.cos((angle * Math.PI) / 180) * distance;
+            const y = Math.sin((angle * Math.PI) / 180) * distance;
             return (
               <div
                 key={i}
@@ -133,18 +133,19 @@ export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
                   borderRadius: '50%',
                   backgroundColor: color,
                   boxShadow: `0 0 10px ${color}`,
-                  transform: phase === 'show' 
-                    ? `translate(${x}px, ${y}px) scale(1)` 
-                    : 'translate(0, 0) scale(0)',
+                  transform:
+                    phase === 'show'
+                      ? `translate(${x}px, ${y}px) scale(1)`
+                      : 'translate(0, 0) scale(0)',
                   opacity: phase === 'show' ? 0 : 1,
-                  transition: `all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 0.01}s`
+                  transition: `all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 0.01}s`,
                 }}
               />
             );
           })}
         </div>
       </div>
-      
+
       {/* Подсказка */}
       <div
         style={{
@@ -153,7 +154,7 @@ export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
           fontSize: '12px',
           color: 'rgba(255,255,255,0.5)',
           opacity: phase === 'show' ? 1 : 0,
-          transition: 'opacity 0.1s'
+          transition: 'opacity 0.1s',
         }}
       >
         tap to skip
@@ -166,19 +167,19 @@ export const CardPlayAnimation: React.FC<CardAnimationProps> = ({
 export const CardDeathAnimation: React.FC<CardAnimationProps> = ({
   cardName,
   cardEmoji,
-  onDone
+  onDone,
 }) => {
   const mountedRef = useRef(true);
   const [phase, setPhase] = useState<'particles' | 'dissolve' | 'done'>('particles');
 
   useEffect(() => {
     mountedRef.current = true;
-    
+
     // Фаза 1: партиклы 0.2с
     const dissolveTimer = setTimeout(() => {
       if (mountedRef.current) setPhase('dissolve');
     }, 200);
-    
+
     // Фаза 2: растворение 0.3с, итого 0.5с
     const doneTimer = setTimeout(() => {
       if (mountedRef.current) onDone();
@@ -187,7 +188,7 @@ export const CardDeathAnimation: React.FC<CardAnimationProps> = ({
     const dismiss = () => {
       if (mountedRef.current) onDone();
     };
-    
+
     window.addEventListener('click', dismiss);
     window.addEventListener('keydown', dismiss);
     window.addEventListener('touchstart', dismiss);
@@ -214,7 +215,7 @@ export const CardDeathAnimation: React.FC<CardAnimationProps> = ({
         pointerEvents: 'auto',
         cursor: 'pointer',
         backgroundColor: phase !== 'done' ? 'rgba(50,0,0,0.5)' : 'rgba(0,0,0,0)',
-        transition: 'background-color 0.15s ease-in'
+        transition: 'background-color 0.15s ease-in',
       }}
     >
       <div
@@ -226,21 +227,19 @@ export const CardDeathAnimation: React.FC<CardAnimationProps> = ({
           opacity: phase === 'dissolve' ? 0 : 1,
           transform: phase === 'dissolve' ? 'scale(0.5) rotate(10deg)' : 'scale(1)',
           filter: phase === 'dissolve' ? 'grayscale(1) brightness(0.5)' : 'none',
-          transition: 'all 0.3s ease-in'
+          transition: 'all 0.3s ease-in',
         }}
       >
         {/* Emoji */}
-        <div style={{ fontSize: '56px', filter: 'grayscale(0.5)' }}>
-          {cardEmoji}
-        </div>
-        
+        <div style={{ fontSize: '56px', filter: 'grayscale(0.5)' }}>{cardEmoji}</div>
+
         {/* Название */}
         <div
           style={{
             fontSize: '22px',
             fontFamily: 'Cinzel, serif',
             color: '#ff4444',
-            textShadow: '0 0 15px rgba(255,0,0,0.8)'
+            textShadow: '0 0 15px rgba(255,0,0,0.8)',
           }}
         >
           💀 {cardName}
@@ -251,9 +250,9 @@ export const CardDeathAnimation: React.FC<CardAnimationProps> = ({
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
         {Array.from({ length: 15 }).map((_, i) => {
           const angle = (i / 15) * 360;
-          const distance = 60 + Math.random() * 40;
-          const x = Math.cos(angle * Math.PI / 180) * distance;
-          const y = Math.sin(angle * Math.PI / 180) * distance - 20; // Вверх
+          const distance = 60 + ((i * 29) % 40);
+          const x = Math.cos((angle * Math.PI) / 180) * distance;
+          const y = Math.sin((angle * Math.PI) / 180) * distance - 20; // Вверх
           return (
             <div
               key={i}
@@ -266,11 +265,9 @@ export const CardDeathAnimation: React.FC<CardAnimationProps> = ({
                 borderRadius: '50%',
                 backgroundColor: '#ff4444',
                 boxShadow: '0 0 8px #ff4444',
-                transform: phase === 'particles' 
-                  ? `translate(${x}px, ${y}px)` 
-                  : 'translate(0, 0)',
+                transform: phase === 'particles' ? `translate(${x}px, ${y}px)` : 'translate(0, 0)',
                 opacity: phase === 'particles' ? 1 : 0,
-                transition: `all 0.2s ease-out ${i * 0.01}s`
+                transition: `all 0.2s ease-out ${i * 0.01}s`,
               }}
             />
           );

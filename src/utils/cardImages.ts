@@ -1,7 +1,10 @@
 import type { CardData } from '../data/cards';
 import { LOCAL_CARD_BACK_IMAGE, LOCAL_CARD_IMAGES } from '../data/localCardImages';
 
-export function getCardCoverSources(card: Pick<CardData, 'id' | 'imageUrl'>): { src?: string; fallback?: string } {
+export function getCardCoverSources(card: Pick<CardData, 'id' | 'imageUrl'>): {
+  src?: string;
+  fallback?: string;
+} {
   const localSrc = LOCAL_CARD_IMAGES[card.id];
   if (localSrc) {
     // Vite сам подставит /omskgathering/ на GitHub и / на локальном компе

@@ -1,0 +1,4 @@
+dist/
+.tmp-regression/
+node_modules/
+public/

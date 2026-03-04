@@ -24,16 +24,28 @@ export function Torch({ side, className = '' }: Props) {
     ctx.scale(2, 2);
 
     interface Flame {
-      x: number; y: number;
-      vx: number; vy: number;
-      size: number; alpha: number;
-      decay: number; color: string;
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      size: number;
+      alpha: number;
+      decay: number;
+      color: string;
     }
 
     const flames: Flame[] = [];
     const sparks: Flame[] = [];
 
-    const flameColors = ['#ff6600', '#ff4400', '#ffaa00', '#ff8800', '#ff2200', '#ffcc00', '#ff0000'];
+    const flameColors = [
+      '#ff6600',
+      '#ff4400',
+      '#ffaa00',
+      '#ff8800',
+      '#ff2200',
+      '#ffcc00',
+      '#ff0000',
+    ];
     const sparkColors = ['#ffee00', '#ffaa00', '#ff6600', '#ffffff'];
 
     const createFlame = (): Flame => ({
@@ -102,7 +114,10 @@ export function Torch({ side, className = '' }: Props) {
       ctx.fill();
 
       // === DYNAMIC FIRE GLOW (ambient light) ===
-      const flicker = Math.sin(time * 0.005) * 0.1 + Math.sin(time * 0.013) * 0.05 + Math.cos(time * 0.007) * 0.08;
+      const flicker =
+        Math.sin(time * 0.005) * 0.1 +
+        Math.sin(time * 0.013) * 0.05 +
+        Math.cos(time * 0.007) * 0.08;
       const glowRadius = 70 + flicker * 30;
       const glowAlpha = 0.15 + flicker * 0.05;
 
@@ -129,7 +144,13 @@ export function Torch({ side, className = '' }: Props) {
 
         const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.size);
         grad.addColorStop(0, `rgba(255, 255, 200, ${f.alpha})`);
-        grad.addColorStop(0.2, f.color + Math.floor(f.alpha * 255).toString(16).padStart(2, '0'));
+        grad.addColorStop(
+          0.2,
+          f.color +
+            Math.floor(f.alpha * 255)
+              .toString(16)
+              .padStart(2, '0')
+        );
         grad.addColorStop(1, 'transparent');
         ctx.fillStyle = grad;
         ctx.beginPath();

@@ -70,3 +70,24 @@
 - Fixed rules/keyword wording drift for vigilance in menu/rules text (`src/components/MainMenu.tsx`) to match engine behavior.
 - Verification complete: `npm run test:regression` 15/15 PASS, `npm run build` PASS (including `GITHUB_ACTIONS=true` build), Playwright smoke artifacts with no console/page errors in `output/keeper-audit/ui-responsive-post-fix`.
 
+### 2026-02-27
+- Reviewed balance audit (`BALANCE_AUDIT_2026-02-26.md`): all 5 suggested balance patches already applied in code (mer_omska cost 8, cluster_lord freeze 1 target, pivo_sibirskoe cost 2, probka_lenina cost 3, bozhestvenniy_svet heal 4).
+- UX-polish Keeper mode: added turn transition overlay ("ХОД ХРАНИТЕЛЯ") with smooth animation when player turn ends.
+- Added AI action status indicators in Keeper UI: shows attack/action messages ("⚔️ [card] атакует!", "✨ Сыграно: [card]") directly in AI thinking overlay.
+- Enhanced AI thinking overlay with pulsing avatar, clearer status text, and improved transitions.
+
+
+### 2026-03-04
+- Restored quality gate stack: installed Vitest + RTL deps, added unit/smoke tests (tests/game/engine.turns.test.ts, tests/game/engine.combat.test.ts, tests/components/GameBoard.smoke.test.tsx), and stabilized Vitest via happy-dom.
+- Fixed strict ESLint blockers without downgrading rules (main.tsx, GameBoard.tsx, MainMenu.tsx, StoryIntro.tsx, CardDust.tsx, src/components/game/MessageFeed.tsx, src/game/engine.impl.ts).
+- Refactored game engine into modular facade: kept implementation in src/game/engine.impl.ts, added combat.ts, turns.ts, effects.ts, and made src/game/engine.ts a stable barrel export.
+- Added CI quality workflow .github/workflows/quality-gate.yml and pinned deploy workflow node to 22.12.0.
+- Ran smoke E2E and saved artifacts under output/keeper-audit/ui-post-fix-playwright/ including ui-smoke-report.json with consoleErrors=[] and pageErrors=[].
+
+### 2026-03-04
+- Session handoff log: quality-gate recovery cycle completed.
+- Added/validated testing stack (Vitest + RTL + happy-dom), new unit/smoke tests, and kept strict ESLint policy without rule downgrades.
+- Implemented engine modular facade (`engine.ts` re-exports) with `engine.impl.ts` preservation and wrapper modules (`combat.ts`, `turns.ts`, `effects.ts`).
+- Added CI workflow `.github/workflows/quality-gate.yml` and pinned deploy workflow Node to `22.12.0`.
+- Refreshed E2E smoke artifacts at `output/keeper-audit/ui-post-fix-playwright/` with zero console/page errors.
+- Local verification status: lint (0 errors), unit tests pass, regression pass (37/37), build pass (Node version warning remains locally).

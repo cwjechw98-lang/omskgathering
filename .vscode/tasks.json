@@ -1,0 +1,1 @@
+{"version":"2.0.0","tasks":[{"label":"Start AI Bridge","type":"shell","command":"node C:\\ai-bridge\\server.js","isBackground":true,"problemMatcher":[]}]}

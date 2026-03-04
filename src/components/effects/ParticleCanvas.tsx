@@ -1,11 +1,16 @@
 import { useRef, useEffect } from 'react';
 
 interface Particle {
-  x: number; y: number;
-  vx: number; vy: number;
-  size: number; alpha: number;
-  decay: number; color: string;
-  life: number; maxLife: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  alpha: number;
+  decay: number;
+  color: string;
+  life: number;
+  maxLife: number;
 }
 
 interface Props {
@@ -15,7 +20,12 @@ interface Props {
   interactive?: boolean;
 }
 
-export function ParticleCanvas({ type = 'embers', density = 60, className = '', interactive = false }: Props) {
+export function ParticleCanvas({
+  type = 'embers',
+  density = 60,
+  className = '',
+  interactive = false,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particles = useRef<Particle[]>([]);
   const animRef = useRef<number>(0);
@@ -54,14 +64,18 @@ export function ParticleCanvas({ type = 'embers', density = 60, className = '', 
         // Embers rise from bottom, drift, flicker
         const side = Math.random() > 0.7;
         return {
-          x: side ? (Math.random() > 0.5 ? W() * 0.15 : W() * 0.85) + (Math.random() - 0.5) * 60 : Math.random() * W(),
+          x: side
+            ? (Math.random() > 0.5 ? W() * 0.15 : W() * 0.85) + (Math.random() - 0.5) * 60
+            : Math.random() * W(),
           y: H() + 10,
           vx: (Math.random() - 0.5) * 0.8,
           vy: -(0.5 + Math.random() * 1.5),
           size: 1 + Math.random() * 3,
           alpha: 0.6 + Math.random() * 0.4,
           decay: 0.003 + Math.random() * 0.005,
-          color, life: 0, maxLife: 150 + Math.random() * 200,
+          color,
+          life: 0,
+          maxLife: 150 + Math.random() * 200,
         };
       }
       if (type === 'snow') {
@@ -73,7 +87,9 @@ export function ParticleCanvas({ type = 'embers', density = 60, className = '', 
           size: 1 + Math.random() * 3,
           alpha: 0.2 + Math.random() * 0.5,
           decay: 0.001,
-          color, life: 0, maxLife: 500,
+          color,
+          life: 0,
+          maxLife: 500,
         };
       }
       if (type === 'magic') {
@@ -87,7 +103,9 @@ export function ParticleCanvas({ type = 'embers', density = 60, className = '', 
           size: 1 + Math.random() * 2.5,
           alpha: 0.3 + Math.random() * 0.6,
           decay: 0.004 + Math.random() * 0.004,
-          color, life: 0, maxLife: 120 + Math.random() * 150,
+          color,
+          life: 0,
+          maxLife: 120 + Math.random() * 150,
         };
       }
       // smoke
@@ -99,7 +117,9 @@ export function ParticleCanvas({ type = 'embers', density = 60, className = '', 
         size: 5 + Math.random() * 15,
         alpha: 0.05 + Math.random() * 0.1,
         decay: 0.001,
-        color, life: 0, maxLife: 300,
+        color,
+        life: 0,
+        maxLife: 300,
       };
     };
 
@@ -138,12 +158,14 @@ export function ParticleCanvas({ type = 'embers', density = 60, className = '', 
         }
 
         // Mouse repulsion
-        const mx = mouse.current.x, my = mouse.current.y;
+        const mx = mouse.current.x,
+          my = mouse.current.y;
         if (interactive && mx >= 0) {
-          const dx = p.x - mx, dy = p.y - my;
+          const dx = p.x - mx,
+            dy = p.y - my;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 80 && dist > 0) {
-            const force = (80 - dist) / 80 * 0.3;
+            const force = ((80 - dist) / 80) * 0.3;
             p.vx += (dx / dist) * force;
             p.vy += (dy / dist) * force;
           }
