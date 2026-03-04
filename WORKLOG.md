@@ -68,6 +68,21 @@
 - ✅ npm run test: PASS (14/14 tests)
 - ✅ npm run test:regression: PASS (51/51 tests)
 
+**Stage 6: Arc Hand Layout** ✅
+- Implemented curved card arrangement for hand
+- CSS classes: `.hand-container`, `.hand-cards-arc`, `.hand-card-in-arc`
+- Arc rotations: -8° to +10° based on card position
+- Hover: card lifts up (-30px), scales (1.15x), derotates (0deg)
+- Drag: card maintains hover state with `.is-dragging` class
+- Mobile: reduced arc intensity (-5° to +6°)
+- Preserves all existing interactions (click, drag, double-click)
+
+**Quality Gates Stage 6:**
+- ✅ npm run lint: PASS (5 warnings, 0 errors)
+- ✅ npm run build: PASS (494 KB JS, 103 KB CSS)
+- ✅ npm run test: PASS (14/14 tests)
+- ✅ npm run test:regression: PASS (51/51 tests)
+
 **Commits:**
 - `00d0404` Refactor PlayerArea with shadcn/ui components
 - `49f184b` Refactor FieldCard and HandCard with shadcn/ui Card

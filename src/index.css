@@ -982,6 +982,65 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
+   ARC HAND LAYOUT — curved card arrangement (Stage 6)
+   ═══════════════════════════════════════════════════════ */
+.hand-container {
+  position: relative;
+  width: 100%;
+  height: var(--hand-card-h);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  overflow: visible;
+}
+
+.hand-cards-arc {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 20px;
+}
+
+.hand-card-in-arc {
+  transition: transform 0.15s ease-out, z-index 0s linear 0.15s;
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+.hand-card-in-arc:hover,
+.hand-card-in-arc.is-dragging {
+  transform: translateY(-30px) scale(1.15) rotate(0deg) !important;
+  z-index: 1000 !important;
+  transition: transform 0.2s ease-out, z-index 0s linear;
+}
+
+/* Individual card rotations for arc effect */
+.hand-card-in-arc[data-arc-index="0"] { transform: rotate(-8deg) translateY(5px); }
+.hand-card-in-arc[data-arc-index="1"] { transform: rotate(-6deg) translateY(3px); }
+.hand-card-in-arc[data-arc-index="2"] { transform: rotate(-4deg) translateY(2px); }
+.hand-card-in-arc[data-arc-index="3"] { transform: rotate(-2deg) translateY(1px); }
+.hand-card-in-arc[data-arc-index="4"] { transform: rotate(0deg); }
+.hand-card-in-arc[data-arc-index="5"] { transform: rotate(2deg) translateY(1px); }
+.hand-card-in-arc[data-arc-index="6"] { transform: rotate(4deg) translateY(2px); }
+.hand-card-in-arc[data-arc-index="7"] { transform: rotate(6deg) translateY(3px); }
+.hand-card-in-arc[data-arc-index="8"] { transform: rotate(8deg) translateY(5px); }
+.hand-card-in-arc[data-arc-index="9"] { transform: rotate(10deg) translateY(8px); }
+
+/* Mobile: reduce arc intensity */
+@media (max-width: 768px) {
+  .hand-card-in-arc[data-arc-index="0"] { transform: rotate(-5deg); }
+  .hand-card-in-arc[data-arc-index="1"] { transform: rotate(-4deg); }
+  .hand-card-in-arc[data-arc-index="2"] { transform: rotate(-3deg); }
+  .hand-card-in-arc[data-arc-index="3"] { transform: rotate(-2deg); }
+  .hand-card-in-arc[data-arc-index="4"] { transform: rotate(0deg); }
+  .hand-card-in-arc[data-arc-index="5"] { transform: rotate(2deg); }
+  .hand-card-in-arc[data-arc-index="6"] { transform: rotate(3deg); }
+  .hand-card-in-arc[data-arc-index="7"] { transform: rotate(4deg); }
+  .hand-card-in-arc[data-arc-index="8"] { transform: rotate(5deg); }
+  .hand-card-in-arc[data-arc-index="9"] { transform: rotate(6deg); }
+}
+
+/* ═══════════════════════════════════════════════════════
    NEW VISUAL EFFECTS (2026-03-04)
    ═══════════════════════════════════════════════════════ */
 

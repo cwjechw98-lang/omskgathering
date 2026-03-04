@@ -1707,17 +1707,14 @@ export function GameBoard({ mode, onBack }: Props) {
         </div>
       )}
 
-      {/* ═══ ИСПРАВЛЕННЫЙ БЛОК РУКИ ═══ */}
+      {/* ═══ ARC HAND LAYOUT (Stage 6) ═══ */}
       <div
-        className="bg-black/70 px-2 shrink-0 border-t border-[#c9a84c]/10 relative z-layer-ui"
+        className="hand-container bg-black/70 shrink-0 border-t border-[#c9a84c]/10 relative z-layer-ui"
         style={{
           paddingBottom: isCompactUI ? 'max(0.375rem, env(safe-area-inset-bottom))' : undefined,
         }}
       >
-        <div
-          className="flex justify-center gap-[clamp(3px,0.4vw,8px)] overflow-x-auto pt-6 pb-4 px-2"
-          style={{ scrollbarWidth: 'thin' }}
-        >
+        <div className="hand-cards-arc">
           {me.hand.length === 0 && (
             <div
               className="text-gray-600 italic py-2 font-body"
@@ -1726,23 +1723,29 @@ export function GameBoard({ mode, onBack }: Props) {
               Рука пуста
             </div>
           )}
-          {me.hand.map((card) => {
+          {me.hand.map((card, index) => {
             const isLand = card.data.type === 'land';
             const canPlay =
               myTurn &&
               !gs.gameOver &&
               (isLand ? me.landsPlayed < me.maxLandsPerTurn : card.data.cost <= me.mana);
+            const arcIndex = Math.min(index, 9); // Max 10 cards with arc
             return (
-              <HandCard
+              <div
                 key={card.uid}
-                card={card}
-                selected={selectedHand === card.uid}
-                canPlay={canPlay}
-                isLand={isLand}
-                onClick={() => clickHand(card.uid)}
-                onDragStart={(e) => handleDragStart(e, card.uid)}
-                onDragEnd={handleDragEnd}
-              />
+                className="hand-card-in-arc"
+                data-arc-index={arcIndex}
+              >
+                <HandCard
+                  card={card}
+                  selected={selectedHand === card.uid}
+                  canPlay={canPlay}
+                  isLand={isLand}
+                  onClick={() => clickHand(card.uid)}
+                  onDragStart={(e) => handleDragStart(e, card.uid)}
+                  onDragEnd={handleDragEnd}
+                />
+              </div>
             );
           })}
         </div>
