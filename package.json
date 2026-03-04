@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:regression": "tsc -p tsconfig.regression.json && powershell -Command \"Set-Content -Path .tmp-regression/package.json -Value '{\\\"type\\\":\\\"commonjs\\\"}'\" && node .tmp-regression/tests/regression/combat-regression.js",
+    "audit:new-cards": "node scripts/audit-new-cards-matrix.mjs",
     "cache:card-images": "node scripts/cache-card-images.mjs",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",

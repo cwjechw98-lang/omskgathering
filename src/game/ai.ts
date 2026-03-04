@@ -115,6 +115,31 @@ const COMMENTS: Record<string, { high: string[]; mid: string[]; low: string[] }>
     mid: ['🏴‍☠️ Пираты Иртыша в деле!'],
     low: ['🏴‍☠️ Корабль тонет...'],
   },
+  kontroler_tramvaya: {
+    high: ['🎟️ БИЛЕТИКИ! Сейчас проверим всех!'],
+    mid: ['🎟️ Контроль на линии.'],
+    low: ['🎟️ Хоть порядок наведу...'],
+  },
+  himik_npz: {
+    high: ['🧪 Формула боли готова!'],
+    mid: ['🧪 Реактор стабилен... пока что.'],
+    low: ['🧪 Всё равно бахнет...'],
+  },
+  khroniker_irtysha: {
+    high: ['📜 Иртыш подскажет лучший ход!'],
+    mid: ['📜 Сверимся с хрониками...'],
+    low: ['📜 Хоть летопись не подведи...'],
+  },
+  arkhivar_omskoi_kreposti: {
+    high: ['🗝️ Архивы открыты, знание за нами!'],
+    mid: ['🗝️ Ищу подходящую запись...'],
+    low: ['🗝️ Ключи ещё могут спасти...'],
+  },
+  shaman_lukash: {
+    high: ['🪶 Духи Левобережья, ведите в бой!'],
+    mid: ['🪶 Тотемы пробуждаются.'],
+    low: ['🪶 Последний обряд...'],
+  },
   bocal: {
     high: ['🏢 Бокал всё контролирует!'],
     mid: ['🏢 Бокал наблюдает...'],
@@ -170,9 +195,13 @@ export function aiTurn(state: GameState): {
 
   // ========== PHASE 1: PLAY A LAND ==========
   const landInHand = gs.player2.hand.find((c) => c.data.type === 'land');
-  if (landInHand && gs.player2.landsPlayed < gs.player2.maxLandsPerTurn) {
-    const next = playCard(gs, 'player2', landInHand.uid);
-    if (next !== gs) gs = next;
+  const preferredLand = gs.player2.hand.find((c) => c.data.id === 'ploshchad_buhgoltsa');
+  if ((preferredLand || landInHand) && gs.player2.landsPlayed < gs.player2.maxLandsPerTurn) {
+    const landToPlay = preferredLand || landInHand;
+    if (landToPlay) {
+      const next = playCard(gs, 'player2', landToPlay.uid);
+      if (next !== gs) gs = next;
+    }
   }
 
   // ========== PHASE 2: PLAY CARDS (priority-based) ==========
@@ -370,6 +399,9 @@ function scoreCardToPlay(card: CardInstance, ai: PlayerState, enemy: PlayerState
 
     // If we have no field presence, creatures are extra important
     if (ai.field.length === 0) s += 15;
+    if (card.data.id === 'khroniker_irtysha') s += ai.deck.length >= 2 ? 8 : 2;
+    if (card.data.id === 'arkhivar_omskoi_kreposti')
+      s += ai.hand.some((h) => h.data.type === 'spell') ? 10 : 3;
 
     return s;
   }
@@ -418,6 +450,9 @@ function scoreCardToPlay(card: CardInstance, ai: PlayerState, enemy: PlayerState
     if (card.data.id === 'pivo_sibirskoe') return 20; // Card draw always decent
     if (card.data.id === 'peer_review') return 18;
     if (card.data.id === 'ledyanoy_veter') return enemy.field.length > 0 ? 22 : -5;
+    if (card.data.id === 'tuman_nad_irtyshom')
+      return enemy.field.length >= 2 ? 34 : enemy.field.length === 1 ? 18 : -5;
+    if (card.data.id === 'svodka_112') return enemy.field.length > 0 ? 28 : 6;
     if (card.data.id === 'segfault') return enemy.field.length > 0 ? 15 : -5;
     if (card.data.id === 'exam_42') return enemy.hand.length >= 4 ? 20 : 5;
 
@@ -430,6 +465,8 @@ function scoreCardToPlay(card: CardInstance, ai: PlayerState, enemy: PlayerState
     if (card.data.id === 'omskaya_zima') return enemy.field.length >= 1 ? 45 : 30;
     if (card.data.id === 'blagoustroistvo') return aiFieldStrength > 5 ? 35 : 20;
     if (card.data.id === 'holy_graph') return 30;
+    if (card.data.id === 'klyatva_metrostroya') return ai.field.length >= 2 ? 32 : 18;
+    if (card.data.id === 'golos_telebashni') return enemy.hand.length >= 4 ? 34 : 16;
     if (card.data.id === 'zarya_pobedy') return ai.field.length >= 2 ? 30 : 15;
     return 20;
   }

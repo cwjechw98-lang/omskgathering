@@ -135,3 +135,40 @@
   - `npm run test`: PASS,
   - `npm run test:regression`: 41/41 PASS,
   - `npm run build`: PASS (local Node warning 20.18.1 < 20.19).
+
+### 2026-03-04
+- Ran explicit matrix audit for the 10 generated Pollinations cards from `output/new-card-set-2026-03-04/new_cards_concepts.json`.
+- Added reusable script: `scripts/audit-new-cards-matrix.mjs` and npm command `npm run audit:new-cards`.
+- Matrix artifacts written to:
+  - `output/keeper-audit/new-cards-matrix/new-cards-matrix.md`
+  - `output/keeper-audit/new-cards-matrix/new-cards-matrix.json`
+- Result: integration status is `0/10 ready` for new cards:
+  - not present in `src/data/cards.ts`,
+  - not mapped in `src/data/localCardImages.ts`,
+  - not present in `public/cards`,
+  - no engine/AI/regression coverage yet for those IDs.
+- Baseline game checks after audit remain green:
+  - `npm run test`: PASS,
+  - `npm run test:regression`: 41/41 PASS.
+
+### 2026-03-04
+- Integrated 10 generated cards into runtime catalog and mechanics end-to-end:
+  - Added cards to `src/data/cards.ts` (creatures/spells/enchantments/land).
+  - Added local cover mappings in `src/data/localCardImages.ts`.
+  - Copied generated assets from `output/new-card-set-2026-03-04/final_400x300/` into `public/cards/`.
+- Implemented engine mechanics in `src/game/engine.impl.ts`:
+  - ETB: `khroniker_irtysha`, `shaman_lukash`.
+  - Attack trigger: `kontroler_tramvaya` temporary `-1 atk` on defender.
+  - Death trigger: `himik_npz` AoE 1.
+  - Spells: `tuman_nad_irtyshom`, `svodka_112`.
+  - Enchantments/turn-start: `klyatva_metrostroya`, `golos_telebashni`.
+  - Land special: `ploshchad_buhgoltsa` heal on third land.
+  - Added arkhivar spell-cast draw hook and synchronized temp-buff cleanup across both sides at turn transition.
+- Updated AI support in `src/game/ai.ts` for new cards (comments + scoring + land preference hook).
+- Expanded regression matrix in `tests/regression/combat-regression.ts` with 10 new tests (one per new card mechanic).
+- Validation after integration:
+  - `npm run audit:new-cards` -> `Ready-to-run cards: 10/10`.
+  - `npm run test:regression` -> `51/51` PASS.
+  - `npm run test` -> PASS.
+  - `npm run lint` -> 0 errors (5 existing warnings).
+  - `npm run build` -> PASS (local Node warning 20.18.1 remains).

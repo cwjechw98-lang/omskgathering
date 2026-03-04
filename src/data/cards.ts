@@ -281,6 +281,24 @@ export const ALL_CARDS: CardData[] = [
       203
     ),
   },
+  {
+    id: 'khroniker_irtysha',
+    name: 'Хроникер Иртыша',
+    cost: 2,
+    color: 'blue',
+    type: 'creature',
+    attack: 1,
+    health: 4,
+    description: 'Защитник. При входе — посмотрите 2 верхние карты, одну возьмите в руку.',
+    flavor: '«Река помнит всё: от крепости до последнего коммита.»',
+    emoji: '📜',
+    keywords: ['defender'],
+    rarity: 'uncommon',
+    imageUrl: img(
+      'mystic river chronicler with glowing scrolls on Irtysh embankment at night, old russian architecture',
+      301
+    ),
+  },
 
   // --- 3 маны ---
   {
@@ -371,6 +389,42 @@ export const ALL_CARDS: CardData[] = [
     imageUrl: img(
       'fisherman wizard at magical river Irtysh, catching glowing fish, siberian landscape',
       205
+    ),
+  },
+  {
+    id: 'kontroler_tramvaya',
+    name: 'Контролер Трамвая №4',
+    cost: 3,
+    color: 'white',
+    type: 'creature',
+    attack: 2,
+    health: 3,
+    description: 'Первый удар. При атаке: защищающееся существо получает -1 атаки до конца хода.',
+    flavor: '«Билетики предъявляем. Возражения не принимаются.»',
+    emoji: '🎟️',
+    keywords: ['first_strike'],
+    rarity: 'uncommon',
+    imageUrl: img(
+      'stern tram inspector in vintage tram number 4, electric sparks and ticket punch weapon',
+      302
+    ),
+  },
+  {
+    id: 'himik_npz',
+    name: 'Химик НПЗ',
+    cost: 3,
+    color: 'black',
+    type: 'creature',
+    attack: 2,
+    health: 2,
+    description: 'Смертельное касание. При смерти — нанесите 1 урон всем существам.',
+    flavor: '«Он всегда знает, что именно горит в колбе.»',
+    emoji: '🧪',
+    keywords: ['deathtouch'],
+    rarity: 'uncommon',
+    imageUrl: img(
+      'ominous refinery chemist with toxic glowing vials near Omsk industrial plant, smoke and neon reflections',
+      303
     ),
   },
 
@@ -466,6 +520,42 @@ export const ALL_CARDS: CardData[] = [
     imageUrl: img(
       'dark witch flying on broomstick over siberian city at night, dark magic curse',
       206
+    ),
+  },
+  {
+    id: 'shaman_lukash',
+    name: 'Шаман с Левобережья',
+    cost: 4,
+    color: 'green',
+    type: 'creature',
+    attack: 3,
+    health: 5,
+    description: 'Растоптать. При входе — другое ваше существо получает +1/+1.',
+    flavor: '«Его бубен слышен даже через метель.»',
+    emoji: '🪶',
+    keywords: ['trample'],
+    rarity: 'rare',
+    imageUrl: img(
+      'siberian urban shaman with antler staff and spirit totems in snowy district, emerald aura',
+      304
+    ),
+  },
+  {
+    id: 'arkhivar_omskoi_kreposti',
+    name: 'Архивариус Крепости',
+    cost: 4,
+    color: 'blue',
+    type: 'creature',
+    attack: 2,
+    health: 4,
+    description: 'Бдительность. Когда вы разыгрываете заклинание — потяните карту.',
+    flavor: '«Старые ключи открывают не двери, а эпохи.»',
+    emoji: '🗝️',
+    keywords: ['vigilance'],
+    rarity: 'rare',
+    imageUrl: img(
+      'ancient fortress archivist with keyring of glowing runes, candlelit stone archives',
+      305
     ),
   },
 
@@ -777,6 +867,36 @@ export const ALL_CARDS: CardData[] = [
     imageUrl: img('freezing icy wind blast from siberian river, ice crystals magic spell', 210),
   },
   {
+    id: 'tuman_nad_irtyshom',
+    name: 'Туман Над Иртышом',
+    cost: 2,
+    color: 'blue',
+    type: 'spell',
+    description: 'Заморозьте до 2 вражеских существ на 1 ход. Потяните карту.',
+    flavor: '«В тумане даже фонари шепчут чужими голосами.»',
+    emoji: '🌫️',
+    rarity: 'uncommon',
+    imageUrl: img(
+      'dense magical fog over Irtysh river embankment, ghost lights, frozen silhouettes',
+      306
+    ),
+  },
+  {
+    id: 'svodka_112',
+    name: 'Сводка 112',
+    cost: 1,
+    color: 'red',
+    type: 'spell',
+    description: 'Нанесите 2 урона существу. Если выжило — нанесите 1 урон герою.',
+    flavor: '«Оперативно. Громко. Неотвратимо.»',
+    emoji: '🚨',
+    rarity: 'common',
+    imageUrl: img(
+      'emergency dispatch center with red alarms and holographic city map of Omsk, dynamic action scene',
+      307
+    ),
+  },
+  {
     id: 'ne_pokiday_omsk',
     name: 'Не Покидай Омск!',
     cost: 3,
@@ -986,6 +1106,36 @@ export const ALL_CARDS: CardData[] = [
       213
     ),
   },
+  {
+    id: 'klyatva_metrostroya',
+    name: 'Клятва Метростроя',
+    cost: 3,
+    color: 'white',
+    type: 'enchantment',
+    description: 'Ваши существа получают +0/+1. В начале хода: если у вас 3+ существ, +2 HP.',
+    flavor: '«Обещание, которое пережило поколения.»',
+    emoji: '🚇',
+    rarity: 'rare',
+    imageUrl: img(
+      'mythic metro construction oath carved in glowing stone under unfinished subway tunnels, sacred white-gold aura',
+      308
+    ),
+  },
+  {
+    id: 'golos_telebashni',
+    name: 'Голос Телебашни',
+    cost: 4,
+    color: 'black',
+    type: 'enchantment',
+    description: 'В начале хода соперник сбрасывает карту, если у него 4+ карт в руке.',
+    flavor: '«Сигнал ловят все. Игнорировать не может никто.»',
+    emoji: '📡',
+    rarity: 'rare',
+    imageUrl: img(
+      'ominous soviet TV tower broadcasting dark psychic waves across night city, noir purple aura',
+      309
+    ),
+  },
 
   // ===== ЗЕМЛИ (Lands) =====
   {
@@ -1061,6 +1211,21 @@ export const ALL_CARDS: CardData[] = [
     imageUrl: img(
       'beautiful green park forest in city, green mana source, nature magic grove',
       147
+    ),
+  },
+  {
+    id: 'ploshchad_buhgoltsa',
+    name: 'Площадь Бухгольца',
+    cost: 0,
+    color: 'colorless',
+    type: 'land',
+    description: '+1 мана. Если это третья ваша земля за игру — восстановите 1 здоровье.',
+    flavor: '«У шара свои орбиты, у города — свои законы.»',
+    emoji: '🗿',
+    rarity: 'common',
+    imageUrl: img(
+      'Buchholz square with iconic sphere monument under dramatic sky, arcane geometric lines on pavement',
+      310
     ),
   },
 ];

@@ -114,3 +114,23 @@ TODO update:
   - `npm run test` -> pass,
   - `npm run test:regression` -> 41/41 pass,
   - `npm run build` -> pass (local Node version warning retained).
+
+- 2026-03-04 new-cards matrix checkpoint:
+- Added automated matrix audit script `scripts/audit-new-cards-matrix.mjs` + npm command `audit:new-cards`.
+- Generated audit artifacts in `output/keeper-audit/new-cards-matrix/`.
+- Current status for generated 10-card set: `ready 0/10`.
+- Missing in runtime pipeline: catalog registration (`cards.ts`), local image map (`localCardImages.ts`), `public/cards` assets, and mechanics/test hooks.
+- Existing game baseline remains stable: `test` pass, `test:regression` 41/41 pass.
+
+- 2026-03-04 new-cards integration checkpoint:
+- Runtime integration completed for all 10 generated cards:
+  - catalog (`cards.ts`), local covers (`localCardImages.ts`), assets in `public/cards/`.
+- Engine hooks implemented for all 10 cards in `engine.impl.ts` (ETB/spell/enchantment/land/death/attack triggers).
+- AI layer updated for new cards (`ai.ts`) with comments/scoring and preferred land usage for `ploshchad_buhgoltsa`.
+- Regression matrix expanded from 41 to 51 tests with dedicated coverage for each new card mechanic.
+- Current matrix (`output/keeper-audit/new-cards-matrix/new-cards-matrix.md`): `ready 10/10`.
+- Current gate after integration:
+  - `npm run test:regression` -> 51/51 pass,
+  - `npm run test` -> pass,
+  - `npm run lint` -> 0 errors (warnings only),
+  - `npm run build` -> pass (local Node warning retained).

@@ -140,6 +140,8 @@ export function getEffectiveHealth(card: CardInstance, player: PlayerState): num
 
   // Blagoustroistvo: +0/+2
   if (player.enchantments.some((c) => c.data.id === 'blagoustroistvo')) hp += 2;
+  // Klyatva Metrostroya: +0/+1
+  if (player.enchantments.some((c) => c.data.id === 'klyatva_metrostroya')) hp += 1;
 
   // Bocal: +1/+1 to pisiner (handled as buffHealth/maxHealth on apply, but keep this as safety)
   if (card.data.id === 'pisiner_21' && player.field.some((c) => c.data.id === 'bocal')) {
@@ -198,6 +200,10 @@ export function playCard(
     player.maxMana += 1;
     player.mana += 1;
     player.landsPlayed += 1;
+    if (card.data.id === 'ploshchad_buhgoltsa' && player.maxMana === 3) {
+      player.health = Math.min(player.maxHealth, player.health + 1);
+      newState.log.push('🗿 Площадь Бухгольца: третья земля — +1 HP!');
+    }
     newState.log.push(`🏔️ ${card.data.name} разыграна. Мана: ${player.mana}/${player.maxMana}`);
     return newState;
   }
@@ -253,6 +259,11 @@ export function playCard(
     for (let ki = 0; ki < kotCount; ki++) {
       drawCard(player, newState.log);
       newState.log.push('🐱 Учёный Кот: +1 карта за заклинание!');
+    }
+    const arkhivarCount = player.field.filter((c) => c.data.id === 'arkhivar_omskoi_kreposti').length;
+    for (let ai = 0; ai < arkhivarCount; ai++) {
+      drawCard(player, newState.log);
+      newState.log.push('🗝️ Архивариус Крепости: +1 карта за заклинание!');
     }
   } else if (card.data.type === 'enchantment') {
     player.enchantments.push(card);
@@ -367,6 +378,16 @@ function applyEntryEffects(
         state.log.push(`🏪 Торговец: взял карту, сбросил ${discarded.data.name}`);
       }
       break;
+    case 'khroniker_irtysha': {
+      const top = player.deck.splice(0, Math.min(2, player.deck.length));
+      if (top.length > 0) {
+        top.sort((a, b) => b.data.cost - a.data.cost);
+        player.hand.push(top[0]);
+        if (top.length > 1) player.deck.push(top[1]);
+        state.log.push(`📜 Хроникер Иртыша: в руку ${top[0].data.name}.`);
+      }
+      break;
+    }
 
     case 'omskiy_huligann':
       opponent.health -= 1;
@@ -383,6 +404,16 @@ function applyEntryEffects(
         const target = opponent.field[Math.floor(Math.random() * opponent.field.length)];
         target.currentHealth -= 2;
         state.log.push(`🧙‍♀️ Ведьма: 2 урона ${target.data.name}!`);
+      }
+      break;
+    }
+    case 'shaman_lukash': {
+      const ally = player.field.find((c) => c.uid !== card.uid);
+      if (ally) {
+        ally.buffAttack += 1;
+        ally.buffHealth += 1;
+        ally.currentHealth += 1;
+        state.log.push(`🪶 Шаман усиливает ${ally.data.name} на +1/+1.`);
       }
       break;
     }
@@ -444,6 +475,10 @@ function applyEntryEffects(
       }
       break;
     }
+    case 'kontroler_tramvaya':
+    case 'himik_npz':
+    case 'arkhivar_omskoi_kreposti':
+      break;
   }
 }
 
@@ -626,6 +661,35 @@ function applySpellEffect(
       drawCard(player, state.log);
       break;
     }
+    case 'tuman_nad_irtyshom': {
+      const targets = [...opponent.field].filter((c) => !hasKeyword(c, 'hexproof'));
+      const freezeCount = Math.min(2, targets.length);
+      for (let i = 0; i < freezeCount; i++) {
+        const target = targets.splice(Math.floor(Math.random() * targets.length), 1)[0];
+        applyFreeze(target, 1);
+        state.log.push(`🌫️ Туман: ${target.data.name} заморожен.`);
+      }
+      drawCard(player, state.log);
+      break;
+    }
+
+    case 'svodka_112': {
+      if (opponent.field.length > 0) {
+        const target = [...opponent.field].sort(
+          (a, b) => getEffectiveAttack(b, opponent, player) - getEffectiveAttack(a, opponent, player)
+        )[0];
+        target.currentHealth -= 2;
+        state.log.push(`🚨 Сводка 112: 2 урона ${target.data.name}.`);
+        if (target.currentHealth > 0) {
+          opponent.health -= 1;
+          state.log.push('🚨 Сводка 112: цель выжила, герою 1 урон.');
+        }
+      } else {
+        opponent.health -= 1;
+        state.log.push('🚨 Сводка 112: целей нет, 1 урон герою.');
+      }
+      break;
+    }
 
     case 'siberian_gnev': {
       if (opponent.field.length > 0) {
@@ -769,6 +833,10 @@ export function attackCreature(
   }
 
   const atkDamage = getEffectiveAttack(attacker, player, opponent);
+  if (attacker.data.id === 'kontroler_tramvaya') {
+    defender.tempBuffAttack -= 1;
+    newState.log.push('🎟️ Контролер: защитник получает -1⚔ до конца хода.');
+  }
   const defenderFrozen = defender.frozen > 0;
   const defDamage = defenderFrozen ? 0 : getEffectiveAttack(defender, opponent, player);
   const defHealthBefore = getEffectiveHealth(defender, opponent);
@@ -888,7 +956,7 @@ export function endTurn(state: GameState): GameState {
   const nextPlayer = newState[nextPlayerKey];
 
   // Clear temp buffs
-  for (const card of currentPlayer.field) {
+  for (const card of [...currentPlayer.field, ...nextPlayer.field]) {
     card.tempBuffAttack = 0;
     card.tempBuffHealth = 0;
   }
@@ -939,6 +1007,12 @@ export function endTurn(state: GameState): GameState {
     nextPlayer.health = Math.min(nextPlayer.maxHealth, nextPlayer.health + 1);
     newState.log.push('🌷 Благоустройство: +1 HP!');
   }
+  if (nextPlayer.enchantments.some((c) => c.data.id === 'klyatva_metrostroya')) {
+    if (nextPlayer.field.length >= 3) {
+      nextPlayer.health = Math.min(nextPlayer.maxHealth, nextPlayer.health + 2);
+      newState.log.push('🚇 Клятва Метростроя: +2 HP за стройный фронт!');
+    }
+  }
 
   // Coffee machine: heal
   const coffeeCount = nextPlayer.field.filter((c) => c.data.id === 'coffee_machine').length;
@@ -963,6 +1037,14 @@ export function endTurn(state: GameState): GameState {
   if (duhOwner.enchantments.some((c) => c.data.id === 'duh_omska')) {
     nextPlayer.health -= 1;
     newState.log.push('👻 Дух Омска: -1 HP!');
+  }
+  if (duhOwner.enchantments.some((c) => c.data.id === 'golos_telebashni')) {
+    if (nextPlayer.hand.length >= 4) {
+      const idx = Math.floor(Math.random() * nextPlayer.hand.length);
+      const discarded = nextPlayer.hand.splice(idx, 1)[0];
+      nextPlayer.graveyard.push(discarded);
+      newState.log.push(`📡 Голос Телебашни: сброшена ${discarded.data.name}.`);
+    }
   }
 
   newState.log.push(
@@ -994,6 +1076,12 @@ function cleanupDead(state: GameState) {
       if (card.data.id === 'pisiner_21') {
         drawCard(player, state.log);
         state.log.push('👨‍💻 Писинер: +1 карта при смерти!');
+      }
+      if (card.data.id === 'himik_npz') {
+        for (const c of [...player.field, ...opponent.field]) {
+          if (c.uid !== card.uid) c.currentHealth -= 1;
+        }
+        state.log.push('🧪 Химик НПЗ: 1 урон всем существам при смерти!');
       }
 
       // Zarya Pobedy: heal on ally death

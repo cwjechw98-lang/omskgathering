@@ -45,6 +45,36 @@ function makeSpell(id: string, name: string): CardInstance {
   return createCardInstance(data);
 }
 
+function makeEnchantment(id: string, name: string): CardInstance {
+  const data: CardData = {
+    id,
+    name,
+    cost: 1,
+    color: 'white',
+    type: 'enchantment',
+    description: 'test',
+    flavor: 'test',
+    emoji: 'E',
+    rarity: 'common',
+  };
+  return createCardInstance(data);
+}
+
+function makeLand(id: string, name: string): CardInstance {
+  const data: CardData = {
+    id,
+    name,
+    cost: 0,
+    color: 'colorless',
+    type: 'land',
+    description: 'test',
+    flavor: 'test',
+    emoji: 'L',
+    rarity: 'common',
+  };
+  return createCardInstance(data);
+}
+
 function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
   return {
     health: 30,
@@ -735,6 +765,170 @@ function testKeeperAttackIntoFrozenDefenderGetsNoRetaliation(): void {
   expect((nextPlayer?.frozen ?? -1) === 0, 'frozen defender should thaw after taking damage');
 }
 
+function testKhronikerIrtyshaTakesBestOfTopTwo(): void {
+  const khroniker = makeCreature('khroniker_irtysha', 'Khroniker', 1, 4, ['defender']);
+  khroniker.data.cost = 0;
+  const cheap = makeCreature('cheap-top', 'Cheap Top', 1, 1);
+  cheap.data.cost = 1;
+  const expensive = makeCreature('exp-top', 'Exp Top', 1, 1);
+  expensive.data.cost = 5;
+  const p1 = makePlayer({ mana: 10, maxMana: 10, hand: [khroniker], deck: [cheap, expensive] });
+  const state = makeState(p1, makePlayer(), 'player1');
+
+  const next = playCard(state, 'player1', khroniker.uid);
+  expect(next.player1.hand.some((c) => c.uid === expensive.uid), 'khroniker should pick best card from top 2');
+}
+
+function testKontrolerTramvayaAppliesAttackDebuffOnHit(): void {
+  const kontroler = makeCreature('kontroler_tramvaya', 'Kontroler', 2, 3, ['first_strike']);
+  kontroler.summoningSickness = false;
+  const defender = makeCreature('test-defender', 'Test Defender', 2, 4);
+  const state = makeState(
+    makePlayer({ field: [kontroler] }),
+    makePlayer({ field: [defender] }),
+    'player1'
+  );
+  const next = attackCreature(state, 'player1', kontroler.uid, defender.uid);
+  const nextKontroler = next.player1.field.find((c) => c.uid === kontroler.uid);
+  expect(Boolean(nextKontroler), 'kontroler should survive');
+  expect((nextKontroler?.currentHealth ?? 0) === 2, 'kontroler should receive 1 retaliatory damage after debuff');
+}
+
+function testHimikNpzDeathDealsOneToAllCreatures(): void {
+  const himik = makeCreature('himik_npz', 'Himik', 2, 1, ['deathtouch']);
+  himik.currentAttack = 0;
+  const ally = makeCreature('ally-himik', 'Ally', 1, 2);
+  const enemyAttacker = makeCreature('enemy-killer', 'Enemy Killer', 2, 2);
+  enemyAttacker.summoningSickness = false;
+  const state = makeState(
+    makePlayer({ field: [himik, ally] }),
+    makePlayer({ field: [enemyAttacker] }),
+    'player2'
+  );
+  const next = attackCreature(state, 'player2', enemyAttacker.uid, himik.uid);
+  const nextAlly = next.player1.field.find((c) => c.uid === ally.uid);
+  const nextEnemyAttacker = next.player2.field.find((c) => c.uid === enemyAttacker.uid);
+  expect((nextAlly?.currentHealth ?? 0) === 1, 'himik death trigger should deal 1 to ally creature');
+  expect((nextEnemyAttacker?.currentHealth ?? 0) === 1, 'himik death trigger should deal 1 to enemy creature');
+}
+
+function testShamanLukashBuffsOtherAllyOnEntry(): void {
+  const shaman = makeCreature('shaman_lukash', 'Shaman', 3, 5, ['trample']);
+  shaman.data.cost = 0;
+  const ally = makeCreature('shaman-ally', 'Shaman Ally', 1, 2);
+  const p1 = makePlayer({ mana: 10, maxMana: 10, hand: [shaman], field: [ally] });
+  const state = makeState(p1, makePlayer(), 'player1');
+  const next = playCard(state, 'player1', shaman.uid);
+  const nextAlly = next.player1.field.find((c) => c.uid === ally.uid);
+  expect((nextAlly?.buffAttack ?? 0) === 1, 'shaman should grant +1 attack buff to another ally');
+  expect((nextAlly?.currentHealth ?? 0) === 3, 'shaman should grant +1 health to another ally');
+}
+
+function testArkhivarDrawsOnSpellCast(): void {
+  const arkhivar = makeCreature('arkhivar_omskoi_kreposti', 'Arkhivar', 2, 4, ['vigilance']);
+  const spell = makeSpell('pivo_sibirskoe', 'Pivo');
+  spell.data.cost = 0;
+  const d1 = makeCreature('d1', 'D1', 1, 1);
+  const d2 = makeCreature('d2', 'D2', 1, 1);
+  const d3 = makeCreature('d3', 'D3', 1, 1);
+  const p1 = makePlayer({ mana: 10, maxMana: 10, hand: [spell], field: [arkhivar], deck: [d1, d2, d3] });
+  const state = makeState(p1, makePlayer(), 'player1');
+  const handBefore = state.player1.hand.length;
+  const next = playCard(state, 'player1', spell.uid);
+  expect(next.player1.hand.length >= handBefore + 2, 'arkhivar should add extra draw when spell is cast');
+}
+
+function testTumanNadIrtyshomFreezesUpToTwoAndDraws(): void {
+  const tuman = makeSpell('tuman_nad_irtyshom', 'Tuman');
+  tuman.data.cost = 0;
+  const e1 = makeCreature('t1', 'T1', 1, 2);
+  const e2 = makeCreature('t2', 'T2', 1, 2);
+  const drawCardFromDeck = makeCreature('tuman-draw', 'Tuman Draw', 1, 1);
+  const p1 = makePlayer({ mana: 10, maxMana: 10, hand: [tuman], deck: [drawCardFromDeck] });
+  const p2 = makePlayer({ field: [e1, e2] });
+  const state = makeState(p1, p2, 'player1');
+  const next = playCard(state, 'player1', tuman.uid);
+  const frozenCount = next.player2.field.filter((c) => c.frozen >= 2).length;
+  expect(frozenCount === 2, `tuman should freeze up to 2 targets, got ${frozenCount}`);
+  expect(next.player1.hand.some((c) => c.uid === drawCardFromDeck.uid), 'tuman should draw a card');
+}
+
+function testSvodka112DealsTwoToCreatureThenOneToHeroIfSurvives(): void {
+  const svodka = makeSpell('svodka_112', 'Svodka');
+  svodka.data.cost = 0;
+  const target = makeCreature('sv-target', 'SV Target', 2, 4);
+  const p1 = makePlayer({ mana: 10, maxMana: 10, hand: [svodka] });
+  const p2 = makePlayer({ health: 30, maxHealth: 30, field: [target] });
+  const state = makeState(p1, p2, 'player1');
+  const next = playCard(state, 'player1', svodka.uid);
+  const nextTarget = next.player2.field.find((c) => c.uid === target.uid);
+  expect((nextTarget?.currentHealth ?? 0) === 2, 'svodka should deal 2 damage to creature');
+  expect(next.player2.health === 29, 'svodka should deal 1 hero damage if creature survives');
+}
+
+function testKlyatvaMetrostroyaHealsAtTurnStartWithThreeCreatures(): void {
+  const klyatva = makeEnchantment('klyatva_metrostroya', 'Klyatva');
+  const a = makeCreature('km-a', 'KM A', 1, 2);
+  const b = makeCreature('km-b', 'KM B', 1, 2);
+  const c = makeCreature('km-c', 'KM C', 1, 2);
+  const deckCard = makeCreature('km-deck', 'KM Deck', 1, 1);
+  const p1 = makePlayer({
+    health: 20,
+    maxHealth: 30,
+    enchantments: [klyatva],
+    field: [a, b, c],
+    deck: [deckCard],
+  });
+  const state = makeState(p1, makePlayer(), 'player2');
+  const next = endTurn(state);
+  expect(next.player1.health === 22, 'klyatva should heal 2 at turn start with >=3 creatures');
+}
+
+function testGolosTelebashniForcesDiscardOnOpponentTurnStart(): void {
+  const golos = makeEnchantment('golos_telebashni', 'Golos');
+  const h1 = makeCreature('g-h1', 'G H1', 1, 1);
+  const h2 = makeCreature('g-h2', 'G H2', 1, 1);
+  const h3 = makeCreature('g-h3', 'G H3', 1, 1);
+  const h4 = makeCreature('g-h4', 'G H4', 1, 1);
+  const p1 = makePlayer({ enchantments: [golos] });
+  const p2 = makePlayer({ hand: [h1, h2, h3, h4] });
+  const state = makeState(p1, p2, 'player1');
+  const next = endTurn(state);
+  expect(next.player2.hand.length === 3, 'golos should force exactly one discard when hand >= 4');
+  expect(next.player2.graveyard.length === 1, 'discarded card should move to graveyard');
+}
+
+function testPloshchadBuhgoltsaHealsOnThirdLandPlayed(): void {
+  const l1 = makeLand('land1', 'Land 1');
+  const l2 = makeLand('land2', 'Land 2');
+  const ploshchad = makeLand('ploshchad_buhgoltsa', 'Ploshchad');
+  const d1 = makeCreature('pb-d1', 'PB D1', 1, 1);
+  const d2 = makeCreature('pb-d2', 'PB D2', 1, 1);
+  const d3 = makeCreature('pb-d3', 'PB D3', 1, 1);
+  const d4 = makeCreature('pb-d4', 'PB D4', 1, 1);
+  const e1 = makeCreature('pb-e1', 'PB E1', 1, 1);
+  const e2 = makeCreature('pb-e2', 'PB E2', 1, 1);
+  const e3 = makeCreature('pb-e3', 'PB E3', 1, 1);
+  const e4 = makeCreature('pb-e4', 'PB E4', 1, 1);
+  const p1 = makePlayer({
+    health: 20,
+    maxHealth: 30,
+    hand: [l1, l2, ploshchad],
+    deck: [d1, d2, d3, d4],
+  });
+  const p2 = makePlayer({ deck: [e1, e2, e3, e4] });
+  let state = makeState(p1, p2, 'player1');
+  state = playCard(state, 'player1', l1.uid);
+  state = endTurn(state);
+  state = endTurn(state);
+  state = playCard(state, 'player1', l2.uid);
+  state = endTurn(state);
+  state = endTurn(state);
+  const afterThird = playCard(state, 'player1', ploshchad.uid);
+  expect(afterThird.player1.maxMana === 3, 'third land should set max mana to 3');
+  expect(afterThird.player1.health === 21, 'ploshchad should heal 1 when played as third land');
+}
+
 function run(): void {
   const tests: Array<{ name: string; fn: () => void }> = [
     { name: 'Frozen defender does not retaliate and thaws on hit', fn: testFrozenDefenderNoRetaliationAndThaw },
@@ -783,6 +977,16 @@ function run(): void {
     { name: 'Babka retaliates when buffed', fn: testBabkaRetaliatesWhenBuffed },
     { name: 'Keeper attack gets retaliation when defender is not frozen', fn: testKeeperAttackReceivesRetaliationWhenDefenderNotFrozen },
     { name: 'Keeper attack gets no retaliation when defender is frozen', fn: testKeeperAttackIntoFrozenDefenderGetsNoRetaliation },
+    { name: 'Khroniker Irtysha ETB selects best of top two', fn: testKhronikerIrtyshaTakesBestOfTopTwo },
+    { name: 'Kontroler Tramvaya applies -1 atk debuff on attack', fn: testKontrolerTramvayaAppliesAttackDebuffOnHit },
+    { name: 'Himik NPZ death trigger deals 1 to all creatures', fn: testHimikNpzDeathDealsOneToAllCreatures },
+    { name: 'Shaman Lukash ETB buffs another ally', fn: testShamanLukashBuffsOtherAllyOnEntry },
+    { name: 'Arkhivar draws when a spell is cast', fn: testArkhivarDrawsOnSpellCast },
+    { name: 'Tuman Nad Irtyshom freezes up to 2 and draws', fn: testTumanNadIrtyshomFreezesUpToTwoAndDraws },
+    { name: 'Svodka 112 deals 2 to creature then 1 to hero if survives', fn: testSvodka112DealsTwoToCreatureThenOneToHeroIfSurvives },
+    { name: 'Klyatva Metrostroya heals at turn start with 3+ creatures', fn: testKlyatvaMetrostroyaHealsAtTurnStartWithThreeCreatures },
+    { name: 'Golos Telebashni forces discard at opponent turn start', fn: testGolosTelebashniForcesDiscardOnOpponentTurnStart },
+    { name: 'Ploshchad Buhgoltsa heals when played as third land', fn: testPloshchadBuhgoltsaHealsOnThirdLandPlayed },
   ];
 
   for (const t of tests) {
