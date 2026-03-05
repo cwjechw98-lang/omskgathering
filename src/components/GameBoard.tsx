@@ -848,13 +848,15 @@ export function GameBoard({ mode, onBack }: Props) {
       <div className="zone-divider">
         <div className="center-divider">
           <div className="divider-buttons">
-            {selectedAttacker && !gs.gameOver && myTurn && <button onClick={clickAttackHero} className="attack-hero-btn">💥 В героя</button>}
-            {selectedAttacker && !gs.gameOver && myTurn && <button onClick={() => { setSelectedAttacker(null); setSelectedAttackerSlot(null); }} className="cancel-btn">Отмена</button>}
-          </div>
-          <div className="divider-hint">{getHint()}</div>
-          <div className="divider-buttons">
+            {selectedAttacker && !gs.gameOver && myTurn && (
+              <>
+                <button onClick={clickAttackHero} className="attack-hero-btn">💥 В героя</button>
+                <button onClick={() => { setSelectedAttacker(null); setSelectedAttackerSlot(null); }} className="cancel-btn">Отмена</button>
+              </>
+            )}
             {!gs.gameOver && myTurn && <button onClick={clickEndTurn} className="end-turn-btn ready">Конец хода ⏭️</button>}
           </div>
+          <div className="divider-hint">{getHint()}</div>
         </div>
       </div>
 

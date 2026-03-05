@@ -146,13 +146,13 @@ export function FieldCard({
           <div className="flex justify-between items-end mt-auto">
             <span
               className="bg-red-700/90 text-white rounded px-1 font-bold font-heading"
-              style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}
+              style={{ fontSize: 'clamp(10px, 1.2vw, 14px)' }}
             >
               {atk}&#9876;
             </span>
             <span
               className={`rounded px-1 font-bold font-heading text-white ${hp <= card.maxHealth / 2 ? 'bg-red-600/90' : 'bg-green-700/90'}`}
-              style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}
+              style={{ fontSize: 'clamp(10px, 1.2vw, 14px)' }}
             >
               {hp}&#10084;
             </span>

@@ -72,7 +72,7 @@
   --z-ui: 60;
   --z-hover: 70;
   --z-overlay: 80;
-  --z-hand: 25;
+  --z-hand: 85;
 
   /* ═══ GAME GRID LAYOUT — Fixed row heights ═══ */
   --topbar-h:      clamp(38px, 5vh,   50px);
@@ -119,13 +119,13 @@
 
 /* Grid zone assignments */
 .zone-topbar       { grid-area: topbar;       overflow: hidden;  z-index: var(--z-ui); }
-.zone-enemy-hero   { grid-area: enemy-hero;   overflow: hidden;  z-index: var(--z-board); }
+.zone-enemy-hero   { grid-area: enemy-hero;   overflow: visible; z-index: 65; }
 .zone-enemy-board  { grid-area: enemy-board;  overflow: hidden;  z-index: var(--z-board); position: relative; }
 .zone-divider      { grid-area: divider;      overflow: visible; z-index: var(--z-divider); position: relative; }
 .zone-player-board { grid-area: player-board; overflow: hidden;  z-index: var(--z-board); position: relative; }
-.zone-player-hero  { grid-area: player-hero;  overflow: hidden;  z-index: var(--z-board); }
+.zone-player-hero  { grid-area: player-hero;  overflow: visible; z-index: 65; }
 .zone-actionbar    { grid-area: actionbar;    overflow: hidden;  z-index: var(--z-ui); }
-.zone-hand         { grid-area: hand;         overflow: hidden;  z-index: var(--z-hand); }
+.zone-hand         { grid-area: hand;         overflow: visible; z-index: var(--z-hand); }
 
 /* Prevent grid items from expanding */
 .game-grid > * {
@@ -556,7 +556,6 @@
 }
 
 .divider-hint {
-  flex: 1;
   text-align: center;
   font-size: clamp(10px, 1.1vw, 13px);
   white-space: nowrap;
@@ -567,6 +566,7 @@
   min-width: 0;
   color: rgba(107,114,128,0.7);
   transition: color 0.25s ease;
+  order: -1;
 }
 
 .divider-buttons {
@@ -576,6 +576,7 @@
   flex-shrink: 0;
   position: relative;
   z-index: 2;
+  justify-content: center;
 }
 
 /* End turn button */
@@ -700,7 +701,7 @@
 
 .hand-card-wrapper:hover {
   transform: rotate(0deg) translateY(-22px) scale(1.16);
-  z-index: calc(var(--z-card-hover) + 5);
+  z-index: calc(var(--z-hand) + 10);
   filter: drop-shadow(0 8px 16px rgba(0,0,0,0.6));
 }
 
@@ -1735,6 +1736,20 @@ body {
    ═══════════════════════════════════════════════════════ */
 
 /* === PROGRESS VARIANTS (Health Bar) === */
+[data-slot="progress"] {
+  background: rgba(255,255,255,0.1);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+[data-slot="progress-indicator"] {
+  height: 100%;
+  width: var(--progress);
+  border-radius: inherit;
+  transition: width 0.5s ease;
+}
+
 .progress-success {
   background: linear-gradient(90deg, #22c55e, #16a34a);
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
