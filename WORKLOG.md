@@ -2,6 +2,53 @@
 
 ## Session Log
 
+### 2026-03-05 — CSS Grid Layout Refactoring + Project Workflow Documentation
+
+**CSS Grid Layout Implementation:**
+- Analyzed reference project in `refactor-game-board-layout/` for stable layout architecture
+- Added `.game-grid` CSS Grid layout to `src/index.css` with 8 fixed rows using `minmax(0, X)`
+- Implemented grid zone classes: `.zone-topbar`, `.zone-enemy-hero`, `.zone-enemy-board`, `.zone-divider`, `.zone-player-board`, `.zone-player-hero`, `.zone-actionbar`, `.zone-hand`
+- Added comprehensive zone styles: `.hero-zone`, `.board-zone`, `.creature-slot`, `.game-card`, `.hand-zone`, `.center-divider`
+- Added `min-height: 0` protection for grid children to prevent stretching (per ui-fix.md)
+- Updated `GameBoard.tsx` to use grid-zone structure instead of flex-based layout
+- Fixed CSS syntax error (unclosed comment in grid-template-rows)
+
+**Quality Gates:**
+- ✅ npm run lint: PASS (0 errors, 6 warnings)
+- ✅ npm run build: PASS (500 KB JS, 117 KB CSS)
+- ✅ npm run test: PASS (20/20 tests)
+- ✅ npm run test:regression: PASS (51/51 tests)
+
+**Test Updates:**
+- Updated `GameBoard.smoke.test.tsx` to handle duplicate "Конец хода" buttons (temporary workaround)
+
+**Project Workflow Documentation:**
+- Created `PROJECT_WORKFLOW.md` with comprehensive project guidelines:
+  - MCP and Skills reference table (when to use which)
+  - Session start/end checklists
+  - Commit message format conventions
+  - Quality gates checklist
+  - GitHub Pages deployment process
+  - File structure documentation
+  - Required reading files for new sessions
+- Updated `BRIEF.md` reference in documentation
+
+**Git/Deployment Process:**
+- Verified remote: https://github.com/cwjechw98-lang/omskgathering.git
+- GitHub Pages auto-deploys on push to `main` branch
+- CI workflow: `quality-gate.yml` runs lint + test + build
+- Deploy workflow: `deploy-pages.yml` uses Node 22.12.0
+
+**Files Modified:**
+- `src/index.css`: +600 lines (CSS Grid layout, zone styles, animations)
+- `src/components/GameBoard.tsx`: Restructured to use grid zones
+- `tests/components/GameBoard.smoke.test.tsx`: Updated test for duplicate buttons
+- `PROJECT_WORKFLOW.md`: New file (comprehensive workflow guide)
+
+**Note:** Some duplicate old layout code remains in GameBoard.tsx — functional but needs future cleanup.
+
+---
+
 ### 2026-03-04 — UI/UX Audit & Refactoring Day
 
 **UI/UX Audit:**

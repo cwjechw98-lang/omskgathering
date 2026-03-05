@@ -1304,7 +1304,7 @@ export function GameBoard({ mode, onBack }: Props) {
   }, []);
 
   return (
-    <div className="h-[100dvh] w-full bg-gradient-to-b from-[#0a0810] via-[#0c0a14] to-[#0a0810] flex flex-col overflow-hidden relative select-none">
+    <div className="game-grid">
       {playAnim && (
         <CardPlayAnimation
           cardName={playAnim.name}
@@ -1327,10 +1327,8 @@ export function GameBoard({ mode, onBack }: Props) {
         <MessageFeed messages={messages} onDismiss={dismissMessage} compact={isCompactUI} />
       )}
 
-      <div
-        className="flex items-center justify-between px-3 bg-black/80 z-layer-ui shrink-0 border-b border-[#c9a84c]/15"
-        style={{ height: 'clamp(36px, 5vh, 48px)' }}
-      >
+      {/* TOP BAR */}
+      <div className="zone-topbar">
         <button
           onClick={onBack}
           className="text-gray-500 hover:text-[#f0d68a] font-heading px-2 py-1 rounded hover:bg-[#1a1508] transition"
@@ -1378,6 +1376,271 @@ export function GameBoard({ mode, onBack }: Props) {
           >
             🔄
           </button>
+        </div>
+      </div>
+
+      {/* ENEMY HERO ZONE */}
+      <div className="zone-enemy-hero">
+        <div className="hero-zone">
+          <PlayerArea
+            player={enemy}
+            isCurrentPlayer={!isP1Turn}
+            label={mode === 'ai' ? `${AI_CHARACTER.avatarEmoji} ${AI_CHARACTER.name}` : 'Игрок 2'}
+            isTop
+            dataEnemyHero
+          />
+        </div>
+      </div>
+
+      {/* ENEMY BOARD ZONE */}
+      <div className="zone-enemy-board">
+        <div className="board-zone enemy">
+          {enemy.field.length === 0 ? (
+            <div className="text-gray-600 italic text-center" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>
+              Поле противника пусто
+            </div>
+          ) : (
+            enemy.field.map((card) => {
+              const canActCard =
+                isP1Turn &&
+                !card.summoningSickness &&
+                !card.hasAttacked &&
+                card.frozen <= 0 &&
+                !card.keywords.includes('defender') &&
+                !gs.gameOver;
+
+              const attackAnim = attackAnimUid === card.uid;
+              const damageAnim = damageAnimUid === card.uid;
+
+              return (
+                <div
+                  key={card.uid}
+                  className="creature-slot occupied"
+                  ref={(el) => {
+                    if (el) cardRefsMap.current.set(card.uid, el);
+                    else cardRefsMap.current.delete(card.uid);
+                  }}
+                >
+                  <div
+                    className={cn(
+                      'game-card-container',
+                      selectedAttacker === card.uid && 'is-target',
+                      canActCard && 'can-act'
+                    )}
+                    onClick={() => clickEnemyCreature(card.uid)}
+                    style={{ cursor: selectedAttacker ? 'crosshair' : 'default' }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && clickEnemyCreature(card.uid)}
+                  >
+                    <FieldCard
+                      card={card}
+                      player={enemy}
+                      opponent={me}
+                      selected={selectedAttacker === card.uid}
+                      isTarget={!!selectedAttacker}
+                      canAct={canActCard}
+                      attackAnim={attackAnim}
+                      damageAnim={damageAnim}
+                      cardRef={(el) => {
+                        if (el) cardRefsMap.current.set(card.uid, el);
+                        else cardRefsMap.current.delete(card.uid);
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* CENTER DIVIDER ZONE */}
+      <div className="zone-divider">
+        <div className="center-divider">
+          <div className="divider-phases">
+            {phases.map((p) => (
+              <div
+                key={p.id}
+                className={cn(
+                  'phase-pill',
+                  p.active && 'active',
+                  p.done && 'done',
+                  !p.active && !p.done && 'idle'
+                )}
+                title={p.label}
+              >
+                {p.icon}
+              </div>
+            ))}
+          </div>
+
+          <div className="divider-buttons">
+            {selectedAttacker && (
+              <>
+                <button
+                  onClick={clickAttackHero}
+                  className="attack-hero-btn"
+                  title="Атаковать героя напрямую"
+                >
+                  ⚔️ В героя
+                </button>
+                <button
+                  onClick={() => setSelectedAttacker(null)}
+                  className="cancel-btn"
+                  title="Отменить выбор"
+                >
+                  ✕
+                </button>
+              </>
+            )}
+            {myTurn && !gs.gameOver && !selectedAttacker && (
+              <button
+                onClick={clickEndTurn}
+                className={cn(
+                  'end-turn-btn',
+                  phase === 'done' ? 'ready' : 'busy'
+                )}
+                title={phase === 'done' ? 'Нет действий — завершите ход' : 'Завершить ход досрочно'}
+              >
+                Конец хода ⏭️
+              </button>
+            )}
+          </div>
+
+          <div className="divider-hint">{getHint()}</div>
+        </div>
+      </div>
+
+      {/* PLAYER BOARD ZONE */}
+      <div className="zone-player-board">
+        <div className="board-zone player">
+          {me.field.length === 0 ? (
+            <div className="text-gray-600 italic text-center" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>
+              Ваше поле пусто
+            </div>
+          ) : (
+            me.field.map((card) => {
+              const canActCard =
+                isP1Turn &&
+                !card.summoningSickness &&
+                !card.hasAttacked &&
+                card.frozen <= 0 &&
+                !card.keywords.includes('defender') &&
+                !gs.gameOver;
+
+              const isSelected = selectedAttacker === card.uid;
+              const attackAnim = attackAnimUid === card.uid;
+              const damageAnim = damageAnimUid === card.uid;
+
+              return (
+                <div
+                  key={card.uid}
+                  className="creature-slot occupied"
+                  ref={(el) => {
+                    if (el) cardRefsMap.current.set(card.uid, el);
+                    else cardRefsMap.current.delete(card.uid);
+                  }}
+                >
+                  <div
+                    className={cn(
+                      'game-card-container',
+                      isSelected && 'attacker-selected',
+                      canActCard && !isSelected && 'can-act'
+                    )}
+                    onClick={() => clickMyCreature(card.uid)}
+                    style={{ cursor: canActCard ? 'pointer' : 'default' }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && clickMyCreature(card.uid)}
+                  >
+                    <FieldCard
+                      card={card}
+                      player={me}
+                      opponent={enemy}
+                      selected={isSelected}
+                      canAct={canActCard}
+                      attackAnim={attackAnim}
+                      damageAnim={damageAnim}
+                      cardRef={(el) => {
+                        if (el) cardRefsMap.current.set(card.uid, el);
+                        else cardRefsMap.current.delete(card.uid);
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* PLAYER HERO ZONE */}
+      <div className="zone-player-hero">
+        <div className="hero-zone">
+          <PlayerArea
+            player={me}
+            isCurrentPlayer={isP1Turn}
+            label="Вы"
+            isTop={false}
+          />
+        </div>
+      </div>
+
+      {/* ACTION BAR ZONE */}
+      <div className="zone-actionbar">
+        <div className="action-bar">
+          <span className={cn('phase-pill', phase === 'land' && 'active', landPlayed && 'done')}>
+            🏔️ Земля
+          </span>
+          <span className={cn('phase-pill', phase === 'play' && 'active', !hasPlayableCard && landPlayed && 'done')}>
+            🃏 Карты
+          </span>
+          <span className={cn('phase-pill', phase === 'attack' && 'active', !hasAttackers && 'done')}>
+            ⚔️ Атака
+          </span>
+          <span className={cn('phase-pill', phase === 'done' && 'active')}>
+            ⏭️ Конец
+          </span>
+        </div>
+      </div>
+
+      {/* HAND ZONE */}
+      <div className="zone-hand">
+        <div className="hand-zone">
+          {me.hand.length === 0 && (
+            <div className="text-gray-600 italic py-2 font-body" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>
+              Рука пуста
+            </div>
+          )}
+          {me.hand.map((card) => {
+            const isLand = card.data.type === 'land';
+            const canPlay =
+              myTurn &&
+              !gs.gameOver &&
+              (isLand ? me.landsPlayed < me.maxLandsPerTurn : card.data.cost <= me.mana);
+            return (
+              <div
+                key={card.uid}
+                className={cn(
+                  'hand-card-wrapper',
+                  selectedHand === card.uid && 'selected',
+                  !canPlay && 'not-playable'
+                )}
+                onClick={() => clickHand(card.uid)}
+                draggable={canPlay}
+                onDragStart={(e) => handleDragStart(e, card.uid)}
+                onDragEnd={handleDragEnd}
+              >
+                <HandCard
+                  card={card}
+                  selected={selectedHand === card.uid}
+                  canPlay={canPlay}
+                  isLand={isLand}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
 

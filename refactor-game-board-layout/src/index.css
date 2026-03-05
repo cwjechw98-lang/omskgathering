@@ -1,0 +1,1371 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════
+   ЦЕНТРАЛИЗОВАННАЯ СИСТЕМА Z-INDEX
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --z-background:    0;
+  --z-board:         1;
+  --z-card-slots:    5;
+  --z-cards:         10;
+  --z-card-hover:    20;
+  --z-hand:          25;
+  --z-card-effects:  30;
+  --z-divider:       40;
+  --z-combat:        50;
+  --z-ui:            90;
+  --z-overlay:       100;
+  --z-modal:         200;
+  --z-banner:        500;
+  --z-top:           10000;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ПЕРЕМЕННЫЕ РАЗМЕРОВ
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --field-card-w:  clamp(58px, 7.2vw, 96px);
+  --field-card-h:  clamp(82px, 10.2vw, 134px);
+  --hand-card-w:   clamp(54px, 6.8vw,  88px);
+  --hand-card-h:   clamp(76px, 9.6vw, 122px);
+  --slot-w:        calc(var(--field-card-w) + 8px);
+  --slot-h:        calc(var(--field-card-h) + 10px);
+
+  --topbar-h:      clamp(38px, 5vh,   50px);
+  --herozone-h:    clamp(56px, 7.5vh, 72px);
+  --divider-h:     clamp(40px, 5.5vh, 54px);
+  --actionbar-h:   clamp(32px, 4vh,   44px);
+  --handzone-h:    calc(var(--hand-card-h) + clamp(24px, 3.5vh, 40px));
+}
+
+@media (max-width: 768px) {
+  :root {
+    --field-card-w:  clamp(44px, 12.5vw, 68px);
+    --field-card-h:  clamp(62px, 17.5vw, 94px);
+    --hand-card-w:   clamp(42px, 12vw,   64px);
+    --hand-card-h:   clamp(58px, 16.5vw, 88px);
+    --topbar-h:      clamp(36px, 5vh,   44px);
+    --herozone-h:    clamp(50px, 7vh,   64px);
+    --divider-h:     clamp(36px, 5vh,   48px);
+    --actionbar-h:   clamp(28px, 3.5vh, 38px);
+    --handzone-h:    calc(var(--hand-card-h) + clamp(18px, 3vh, 30px));
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --field-card-w:  clamp(38px, 16vw,  60px);
+    --field-card-h:  clamp(54px, 22.5vw, 84px);
+    --hand-card-w:   clamp(36px, 15.5vw, 57px);
+    --hand-card-h:   clamp(50px, 22vw,   80px);
+    --herozone-h:    clamp(46px, 6.5vh,  58px);
+    --divider-h:     clamp(34px, 5vh,    46px);
+    --handzone-h:    calc(var(--hand-card-h) + clamp(16px, 2.8vh, 26px));
+    --actionbar-h:   clamp(26px, 3.5vh,  36px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BASE RESET
+   ═══════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #07060f;
+  color: #fff;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.25); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ГЛАВНЫЙ CSS GRID — 8 строк, именованные зоны
+   ═══════════════════════════════════════════════════════════════════ */
+.game-grid {
+  display: grid;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+
+  grid-template-rows:
+    var(--topbar-h)       /* topbar   */
+    var(--herozone-h)     /* enemy-hero */
+    1fr                   /* enemy-board */
+    var(--divider-h)      /* divider  */
+    1fr                   /* player-board */
+    var(--herozone-h)     /* player-hero */
+    var(--actionbar-h)    /* actionbar */
+    var(--handzone-h);    /* hand     */
+
+  grid-template-areas:
+    "topbar"
+    "enemy-hero"
+    "enemy-board"
+    "divider"
+    "player-board"
+    "player-hero"
+    "actionbar"
+    "hand";
+
+  background:
+    radial-gradient(ellipse at 50% 0%,   rgba(40,25,80,0.45)  0%, transparent 55%),
+    radial-gradient(ellipse at 50% 100%, rgba(20,40,80,0.35)  0%, transparent 55%),
+    linear-gradient(180deg, #080610 0%, #07060e 50%, #060810 100%);
+}
+
+/* ── Присвоение grid-area ── */
+.zone-topbar       { grid-area: topbar;       overflow: hidden;  z-index: var(--z-ui); }
+.zone-enemy-hero   { grid-area: enemy-hero;   overflow: hidden;  z-index: var(--z-board); }
+.zone-enemy-board  { grid-area: enemy-board;  overflow: hidden;  z-index: var(--z-board); position: relative; }
+.zone-divider      { grid-area: divider;      overflow: visible; z-index: var(--z-divider); position: relative; }
+.zone-player-board { grid-area: player-board; overflow: hidden;  z-index: var(--z-board); position: relative; }
+.zone-player-hero  { grid-area: player-hero;  overflow: hidden;  z-index: var(--z-board); }
+.zone-actionbar    { grid-area: actionbar;    overflow: hidden;  z-index: var(--z-ui); }
+.zone-hand         { grid-area: hand;         overflow: hidden;  z-index: var(--z-hand); }
+
+/* ── Тонкие фоны зон ── */
+.zone-enemy-board {
+  background: linear-gradient(180deg,
+    rgba(180,40,40,0.03) 0%,
+    rgba(120,20,20,0.02) 50%,
+    transparent 100%
+  );
+}
+.zone-player-board {
+  background: linear-gradient(0deg,
+    rgba(40,80,180,0.04) 0%,
+    rgba(20,40,120,0.02) 50%,
+    transparent 100%
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TOP BAR
+   ═══════════════════════════════════════════════════════════════════ */
+.zone-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(8px, 1.5vw, 16px);
+  background: rgba(0,0,0,0.88);
+  border-bottom: 1px solid rgba(201,168,76,0.07);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HERO ZONE
+   ═══════════════════════════════════════════════════════════════════ */
+.hero-zone {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1vw, 14px);
+  padding: 0 clamp(8px, 1.5vw, 16px);
+  height: 100%;
+  transition: background 0.35s ease;
+}
+
+.hero-avatar {
+  width:  clamp(32px, 4vw, 46px);
+  height: clamp(32px, 4vw, 46px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: clamp(15px, 2.2vw, 26px);
+  transition: box-shadow 0.4s ease;
+}
+
+.hero-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2px, 0.3vh, 5px);
+}
+
+.hero-name {
+  font-weight: 700;
+  font-size: clamp(10px, 1.2vw, 14px);
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hero-hp-bar-track {
+  height: clamp(5px, 0.7vw, 9px);
+  background: rgba(255,255,255,0.07);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.hero-hp-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease, background-color 0.5s ease;
+}
+
+.hero-hp-text {
+  font-weight: 700;
+  font-size: clamp(11px, 1.3vw, 15px);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.4s ease;
+}
+
+.hero-mana-pips {
+  display: flex;
+  gap: clamp(2px, 0.25vw, 4px);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mana-pip {
+  width:  clamp(7px, 0.9vw, 11px);
+  height: clamp(7px, 0.9vw, 11px);
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mana-pip.full  { background: #3b82f6; box-shadow: 0 0 5px rgba(59,130,246,0.65); }
+.mana-pip.spent { background: rgba(30,58,138,0.45); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   DECK & GRAVEYARD ZONES
+   ═══════════════════════════════════════════════════════════════════ */
+.deck-zone, .graveyard-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width:  clamp(32px, 4.2vw, 52px);
+  height: clamp(44px, 5.8vw, 70px);
+  border-radius: 7px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.18s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.deck-zone:hover, .graveyard-zone:hover {
+  transform: scale(1.08) translateY(-2px);
+}
+
+.deck-zone {
+  background: linear-gradient(150deg, #1a1030, #0d0820);
+  border: 1.5px solid rgba(120,100,200,0.35);
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.5),
+    2px 2px 0 rgba(0,0,0,0.4),
+    3px 3px 0 rgba(0,0,0,0.3);
+}
+
+.deck-zone:hover {
+  box-shadow:
+    0 4px 16px rgba(120,100,200,0.28),
+    2px 2px 0 rgba(0,0,0,0.4),
+    3px 3px 0 rgba(0,0,0,0.3);
+}
+
+.graveyard-zone {
+  background: linear-gradient(150deg, #1a0808, #0d0404);
+  border: 1.5px dashed rgba(200,60,60,0.32);
+}
+
+.graveyard-zone:hover {
+  box-shadow: 0 4px 16px rgba(200,60,60,0.18);
+}
+
+.deck-count      { font-size: clamp(9px,1.1vw,13px); font-weight:700; color: rgba(200,190,230,0.8); margin-top:2px; }
+.graveyard-count { font-size: clamp(9px,1.1vw,13px); font-weight:700; color: rgba(220,120,120,0.7); margin-top:2px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   BOARD ZONE — CSS GRID 7 СЛОТОВ
+   ═══════════════════════════════════════════════════════════════════ */
+.board-zone {
+  display: grid;
+  grid-template-columns: repeat(7, var(--slot-w));
+  gap: clamp(3px, 0.5vw, 8px);
+  justify-content: center;
+  align-content: center;
+  padding: 4px clamp(6px, 1.5vw, 20px);
+  height: 100%;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.board-zone::-webkit-scrollbar { display: none; }
+
+/* Enemy board — карты прижаты к низу слота */
+.board-zone.enemy   { align-items: end; align-content: end; padding-bottom: 6px; }
+/* Player board — карты прижаты к верху слота */
+.board-zone.player  { align-items: start; align-content: start; padding-top: 6px; }
+
+/* ─── Attack Lane подсветка ─── */
+.board-zone.enemy .creature-slot.attack-lane-active {
+  background: rgba(239,68,68,0.07);
+  border-color: rgba(239,68,68,0.28);
+  box-shadow: 0 0 14px rgba(239,68,68,0.12) inset;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ЭТАП 2 — АРХИТЕКТУРА КАРТЫ: CardSlot → CardContainer → CardVisual
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── CardSlot (= .creature-slot) ──
+   Определяет позицию в grid, фиксированный размер.
+   НЕ делает transform — только позиционирование. */
+.creature-slot {
+  width:  var(--slot-w);
+  height: var(--slot-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px dashed rgba(255,255,255,0.055);
+  background: rgba(255,255,255,0.012);
+  position: relative;
+  z-index: var(--z-card-slots);
+  transition: border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+}
+
+.creature-slot.drop-target {
+  border-color: rgba(34,197,94,0.42);
+  background: rgba(34,197,94,0.06);
+  animation: slotDropPulse 0.9s ease-in-out infinite;
+}
+
+.creature-slot.occupied {
+  border-color: transparent;
+  background: transparent;
+}
+
+/* Подсветка дорожки атаки */
+.creature-slot.attack-lane {
+  background: rgba(239,68,68,0.05);
+  border-color: rgba(239,68,68,0.22);
+  box-shadow: 0 0 10px rgba(239,68,68,0.1) inset;
+  transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+
+/* ── CardContainer (= .game-card-container) ──
+   Отвечает за hover, scale, drag.
+   ТОЛЬКО transform, cursor, z-index — никакого overflow. */
+.game-card-container {
+  width:  var(--field-card-w);
+  height: var(--field-card-h);
+  transform-origin: bottom center;
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), z-index 0s;
+  position: relative;
+  z-index: var(--z-cards);
+}
+
+/* hover на слоте (не на руке) — только в occupied slot */
+.creature-slot.occupied:hover .game-card-container {
+  transform: scale(1.08) translateY(-5px);
+  z-index: var(--z-card-hover);
+}
+
+/* Выбранный атакующий */
+.game-card-container.attacker-selected {
+  transform: scale(1.1) translateY(-8px);
+  z-index: var(--z-card-hover);
+}
+
+/* Цель */
+.game-card-container.is-target:hover {
+  transform: scale(1.06);
+  cursor: crosshair;
+}
+
+/* Может атаковать — лёгкий подбрыск */
+.game-card-container.can-act {
+  animation: canActFloat 2.5s ease-in-out infinite;
+}
+
+/* ── CardVisual (= .game-card) ──
+   Только внешний вид: рамка, фон, foil, статы.
+   overflow: hidden ОБЯЗАТЕЛЕН — foil не вылезает за карту. */
+.game-card {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  border: 2px solid rgba(255,255,255,0.1);
+  overflow: hidden;             /* ← КРИТИЧНО */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  /* Плавный цвет рамки */
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* ─── Цвета карты ─── */
+.game-card.color-white    { background: linear-gradient(160deg, #3c3222, #201c12); }
+.game-card.color-blue     { background: linear-gradient(160deg, #0e1e40, #070f22); }
+.game-card.color-black    { background: linear-gradient(160deg, #1c1024, #0e0912); }
+.game-card.color-red      { background: linear-gradient(160deg, #3c1212, #220a0a); }
+.game-card.color-green    { background: linear-gradient(160deg, #0c2a12, #081808); }
+.game-card.color-colorless{ background: linear-gradient(160deg, #282828, #161616); }
+
+/* ─── Редкость ─── */
+.game-card.rarity-common   { border-color: rgba(150,150,150,0.22); }
+.game-card.rarity-uncommon { border-color: rgba(180,220,180,0.38); }
+.game-card.rarity-rare     { border-color: rgba(200,160,55,0.52); }
+.game-card.rarity-mythic   {
+  border-color: rgba(220,120,35,0.62);
+  box-shadow: 0 0 7px rgba(220,120,35,0.22);
+}
+
+/* ─── Состояния карты ─── */
+.game-card.can-act-glow {
+  border-color: rgba(74,222,128,0.68);
+  box-shadow: 0 0 10px rgba(74,222,128,0.28), inset 0 0 5px rgba(74,222,128,0.05);
+}
+
+.game-card.attacker-glow {
+  border-color: rgba(250,204,21,0.88);
+  box-shadow:
+    0 0 20px rgba(250,204,21,0.5),
+    0 0 5px rgba(250,204,21,0.9),
+    inset 0 0 8px rgba(250,204,21,0.08);
+}
+
+.game-card.is-target-glow {
+  border-color: rgba(239,68,68,0.85);
+  box-shadow: 0 0 16px rgba(239,68,68,0.45);
+  animation: targetPulse 0.85s ease-in-out infinite;
+}
+
+.game-card.frozen-look {
+  opacity: 0.65;
+  filter: saturate(0.45) hue-rotate(165deg);
+  border-color: rgba(103,232,249,0.42);
+}
+
+/* ─── Foil эффект (rare / mythic) ─── */
+/* z-index: var(--z-card-effects) = 30 — выше карты, ниже UI */
+.game-card.rarity-rare::after,
+.game-card.rarity-mythic::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: var(--z-card-effects);
+  opacity: 0;
+  background: linear-gradient(
+    115deg,
+    transparent         20%,
+    rgba(255,255,255,0.04) 30%,
+    rgba(180,130,255,0.13) 38%,
+    rgba(255,220,100,0.19) 46%,
+    rgba(100,220,255,0.14) 54%,
+    rgba(255,255,255,0.04) 62%,
+    transparent         70%
+  );
+  background-size: 300% 300%;
+  animation: foilShimmer 3.5s ease-in-out infinite;
+}
+
+.game-card.rarity-mythic::after {
+  opacity: 0.88;
+  animation-duration: 2.2s;
+  background: linear-gradient(
+    110deg,
+    transparent            10%,
+    rgba(255,200,80,0.04)  22%,
+    rgba(200,100,255,0.22) 33%,
+    rgba(255,230,120,0.30) 45%,
+    rgba(80,200,255,0.23)  57%,
+    rgba(255,120,200,0.17) 68%,
+    rgba(255,255,255,0.04) 78%,
+    transparent            88%
+  );
+  background-size: 400% 400%;
+}
+
+.game-card.rarity-rare:hover::after   { opacity: 1; }
+.game-card.rarity-mythic:hover::after { opacity: 1; }
+
+/* ─── Анатомия карты ─── */
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: clamp(2px,0.35vw,5px) clamp(2px,0.35vw,5px) 0;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.card-emoji {
+  font-size: clamp(14px, 2vw, 28px);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.card-cost {
+  width:  clamp(15px, 1.9vw, 23px);
+  height: clamp(15px, 1.9vw, 23px);
+  border-radius: 50%;
+  background: #1a4db5;
+  color: #fff;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(7px, 0.85vw, 11px);
+  flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.55);
+  position: relative;
+  z-index: 2;
+}
+
+.card-art-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.card-bottom {
+  padding: clamp(2px,0.28vw,4px);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.58);
+  position: relative;
+  z-index: 2;
+}
+
+.card-name {
+  color: #fff;
+  font-weight: 700;
+  font-size: clamp(5.5px, 0.7vw, 9.5px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.15;
+}
+
+.card-keywords { display: flex; flex-wrap: wrap; gap: 1px; font-size: clamp(7px, 0.7vw, 10px); }
+.card-status   { display: flex; gap: 2px; font-size: clamp(6px, 0.65vw, 9px); }
+
+.card-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2px;
+  margin-top: 1px;
+}
+
+.stat-atk {
+  background: rgba(185,28,28,0.88);
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(7px, 0.9vw, 12px);
+  padding: 0 clamp(2px,0.28vw,4px);
+  border-radius: 3px;
+  line-height: 1.35;
+}
+
+.stat-hp {
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(7px, 0.9vw, 12px);
+  padding: 0 clamp(2px,0.28vw,4px);
+  border-radius: 3px;
+  line-height: 1.35;
+}
+.stat-hp.healthy { background: rgba(21,128,61,0.88); }
+.stat-hp.wounded { background: rgba(185,28,28,0.88); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ЭТАП 6 — ARC HAND LAYOUT
+   Карты расположены по дуге с помощью CSS custom properties.
+   ═══════════════════════════════════════════════════════════════════ */
+.hand-zone {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  padding: clamp(6px,1vh,14px) clamp(4px,0.8vw,10px) clamp(4px,0.8vh,8px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  position: relative;
+  z-index: var(--z-hand);
+  /* Отрицательный gap создаёт веерный overlap */
+  gap: clamp(-14px,-2.2vw,-5px);
+}
+
+/* ── Обёртка карты в руке (CardContainer для руки) ── */
+.hand-card-wrapper {
+  flex-shrink: 0;
+  position: relative;
+  width:  var(--hand-card-w);
+  height: var(--hand-card-h);
+  /* Угол дуги и смещение задаются через inline style: --card-angle, --card-offset */
+  transform:
+    rotate(var(--card-angle, 0deg))
+    translateY(var(--card-offset, 0px));
+  transform-origin: bottom center;
+  transition:
+    transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+    z-index 0s,
+    filter 0.22s ease;
+  cursor: pointer;
+  z-index: calc(var(--z-hand) + var(--card-index, 0));
+}
+
+/* Hover — карта поднимается, угол исчезает, масштаб растёт */
+.hand-card-wrapper:hover {
+  transform:
+    rotate(0deg)
+    translateY(-22px)
+    scale(1.16);
+  z-index: calc(var(--z-card-hover) + 5);
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.6));
+}
+
+/* Выбранная */
+.hand-card-wrapper.selected {
+  transform:
+    rotate(0deg)
+    translateY(-28px)
+    scale(1.2);
+  z-index: calc(var(--z-card-hover) + 10);
+  filter: drop-shadow(0 10px 20px rgba(250,204,21,0.35));
+}
+
+/* Нельзя играть */
+.hand-card-wrapper.not-playable {
+  opacity: 0.38;
+  filter: grayscale(0.55);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ЦЕНТРАЛЬНЫЙ РАЗДЕЛИТЕЛЬ — ЦЕНТР ЭКРАНА
+   ═══════════════════════════════════════════════════════════════════ */
+.center-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 1.2vw, 16px);
+  height: 100%;
+  width: 100%;
+  position: relative;
+  padding: 0 clamp(8px, 2vw, 24px);
+}
+
+/* Горизонтальная разделительная линия */
+.center-divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(201,168,76,0.06)  8%,
+    rgba(201,168,76,0.32) 35%,
+    rgba(201,168,76,0.52) 50%,
+    rgba(201,168,76,0.32) 65%,
+    rgba(201,168,76,0.06) 92%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* Левый блок — фазы */
+.divider-phases {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* Правый блок — подсказка */
+.divider-hint {
+  flex: 1;
+  text-align: center;
+  font-size: clamp(10px, 1.1vw, 13px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  color: rgba(107,114,128,0.7);
+  transition: color 0.25s ease;
+}
+
+/* Блок кнопок — строго по центру */
+.divider-buttons {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px,1vw,12px);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Кнопка «Конец хода» ── */
+.end-turn-btn {
+  padding: clamp(5px,0.9vh,11px) clamp(14px,2.5vw,30px);
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: clamp(11px, 1.2vw, 15px);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    transform  0.15s cubic-bezier(0.34,1.56,0.64,1),
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.end-turn-btn.ready {
+  background: linear-gradient(135deg, #7c3d08, #b8840a 50%, #d49610);
+  border-color: rgba(212,150,14,0.6);
+  color: #fff;
+  box-shadow: 0 0 18px rgba(201,168,76,0.35), 0 4px 12px rgba(0,0,0,0.5);
+  animation: endTurnGlow 2.2s ease-in-out infinite;
+}
+
+.end-turn-btn.ready:hover {
+  transform: scale(1.09);
+  box-shadow: 0 0 30px rgba(201,168,76,0.55), 0 6px 18px rgba(0,0,0,0.6);
+}
+
+.end-turn-btn.ready:active  { transform: scale(0.95); }
+
+.end-turn-btn.busy {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.22);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── Кнопка «В героя» (атака) ── */
+.attack-hero-btn {
+  padding: clamp(5px,0.9vh,11px) clamp(12px,2vw,24px);
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: clamp(11px, 1.2vw, 15px);
+  background: linear-gradient(135deg, #7f1d1d, #b91c1c);
+  border: 1.5px solid rgba(239,68,68,0.55);
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  box-shadow: 0 0 14px rgba(239,68,68,0.3), 0 4px 12px rgba(0,0,0,0.5);
+  animation: attackBtnPulse 0.9s ease-in-out infinite;
+  transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.attack-hero-btn:hover  { transform: scale(1.09); }
+.attack-hero-btn:active { transform: scale(0.94); }
+
+/* ── Кнопка «Отмена» ── */
+.cancel-btn {
+  padding: clamp(5px,0.9vh,11px) clamp(10px,1.5vw,18px);
+  border-radius: 10px;
+  font-size: clamp(11px, 1.2vw, 14px);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.11);
+  color: #9ca3af;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background 0.15s, transform 0.12s;
+}
+
+.cancel-btn:hover  { background: rgba(255,255,255,0.12); transform: scale(1.04); }
+.cancel-btn:active { transform: scale(0.96); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ACTION BAR (нижняя строка подсказок / фаз)
+   ═══════════════════════════════════════════════════════════════════ */
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: clamp(4px, 0.6vw, 10px);
+  padding: 0 clamp(8px, 1.5vw, 16px);
+  height: 100%;
+  background: rgba(0,0,0,0.72);
+  border-top: 1px solid rgba(201,168,76,0.055);
+  font-size: clamp(10px,1.1vw,13px);
+}
+
+/* ─── Phase pills ─── */
+.phase-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: clamp(9px, 0.9vw, 12px);
+  font-weight: 600;
+  transition: all 0.22s ease;
+}
+.phase-pill.active { background: rgba(201,168,76,0.22); color: #f0d68a; }
+.phase-pill.done   { color: rgba(255,255,255,0.2);  text-decoration: line-through; }
+.phase-pill.idle   { color: rgba(255,255,255,0.22); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   DROP ZONE OVERLAY
+   ═══════════════════════════════════════════════════════════════════ */
+.drop-overlay {
+  position: absolute;
+  inset: 4px;
+  border-radius: 12px;
+  background: rgba(34,197,94,0.05);
+  border: 2px dashed rgba(34,197,94,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-combat);
+  pointer-events: none;
+  animation: slotDropPulse 0.9s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ENEMY HAND (рубашки карт)
+   ═══════════════════════════════════════════════════════════════════ */
+.enemy-hand-card {
+  width:  clamp(10px, 1.4vw, 18px);
+  height: clamp(14px, 2vw,   24px);
+  background: linear-gradient(160deg, #2a1a30, #180d20);
+  border: 1px solid rgba(180,80,160,0.25);
+  border-radius: 3px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(4px, 0.5vw, 7px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ENCHANTMENT CHIPS
+   ═══════════════════════════════════════════════════════════════════ */
+.enchant-chip {
+  background: rgba(88,28,135,0.35);
+  border: 1px solid rgba(147,51,234,0.25);
+  color: #d8b4fe;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: clamp(8px, 0.85vw, 11px);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.enchant-chip:hover { background: rgba(88,28,135,0.55); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ЭТАП 7 — OVERLAYS (все через position:fixed, строгие z-index)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Card Preview Panel ── */
+.card-preview-panel {
+  position: fixed;
+  right: clamp(6px, 1vw, 14px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: var(--z-overlay);
+  width: clamp(180px, 18vw, 262px);
+  animation: fadeSlideRight 0.25s cubic-bezier(0.22,1,0.36,1);
+}
+
+@media (max-width: 600px) {
+  .card-preview-panel {
+    right: 6px;
+    top: auto;
+    bottom: calc(var(--handzone-h) + var(--actionbar-h) + 8px);
+    transform: none;
+    width: clamp(160px, 46vw, 218px);
+  }
+}
+
+/* ── Log panel ── */
+.log-panel {
+  position: fixed;
+  top: var(--topbar-h);
+  right: 0;
+  bottom: 0;
+  width: clamp(220px, 26vw, 320px);
+  background: rgba(7,6,15,0.97);
+  border-left: 1px solid rgba(201,168,76,0.12);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-overlay);
+  animation: fadeSlideRight 0.22s ease-out;
+  backdrop-filter: blur(12px);
+}
+
+/* ── Graveyard / Zone Modal ── */
+.zone-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.82);
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: scaleIn 0.2s ease-out;
+}
+
+.zone-modal {
+  background: linear-gradient(160deg, #0f0d1e, #080610);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 16px;
+  width: min(480px, 90vw);
+  max-height: 80dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+}
+
+.zone-modal-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(201,168,76,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.zone-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* ── AI Thinking Badge ── */
+.ai-thinking-badge {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background: rgba(7,6,15,0.97);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 18px;
+  padding: clamp(12px,2vh,22px) clamp(16px,3vw,30px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: var(--z-banner);
+  pointer-events: none;
+  animation: scaleIn 0.28s cubic-bezier(0.22,1,0.36,1);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+  backdrop-filter: blur(16px);
+}
+
+/* ── AI Message Feed ── */
+.ai-feed {
+  position: fixed;
+  left: clamp(8px, 1.5vw, 16px);
+  top: calc(var(--topbar-h) + var(--herozone-h) + 6px);
+  z-index: var(--z-ui);
+  width: clamp(200px, 22vw, 310px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+/* ── Плашка ИИ — медленное ТЕКУЧЕЕ появление ── */
+/* Opacity управляется через React state (inline style),
+   трансформация — через CSS transition для плавности */
+.ai-feed-item {
+  background: rgba(10,8,20,0.96);
+  border: 1px solid rgba(201,168,76,0.18);
+  border-radius: 12px;
+  padding: clamp(8px,1vw,13px) clamp(10px,1.2vw,15px);
+  pointer-events: none;
+  /* Transition управляет плавностью изменения opacity/transform из React */
+  transition:
+    opacity    1.1s cubic-bezier(0.16,1,0.3,1),
+    transform  1.1s cubic-bezier(0.16,1,0.3,1),
+    filter     1.1s cubic-bezier(0.16,1,0.3,1);
+  will-change: opacity, transform;
+}
+
+/* Видимое состояние — задаётся через inline style из React */
+/* opacity: 0 → 1 при появлении, 1 → 0 при исчезновении */
+
+/* Turn Banner */
+.turn-banner {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.74);
+  z-index: var(--z-top);
+  pointer-events: none;
+  animation: turnBanner 1.4s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+
+.turn-banner-text {
+  font-size: clamp(22px, 5vw, 48px);
+  font-weight: 800;
+  color: #f0d68a;
+  text-shadow: 0 0 28px rgba(201,168,76,0.7);
+  letter-spacing: 0.04em;
+}
+
+.turn-banner-sub {
+  font-size: clamp(11px, 1.8vw, 15px);
+  color: rgba(201,168,76,0.5);
+  margin-top: 6px;
+}
+
+/* ── Damage Numbers ── */
+.dmg-number {
+  position: fixed;
+  font-weight: 900;
+  font-size: clamp(20px, 3vw, 30px);
+  pointer-events: none;
+  z-index: var(--z-top);
+  animation: damageFloat 0.85s ease-out forwards;
+  transform: translate(-50%,-50%);
+  text-shadow: 2px 2px 0 #000, 0 0 8px currentColor;
+}
+
+.dmg-number.damage { color: #ff4444; }
+.dmg-number.heal   { color: #44ff88; }
+
+/* ── Low Health Overlay ── */
+.low-health-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: calc(var(--z-top) - 2);
+  background: radial-gradient(
+    ellipse at center,
+    transparent 42%,
+    rgba(220,20,20,0.12) 68%,
+    rgba(255,0,0,0.24) 100%
+  );
+  animation: lowHealthPulse 2.6s ease-in-out infinite;
+}
+
+.low-health-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255,0,0,0.2);
+  pointer-events: none;
+}
+
+.low-health-overlay.critical {
+  animation: criticalHealthPulse 1.1s ease-in-out infinite;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 28%,
+    rgba(220,20,20,0.20) 58%,
+    rgba(255,0,0,0.38) 100%
+  );
+}
+
+.low-health-overlay.critical::after {
+  border-color: rgba(255,0,0,0.42);
+}
+
+/* ── Sparks ── */
+.spark {
+  position: fixed;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: var(--z-top);
+  animation: sparkFly 0.45s ease-out forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Bounce dots (AI thinking)
+   ═══════════════════════════════════════════════════════════════════ */
+.dot-bounce { display: inline-flex; gap: 4px; }
+.dot-bounce span {
+  width: 7px; height: 7px;
+  background: #c9a84c;
+  border-radius: 50%;
+  animation: dotBounce 1.2s ease-in-out infinite;
+}
+.dot-bounce span:nth-child(2) { animation-delay: 0.15s; }
+.dot-bounce span:nth-child(3) { animation-delay: 0.30s; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Foil переливание */
+@keyframes foilShimmer {
+  0%   { background-position: 200% 0%;    opacity: 0; }
+  12%  { opacity: 0.65; }
+  50%  { background-position: -55% 100%;  opacity: 1; }
+  88%  { opacity: 0.65; }
+  100% { background-position: 200% 0%;    opacity: 0; }
+}
+
+/* «Может атаковать» — лёгкое покачивание вверх */
+@keyframes canActFloat {
+  0%,100% { transform: translateY(0);    }
+  50%     { transform: translateY(-4px); }
+}
+
+/* Пульс: может атаковать */
+@keyframes canActGlowPulse {
+  0%,100% { box-shadow: 0 0 6px rgba(74,222,128,0.22), inset 0 0 4px rgba(74,222,128,0.04); }
+  50%     { box-shadow: 0 0 18px rgba(74,222,128,0.55), inset 0 0 8px rgba(74,222,128,0.1); }
+}
+
+/* Пульс: цель */
+@keyframes targetPulse {
+  0%,100% { box-shadow: 0 0 8px rgba(239,68,68,0.3); }
+  50%     { box-shadow: 0 0 24px rgba(239,68,68,0.72); }
+}
+
+/* Удар карты */
+@keyframes cardAttack {
+  0%   { transform: translateY(0)   scale(1);    }
+  25%  { transform: translateY(-18px) scale(1.1); }
+  55%  { transform: translateY(8px) scale(0.95); }
+  100% { transform: translateY(0)   scale(1);    }
+}
+
+/* Получение урона */
+@keyframes cardDamage {
+  0%   { filter: brightness(1);     transform: scale(1); }
+  15%  { filter: brightness(2.8) saturate(0.2); transform: scale(0.92); }
+  50%  { filter: brightness(0.65);  }
+  100% { filter: brightness(1);     transform: scale(1); }
+}
+
+/* Появление карты на поле */
+@keyframes cardEntrance {
+  0%   { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  65%  { transform: scale(1.07) rotate(1.5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg);     opacity: 1; }
+}
+
+/* Пульс слота при дропе */
+@keyframes slotDropPulse {
+  0%,100% { border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.04); }
+  50%     { border-color: rgba(34,197,94,0.62); background: rgba(34,197,94,0.10); }
+}
+
+/* Кнопка «Конец хода» */
+@keyframes endTurnGlow {
+  0%,100% { box-shadow: 0 0 14px rgba(201,168,76,0.3), 0 4px 12px rgba(0,0,0,0.5); }
+  50%     { box-shadow: 0 0 30px rgba(201,168,76,0.62), 0 4px 18px rgba(0,0,0,0.6); }
+}
+
+/* Кнопка атаки */
+@keyframes attackBtnPulse {
+  0%,100% { box-shadow: 0 0 10px rgba(239,68,68,0.25), 0 4px 12px rgba(0,0,0,0.5); }
+  50%     { box-shadow: 0 0 24px rgba(239,68,68,0.65), 0 4px 18px rgba(0,0,0,0.5); }
+}
+
+/* Баннер смены хода */
+@keyframes turnBanner {
+  0%   { opacity: 0; transform: scale(0.86) translateY(-14px); }
+  18%  { opacity: 1; transform: scale(1.02) translateY(0); }
+  80%  { opacity: 1; transform: scale(1)    translateY(0); }
+  100% { opacity: 0; transform: scale(0.96) translateY(8px); }
+}
+
+/* Урон */
+@keyframes damageFloat {
+  0%   { opacity: 1;   transform: translate(-50%,-50%) scale(1);   }
+  60%  { opacity: 0.8; }
+  100% { opacity: 0;   transform: translate(-50%,-140%) scale(1.7); }
+}
+
+/* Тревожный пульс (мало HP) */
+@keyframes lowHealthPulse {
+  0%   { opacity: 0;    }
+  20%  { opacity: 0.22; }
+  40%  { opacity: 0.06; }
+  60%  { opacity: 0.30; }
+  80%  { opacity: 0.08; }
+  100% { opacity: 0;    }
+}
+
+@keyframes criticalHealthPulse {
+  0%,100% { opacity: 0.08; }
+  50%     { opacity: 0.42; }
+}
+
+/* ─── ИИ-плашки — МЕДЛЕННОЕ ТЕКУЧЕЕ ПОЯВЛЕНИЕ ───
+   Три фазы управляются React state (visible: boolean):
+   1. DOM добавлен, visible=false → opacity:0, transform смещён, filter blur
+   2. 120ms → visible=true → CSS transition 1.1s медленно «натекает»
+   3. За 1.2s до конца → visible=false → медленно исчезает с blur
+   CSS делает только transition, React — switching */
+
+/* Dot bounce */
+@keyframes dotBounce {
+  0%,80%,100% { transform: translateY(0);   }
+  40%         { transform: translateY(-6px); }
+}
+
+/* Slide-in для overlays */
+@keyframes fadeSlideRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.86); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+
+/* Спарки */
+@keyframes sparkFly {
+  0%   { transform: translate(0,0) scale(1);   opacity: 1; }
+  100% { transform: translate(var(--dx),var(--dy)) scale(0); opacity: 0; }
+}
+
+/* Утилиты */
+.card-attack-anim { animation: cardAttack  0.52s ease-out; }
+.card-damage-anim { animation: cardDamage  0.38s ease-out; }
+.card-entrance    { animation: cardEntrance 0.38s cubic-bezier(0.22,1,0.36,1); }
+.scale-in         { animation: scaleIn 0.22s ease-out; }
+.fade-slide-up    { animation: fadeSlideUp 0.25s ease-out; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   DEBUG ZONES MODE
+   Класс .debug-zones на <body> показывает границы зон взаимодействия.
+   Активируется из DebugOverlay кнопкой «🔲 Зоны».
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* CardSlot — пунктирная синяя рамка */
+.debug-zones .creature-slot {
+  outline: 1.5px dashed rgba(59,130,246,0.55) !important;
+  outline-offset: -1px;
+}
+
+/* Занятые слоты — зелёный */
+.debug-zones .creature-slot.occupied {
+  outline-color: rgba(34,197,94,0.55) !important;
+}
+
+/* CardContainer — оранжевая сплошная рамка */
+.debug-zones .game-card-container {
+  outline: 1.5px solid rgba(251,146,60,0.7) !important;
+  outline-offset: -1px;
+}
+
+/* CardVisual — жёлтая рамка (внутренняя, overflow:hidden) */
+.debug-zones .game-card {
+  outline: 1px solid rgba(250,204,21,0.65) !important;
+  outline-offset: -2px;
+}
+
+/* Hero zone */
+.debug-zones .hero-zone {
+  outline: 1.5px dashed rgba(167,139,250,0.55) !important;
+  outline-offset: -1px;
+}
+
+/* Hand zone */
+.debug-zones .hand-zone {
+  outline: 1.5px dashed rgba(52,211,153,0.5) !important;
+  outline-offset: -2px;
+}
+
+/* Hand card wrapper */
+.debug-zones .hand-card-wrapper {
+  outline: 1px dashed rgba(251,146,60,0.55) !important;
+  outline-offset: -1px;
+}
+
+/* Board zones */
+.debug-zones .board-zone {
+  outline: 1.5px dashed rgba(148,163,184,0.3) !important;
+  outline-offset: -1px;
+}
+
+/* Deck / graveyard */
+.debug-zones .deck-zone {
+  outline: 1.5px solid rgba(139,92,246,0.7) !important;
+  outline-offset: -1px;
+}
+
+.debug-zones .graveyard-zone {
+  outline: 1.5px solid rgba(239,68,68,0.6) !important;
+  outline-offset: -1px;
+}
+
+/* Divider / ActionBar */
+.debug-zones .zone-divider {
+  outline: 1px solid rgba(201,168,76,0.4) !important;
+  outline-offset: -1px;
+}
+
+.debug-zones .zone-actionbar {
+  outline: 1px solid rgba(148,163,184,0.3) !important;
+  outline-offset: -1px;
+}
+
+/* Debug zones legend — показываем в правом нижнем углу */
+.debug-zones::after {
+  content: '🔲 ZONES: blue=slot  orange=container  yellow=visual  purple=hero  green=hand';
+  position: fixed;
+  bottom: 42px;
+  left: 8px;
+  right: 320px;
+  background: rgba(0,0,0,0.85);
+  color: rgba(201,168,76,0.75);
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(201,168,76,0.15);
+  z-index: 99998;
+  pointer-events: none;
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
