@@ -39,19 +39,28 @@ export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: Pl
       aria-label={label}
     >
       {/* Avatar */}
-      <div
-        className={cn(
-          "rounded-full flex items-center justify-center shrink-0 border",
-          isCurrentPlayer ? "bg-[#2a1a08] border-[#c9a84c]/50" : "bg-[#1a1a2a] border-gray-700/50"
-        )}
-        style={{
-          width: 'clamp(32px, 3.5vw, 48px)',
-          height: 'clamp(32px, 3.5vw, 48px)',
-          fontSize: 'clamp(14px, 1.8vw, 24px)',
-        }}
-        aria-hidden="true"
-      >
-        {label.includes('🤖') || label.includes('🗿') ? '🗿' : '👤'}
+      <div className="flex flex-col items-center gap-1">
+        <div
+          className={cn(
+            "rounded-full flex items-center justify-center shrink-0 border",
+            isCurrentPlayer ? "bg-[#2a1a08] border-[#c9a84c]/50" : "bg-[#1a1a2a] border-gray-700/50"
+          )}
+          style={{
+            width: 'clamp(32px, 3.5vw, 48px)',
+            height: 'clamp(32px, 3.5vw, 48px)',
+            fontSize: 'clamp(14px, 1.8vw, 24px)',
+          }}
+          aria-hidden="true"
+        >
+          {label.includes('🤖') || label.includes('🗿') ? '🗿' : '👤'}
+        </div>
+        {/* Player label under avatar */}
+        <span
+          className="font-heading text-gray-400 text-[9px] truncate max-w-[80px]"
+          style={{ fontSize: 'clamp(8px, 0.8vw, 10px)' }}
+        >
+          {label.includes('Хранитель') ? 'Хранитель' : label.includes('Вы') ? 'Вы' : label}
+        </span>
       </div>
 
       {/* Info */}
@@ -134,17 +143,24 @@ export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: Pl
           </TooltipTrigger>
           <TooltipContent side="top">Карт в руке</TooltipContent>
         </Tooltip>
-        
+
+        {/* Deck with card back visualization */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Badge variant="outline" className="gap-1.5 text-xs min-w-[60px] h-6">
-              <span aria-hidden="true">📚</span>
-              <span>{player.deck.length}</span>
-            </Badge>
+            <div className="flex items-center gap-1">
+              <div className="relative w-5 h-7 rounded border border-gray-600 bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
+                <span className="text-[8px]">🂠</span>
+                {player.deck.length > 0 && (
+                  <span className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-[8px] rounded-full px-1 min-w-[16px] text-center">
+                    {player.deck.length}
+                  </span>
+                )}
+              </div>
+            </div>
           </TooltipTrigger>
-          <TooltipContent side="top">Карт в колоде</TooltipContent>
+          <TooltipContent side="top">Карт в колоде: {player.deck.length}</TooltipContent>
         </Tooltip>
-        
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Badge variant="outline" className="gap-1.5 text-xs min-w-[60px] h-6">
