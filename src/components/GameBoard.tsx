@@ -399,11 +399,13 @@ function CardSlot({
 function CardContainer({
   className,
   children,
+  ref,
   ...props
-}: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
+}: HTMLAttributes<HTMLDivElement> & { children: ReactNode; ref?: (el: HTMLDivElement | null) => void }) {
   return (
     <div
       {...props}
+      ref={ref}
       className={cn(
         'relative w-full h-full transition-transform duration-200 ease-out transform-gpu origin-bottom',
         className
@@ -1521,8 +1523,7 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* ACTION LOG */}
       <ModalOverlay
         open={showLog}
-        onClose={(e) => {
-          e?.stopPropagation();
+        onClose={() => {
           setShowLog(false);
         }}
         title="📜 Журнал действий"
