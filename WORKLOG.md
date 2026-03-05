@@ -2,6 +2,10 @@
 
 ## Session Log
 
+### 2026-03-05 — Исправление верстки игрового поля
+
+*   Исправлена верстка игрового поля в `GameBoard.tsx`, которая была нарушена из-за отсутствия `flex-direction: column` в основном контейнере.
+
 ### 2026-03-05 — CSS Grid Layout Refactoring + Project Workflow Documentation
 
 **CSS Grid Layout Implementation:**

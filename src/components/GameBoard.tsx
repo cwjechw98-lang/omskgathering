@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, type HTMLAttributes, type ReactNode } from 'react';
-import { GameState, CardInstance } from '../game/types';
+import { GameState, CardInstance, PlayerState } from '../game/types';
 import {
   createInitialGameState,
   playCard,
@@ -10,7 +10,6 @@ import {
   getEffectiveHealth,
 } from '../game/engine';
 import { aiTurn } from '../game/ai';
-import { PlayerArea } from './PlayerArea';
 import {
   CARD_NARRATIVES,
   STORY_EVENTS,
@@ -18,25 +17,15 @@ import {
   getAILoreComment,
   AI_CHARACTER,
 } from '../data/lore';
-import { CardPlayAnimation, CardDeathAnimation } from './effects/CardDust';
 import {
   getCardBackSource,
   getCardCoverSources,
   handleImageErrorWithFallback,
 } from '../utils/cardImages';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from './ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from './ui/sheet';
-import { Button } from './ui/button';
-import { Card, CardContent } from './ui/card';
+import { Card as UICard, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -122,7 +111,6 @@ function useMessageFeed() {
   }, [messages.length]);
 
   const clear = useCallback(() => setMessages([]), []);
-
   const dismiss = useCallback((id: number) => {
     setMessages((prev) => prev.filter((m) => m.id !== id));
   }, []);
@@ -133,11 +121,9 @@ function useMessageFeed() {
 function MessageFeed({
   messages,
   onDismiss,
-  compact = false,
 }: {
   messages: GameMessage[];
   onDismiss?: (id: number) => void;
-  compact?: boolean;
 }) {
   const feedRef = useRef<HTMLDivElement>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -158,23 +144,18 @@ function MessageFeed({
 
   return (
     <div
-      className={`absolute z-layer-ui pointer-events-none ${compact ? 'left-2 right-2' : 'left-3'}`}
+      className="absolute z-layer-ui pointer-events-none left-3"
       style={{
-        top: compact ? 'clamp(52px, 6.8vh, 76px)' : 'clamp(55px, 7vh, 80px)',
-        width: compact ? 'auto' : 'clamp(260px, 22vw, 380px)',
-        maxHeight: compact ? 'clamp(136px, 24vh, 200px)' : 'clamp(200px, 35vh, 400px)',
+        top: 'clamp(55px, 7vh, 80px)',
+        width: 'clamp(260px, 22vw, 380px)',
+        maxHeight: 'clamp(200px, 35vh, 400px)',
       }}
     >
-      <div
-        ref={feedRef}
-        className="flex flex-col gap-2 overflow-y-auto pr-1"
-        style={{ scrollbarWidth: 'none' }}
-      >
+      <div ref={feedRef} className="flex flex-col gap-2 overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
         {messages.map((msg) => {
           const age = nowMs - msg.createdAt;
           const fadeStart = msg.duration * 0.6;
-          const opacity =
-            age > fadeStart ? Math.max(0, 1 - (age - fadeStart) / (msg.duration * 0.4)) : 1;
+          const opacity = age > fadeStart ? Math.max(0, 1 - (age - fadeStart) / (msg.duration * 0.4)) : 1;
           const isAI = msg.type === 'ai';
 
           return (
@@ -200,27 +181,18 @@ function MessageFeed({
               {isAI && (
                 <div className="flex items-start gap-2">
                   <div className="shrink-0 flex flex-col items-center">
-                    <span style={{ fontSize: 'clamp(24px, 2.5vw, 36px)' }}>
-                      {AI_CHARACTER.avatarEmoji}
-                    </span>
-                    <span
-                      className="text-[#c9a84c] font-heading font-bold mt-0.5"
-                      style={{ fontSize: 'clamp(8px, 0.8vw, 11px)' }}
-                    >
+                    <span style={{ fontSize: 'clamp(24px, 2.5vw, 36px)' }}>{AI_CHARACTER.avatarEmoji}</span>
+                    <span className="text-[#c9a84c] font-heading font-bold mt-0.5" style={{ fontSize: 'clamp(8px, 0.8vw, 11px)' }}>
                       {AI_CHARACTER.name}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p
-                      className="text-gray-200 font-body leading-relaxed italic"
-                      style={{ fontSize: 'clamp(12px, 1.15vw, 16px)' }}
-                    >
+                    <p className="text-gray-200 font-body leading-relaxed italic" style={{ fontSize: 'clamp(12px, 1.15vw, 16px)' }}>
                       «{msg.text}»
                     </p>
                   </div>
                 </div>
               )}
-
               {!isAI && (
                 <div className="flex items-start gap-2">
                   <span style={{ fontSize: 'clamp(16px, 1.8vw, 24px)' }}>{msg.emoji}</span>
@@ -257,65 +229,126 @@ function MessageFeed({
   );
 }
 
-/* ═══ FIELD CARD — Refactored with shadcn/ui Card ═══ */
-function CardSlot({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
+/* ═══ PLAYER AREA (inline) ═══ */
+function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: {
+  player: PlayerState;
+  isCurrentPlayer: boolean;
+  label: string;
+  dataEnemyHero?: boolean;
 }) {
+  const healthPercent = Math.max(0, (player.health / player.maxHealth) * 100);
+  const getHealthVariant = () => {
+    const hpPercent = (player.health / player.maxHealth) * 100;
+    if (hpPercent > 60) return 'success';
+    if (hpPercent > 30) return 'warning';
+    return 'danger';
+  };
+  const healthVariant = getHealthVariant();
+
   return (
-    <div
+    <UICard
+      data-enemy-hero={dataEnemyHero ? 'true' : undefined}
       className={cn(
-        'relative shrink-0 w-[var(--field-card-w)] h-[var(--field-card-h)] pointer-events-auto',
-        className
+        'flex items-center gap-3 p-3 border transition-all shrink-0',
+        isCurrentPlayer
+          ? 'bg-[#1a1508]/50 border-[#c9a84c]/30 shadow-lg shadow-[#c9a84c]/10'
+          : 'bg-[#0f0f18]/50 border-gray-800/30'
       )}
-      style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)' }}
+      role="region"
+      aria-label={label}
     >
+      <div
+        className={cn(
+          'rounded-full flex items-center justify-center shrink-0 border',
+          isCurrentPlayer ? 'bg-[#2a1a08] border-[#c9a84c]/50' : 'bg-[#1a1a2a] border-gray-700/50'
+        )}
+        style={{ width: 'clamp(32px, 3.5vw, 48px)', height: 'clamp(32px, 3.5vw, 48px)', fontSize: 'clamp(14px, 1.8vw, 24px)' }}
+      >
+        {label.includes('🗿') ? '🗿' : '👤'}
+      </div>
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="flex items-center gap-2">
+          <span className="font-heading text-white font-bold" style={{ fontSize: 'clamp(11px, 1.1vw, 14px)' }}>
+            {label}
+          </span>
+          {isCurrentPlayer && (
+            <Badge variant="secondary" className="animate-pulse bg-[#f0d68a]/20 text-[#f0d68a] border-transparent text-[10px] h-5 px-1.5">
+              ⚡ Ход
+            </Badge>
+          )}
+        </div>
+        <div className="relative">
+          <Progress
+            value={healthPercent}
+            className={cn(
+              'h-4 transition-all duration-500',
+              healthVariant === 'success' && 'progress-success',
+              healthVariant === 'warning' && 'progress-warning',
+              healthVariant === 'danger' && 'progress-danger'
+            )}
+          />
+          <span className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white drop-shadow text-[10px]" style={{ fontSize: 'clamp(9px, 0.9vw, 11px)' }}>
+            ❤️ {player.health}/{player.maxHealth}
+          </span>
+        </div>
+        <Tooltip>
+          <TooltipTrigger>
+            <div className="flex items-center gap-1">
+              <div className="flex gap-px">
+                {Array.from({ length: Math.min(player.maxMana, 12) }, (_, i) => (
+                  <Badge
+                    key={i}
+                    variant={i < player.mana ? 'mana-available' : 'mana-spent'}
+                    className="w-3 h-3 rounded-full p-0 min-w-0"
+                  />
+                ))}
+              </div>
+              <span className="text-blue-300 font-heading font-bold" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)' }}>
+                💎 {player.mana}/{player.maxMana}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top"><p>Мана: {player.mana} / {player.maxMana}</p></TooltipContent>
+        </Tooltip>
+      </div>
+      <div className="flex flex-col items-end gap-1">
+        <Badge variant="outline" className="gap-1.5 text-xs min-w-[60px] h-6">
+          <span>🤚</span><span>{player.hand.length}</span>
+        </Badge>
+        <Badge variant="outline" className="gap-1.5 text-xs min-w-[60px] h-6">
+          <span>📚</span><span>{player.deck.length}</span>
+        </Badge>
+        <Badge variant="outline" className="gap-1.5 text-xs min-w-[60px] h-6">
+          <span>💀</span><span>{player.graveyard.length}</span>
+        </Badge>
+      </div>
+    </UICard>
+  );
+}
+
+/* ═══ CARD CONTAINERS ═══ */
+function CardSlot({ className, children, style }: { className?: string; children: ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div className={cn('relative shrink-0', className)} style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)', ...style }}>
       {children}
     </div>
   );
 }
 
-function CardContainer({
-  className,
-  children,
-  ...props
-}: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
+function CardContainer({ className, children, ...props }: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
   return (
-    <div
-      {...props}
-      className={cn(
-        'relative w-full h-full transition-transform duration-200 ease-out transform-gpu origin-bottom',
-        className
-      )}
-    >
+    <div {...props} className={cn('relative w-full h-full transition-transform duration-200 ease-out transform-gpu origin-bottom', className)}>
       {children}
     </div>
   );
 }
 
 function CardVisual({ className, children }: { className?: string; children: ReactNode }) {
-  return (
-    <Card className={cn('relative w-full h-full overflow-hidden', className)}>
-      {children}
-    </Card>
-  );
+  return <UICard className={cn('relative w-full h-full overflow-hidden', className)}>{children}</UICard>;
 }
 
-function FieldCard({
-  card,
-  player,
-  opponent,
-  selected,
-  isTarget,
-  canAct,
-  attackAnim,
-  damageAnim,
-  onClick,
-  cardRef,
-}: {
+/* ═══ FIELD CARD ═══ */
+function FieldCard({ card, player, opponent, selected, isTarget, canAct, attackAnim, damageAnim, onClick, cardRef }: {
   card: CardInstance;
   player: GameState['player1'];
   opponent?: GameState['player1'];
@@ -338,153 +371,81 @@ function FieldCard({
   return (
     <CardSlot>
       <CardContainer
-      ref={cardRef}
-      onClick={onClick}
-      className={cn(
-        'card-container card-field-container cursor-pointer',
-        selected && "ring-2 ring-yellow-400 shadow-yellow-400/50 shadow-lg scale-105",
-        isTarget && "ring-2 ring-red-500 shadow-red-500/40 shadow-lg animate-pulse cursor-crosshair",
-        canAct && "ring-2 ring-green-400/70 shadow-green-400/30 shadow-md hover:scale-105",
-        frozen && "ring-1 ring-cyan-400/50 opacity-70",
-        !selected && !isTarget && !canAct && !frozen && "ring-1 ring-gray-600/40 hover:ring-gray-400/60",
-        attackAnim && "card-attack-animation",
-        damageAnim && "card-damage-animation"
-      )}
-      role="button"
-      tabIndex={0}
-      aria-label={`${card.data.name}: ${atk} атака, ${hp} здоровье`}
-      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
-      title={`${card.data.name}\n${card.data.description}\n⚔${atk} ❤${hp}`}
-    >
-      <CardVisual
+        ref={cardRef}
+        onClick={onClick}
         className={cn(
-          'card-frame card-in-field card-visual',
-          card.data.rarity === 'mythic' && 'card-frame-mythic',
-          card.data.rarity === 'rare' && 'card-frame-rare'
+          'card-container card-field-container cursor-pointer',
+          selected && 'ring-2 ring-yellow-400 shadow-yellow-400/50 shadow-lg scale-105',
+          isTarget && 'ring-2 ring-red-500 shadow-red-500/40 shadow-lg animate-pulse cursor-crosshair',
+          canAct && 'ring-2 ring-green-400/70 shadow-green-400/30 shadow-md hover:scale-105',
+          frozen && 'ring-1 ring-cyan-400/50 opacity-70',
+          !selected && !isTarget && !canAct && !frozen && 'ring-1 ring-gray-600/40 hover:ring-gray-400/60',
+          attackAnim && 'card-attack-animation',
+          damageAnim && 'card-damage-animation'
         )}
+        role="button"
+        tabIndex={0}
+        aria-label={`${card.data.name}: ${atk} атака, ${hp} здоровье`}
+        onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+        title={`${card.data.name}\n${card.data.description}\n⚔${atk} ❤${hp}`}
       >
-      {/* Foil overlay */}
-      {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
-        <div className={`card-foil-overlay pointer-events-none z-layer-card-effects ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
-      )}
-
-      {/* Art background */}
-      <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} aria-hidden="true" />
-      
-      {art.src && (
-        <img
-          src={art.src}
-          data-fallback={art.fallback}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
-          loading="lazy"
-          onError={(e) => handleImageErrorWithFallback(e.currentTarget)}
-          aria-hidden="true"
-        />
-      )}
-      
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" aria-hidden="true" />
-
-      <CardContent className="relative z-layer-cards flex flex-col h-full p-[clamp(2px,0.4vw,6px)] text-white">
-        {/* Top row: Emoji + Cost */}
-        <div className="flex justify-between items-start">
-          <Tooltip>
-            <TooltipTrigger>
-              <span style={{ fontSize: 'clamp(16px, 2.2vw, 32px)' }} aria-hidden="true">
-                {card.data.emoji}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top">{card.data.name}</TooltipContent>
-          </Tooltip>
-          
-          <Badge 
-            variant="secondary" 
-            className="bg-blue-600/90 text-white font-bold font-heading shadow min-w-[24px] h-6 px-1.5 flex items-center justify-center"
-            aria-label={`Цена: ${card.data.cost} маны`}
-          >
-            {card.data.cost}
-          </Badge>
-        </div>
-
-        {/* Card name */}
-        <h3
-          className="font-heading text-white font-bold truncate mt-auto"
-          style={{ fontSize: 'clamp(6px, 0.85vw, 11px)' }}
-        >
-          {card.data.name}
-        </h3>
-
-        {/* Keywords с tooltip */}
-        {card.keywords.length > 0 && (
-          <div className="flex flex-wrap gap-px">
-            {card.keywords.slice(0, 4).map((k) => (
-              <Tooltip key={k}>
-                <TooltipTrigger>
-                  <Badge variant="keyword" style={{ fontSize: 'clamp(7px, 0.8vw, 12px)' }}>
-                    {KWS[k]}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>{KW[k]}</TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
-        )}
-
-        {/* Status icons */}
-        <div className="flex items-center gap-0.5" style={{ fontSize: 'clamp(7px, 0.8vw, 11px)' }}>
-          {frozen && <span title="Заморожен" aria-label="Заморожен">❄️</span>}
-          {sick && <span title="Болезнь призыва" aria-label="Болезнь призыва">💤</span>}
-          {attacked && !sick && <span title="Атаковал" aria-label="Атаковал">✅</span>}
-          {isDef && <span title="Защитник" aria-label="Защитник">🛡️</span>}
-          {canAct && (
-            <span className="text-green-400 animate-pulse" title="Может атаковать" aria-label="Может атаковать">
-              ⚔️
-            </span>
+        <CardVisual className={cn('card-frame card-in-field card-visual', card.data.rarity === 'mythic' && 'card-frame-mythic', card.data.rarity === 'rare' && 'card-frame-rare')}>
+          {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
+            <div className={`card-foil-overlay pointer-events-none z-layer-card-effects ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
           )}
-        </div>
-
-        {/* Stats */}
-        {card.data.type === 'creature' && (
-          <div className="flex justify-between items-end mt-auto">
-            <Badge 
-              variant="destructive"
-              className="bg-red-700/90 text-white rounded px-1 font-bold font-heading"
-              style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}
-              aria-label={`${atk} атака`}
-            >
-              {atk}⚔
-            </Badge>
-            <Badge 
-              className={cn(
-                "rounded px-1 font-bold font-heading text-white",
-                hp <= card.maxHealth / 2 ? "bg-red-600/90" : "bg-green-700/90"
-              )}
-              style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}
-              aria-label={`${hp} здоровье из ${card.maxHealth}`}
-            >
-              {hp}❤
-            </Badge>
-          </div>
-        )}
-      </CardContent>
-
-      {frozen && <div className="absolute inset-0 bg-cyan-300/15 pointer-events-none z-layer-card-effects" aria-hidden="true" />}
-      </CardVisual>
+          <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} />
+          {art.src && (
+            <img src={art.src} data-fallback={art.fallback} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy" onError={(e) => handleImageErrorWithFallback(e.currentTarget)} />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" />
+          <CardContent className="relative z-layer-cards flex flex-col h-full p-[clamp(2px,0.4vw,6px)] text-white">
+            <div className="flex justify-between items-start">
+              <Tooltip>
+                <TooltipTrigger><span style={{ fontSize: 'clamp(16px, 2.2vw, 32px)' }}>{card.data.emoji}</span></TooltipTrigger>
+                <TooltipContent side="top">{card.data.name}</TooltipContent>
+              </Tooltip>
+              <Badge variant="secondary" className="bg-blue-600/90 text-white font-bold font-heading shadow min-w-[24px] h-6 px-1.5 flex items-center justify-center">
+                {card.data.cost}
+              </Badge>
+            </div>
+            <h3 className="font-heading text-white font-bold truncate mt-auto" style={{ fontSize: 'clamp(6px, 0.85vw, 11px)' }}>{card.data.name}</h3>
+            {card.keywords.length > 0 && (
+              <div className="flex flex-wrap gap-px">
+                {card.keywords.slice(0, 4).map((k) => (
+                  <Tooltip key={k}>
+                    <TooltipTrigger><Badge variant="keyword" style={{ fontSize: 'clamp(7px, 0.8vw, 12px)' }}>{KWS[k]}</Badge></TooltipTrigger>
+                    <TooltipContent>{KW[k]}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-0.5" style={{ fontSize: 'clamp(7px, 0.8vw, 11px)' }}>
+              {frozen && <span title="Заморожен">❄️</span>}
+              {sick && <span title="Болезнь призыва">💤</span>}
+              {attacked && !sick && <span title="Атаковал">✅</span>}
+              {isDef && <span title="Защитник">🛡️</span>}
+              {canAct && <span className="text-green-400 animate-pulse" title="Может атаковать">⚔️</span>}
+            </div>
+            {card.data.type === 'creature' && (
+              <div className="flex justify-between items-end mt-auto">
+                <Badge variant="destructive" className="bg-red-700/90 text-white rounded px-1 font-bold font-heading" style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}>
+                  {atk}⚔
+                </Badge>
+                <Badge className={cn('rounded px-1 font-bold font-heading text-white', hp <= card.maxHealth / 2 ? 'bg-red-600/90' : 'bg-green-700/90')} style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}>
+                  {hp}❤
+                </Badge>
+              </div>
+            )}
+          </CardContent>
+          {frozen && <div className="absolute inset-0 bg-cyan-300/15 pointer-events-none z-layer-card-effects" />}
+        </CardVisual>
       </CardContainer>
     </CardSlot>
   );
 }
 
-/* ═══ HAND CARD — Refactored with shadcn/ui Card ═══ */
-function HandCard({
-  card,
-  selected,
-  canPlay,
-  isLand,
-  onClick,
-  onDragStart,
-  onDragEnd,
-}: {
+/* ═══ HAND CARD ═══ */
+function HandCardComponent({ card, selected, canPlay, isLand, onClick, onDragStart, onDragEnd }: {
   card: CardInstance;
   selected?: boolean;
   canPlay?: boolean;
@@ -496,334 +457,85 @@ function HandCard({
   const art = getCardCoverSources(card.data);
 
   return (
-    <CardSlot className="w-[var(--hand-card-w)] h-[var(--hand-card-h)]">
-      <CardContainer
+    <CardContainer
       onClick={onClick}
       draggable={canPlay}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={cn(
         'card-container card-hand-container cursor-pointer rounded-lg',
-        selected && "border-yellow-400 shadow-yellow-400/50 shadow-lg -translate-y-4 scale-110 z-layer-hover",
-        canPlay && isLand && "border-[#c9a84c] shadow-[#c9a84c]/30 shadow-lg card-glow hover:scale-105",
-        canPlay && !isLand && "border-green-500/60 shadow-green-500/15 shadow-md hover:scale-105",
-        !canPlay && !selected && "border-gray-700/40 opacity-45",
-        canPlay && "cursor-grab active:cursor-grabbing"
+        selected && 'border-yellow-400 shadow-yellow-400/50 shadow-lg -translate-y-4 scale-110 z-layer-hover',
+        canPlay && isLand && 'border-[#c9a84c] shadow-[#c9a84c]/30 shadow-lg card-glow hover:scale-105',
+        canPlay && !isLand && 'border-green-500/60 shadow-green-500/15 shadow-md hover:scale-105',
+        !canPlay && !selected && 'border-gray-700/40 opacity-45',
+        canPlay && 'cursor-grab active:cursor-grabbing'
       )}
+      style={{ width: 'var(--hand-card-w)', height: 'var(--hand-card-h)' }}
       role="button"
       tabIndex={0}
       aria-label={`${card.data.name} (${card.data.cost} маны)`}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
-      title={`${card.data.name} (${card.data.cost}💎)\n${card.data.description}\n${canPlay ? '👆 Двойной клик или перетащите на поле' : '❌ Не хватает маны'}`}
     >
       <CardVisual className="card-frame card-in-hand card-visual border-2">
-      {/* Foil overlay */}
-      {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
-        <div className={`card-foil-overlay pointer-events-none z-layer-card-effects ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
-      )}
-
-      <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} aria-hidden="true" />
-      
-      {art.src && (
-        <img
-          src={art.src}
-          data-fallback={art.fallback}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-30"
-          loading="lazy"
-          draggable={false}
-          onError={(e) => handleImageErrorWithFallback(e.currentTarget)}
-          aria-hidden="true"
-        />
-      )}
-      
-      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80" aria-hidden="true" />
-
-      <CardContent className="relative z-layer-cards flex flex-col h-full p-[clamp(2px,0.3vw,5px)] text-white">
-        {/* Top row: Emoji + Cost */}
-        <div className="flex justify-between items-start">
-          <span style={{ fontSize: 'clamp(14px, 1.8vw, 28px)' }} aria-hidden="true">
-            {card.data.emoji}
-          </span>
-          <Badge
-            variant={isLand ? "default" : canPlay ? "default" : "secondary"}
-            className={cn(
-              "rounded-full flex items-center justify-center font-bold font-heading min-w-[22px] h-[22px] px-1.5",
-              isLand && "bg-[#c9a84c] text-black",
-              canPlay && !isLand && "bg-blue-500 text-white",
-              !canPlay && !isLand && "bg-gray-700 text-gray-400"
-            )}
-            style={{ fontSize: 'clamp(8px, 0.9vw, 12px)' }}
-            aria-label={`Цена: ${card.data.cost} маны`}
-          >
-            {card.data.cost}
-          </Badge>
-        </div>
-
-        {/* Card name */}
-        <h3
-          className="font-heading text-white font-bold leading-tight mt-auto"
-          style={{ fontSize: 'clamp(5px, 0.7vw, 9px)' }}
-        >
-          {card.data.name}
-        </h3>
-
-        {/* Stats */}
-        {card.data.type === 'creature' && (
-          <div className="flex justify-between items-end mt-0.5">
+        {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
+          <div className={`card-foil-overlay pointer-events-none z-layer-card-effects ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
+        )}
+        <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} />
+        {art.src && (
+          <img src={art.src} data-fallback={art.fallback} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" loading="lazy" draggable={false} onError={(e) => handleImageErrorWithFallback(e.currentTarget)} />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80" />
+        <CardContent className="relative z-layer-cards flex flex-col h-full p-[clamp(2px,0.3vw,5px)] text-white">
+          <div className="flex justify-between items-start">
+            <span style={{ fontSize: 'clamp(14px, 1.8vw, 28px)' }}>{card.data.emoji}</span>
             <Badge
-              variant="destructive"
-              className="bg-red-700/90 text-red-300 font-bold font-heading rounded px-1"
-              style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}
-              aria-label={`${card.data.attack} атака`}
-            >
-              {card.data.attack}⚔
-            </Badge>
-            <Badge
-              className="bg-green-700/90 text-green-300 font-bold font-heading rounded px-1"
-              style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}
-              aria-label={`${card.data.health} здоровье`}
-            >
-              {card.data.health}❤
-            </Badge>
-          </div>
-        )}
-        
-        {card.data.type === 'land' && (
-          <div
-            className="text-[#c9a84c] font-bold text-center"
-            style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}
-            aria-label="Земля"
-          >
-            🏔️
-          </div>
-        )}
-        
-        {card.data.type === 'spell' && (
-          <div className="text-blue-300 text-center" style={{ fontSize: 'clamp(8px, 1vw, 12px)' }} aria-label="Заклинание">
-            ✨
-          </div>
-        )}
-        
-        {card.data.type === 'enchantment' && (
-          <div
-            className="text-purple-300 text-center"
-            style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}
-            aria-label="Наложение"
-          >
-            🔮
-          </div>
-        )}
-      </CardContent>
-
-      {/* Playable indicator */}
-      {canPlay && !selected && (
-        <div
-          className={`absolute top-1 right-1 rounded-full animate-pulse z-layer-card-effects ${isLand ? 'bg-[#c9a84c]' : 'bg-green-400'}`}
-          style={{ width: 'clamp(4px, 0.5vw, 8px)', height: 'clamp(4px, 0.5vw, 8px)' }}
-          aria-hidden="true"
-        />
-      )}
-      </CardVisual>
-      </CardContainer>
-    </CardSlot>
-  );
-}
-
-/* ═══ CARD PREVIEW — compact sidebar, right side ═══ */
-function CardPreview({
-  card,
-  owner,
-  gs,
-  onClose,
-  compact = false,
-}: {
-  card: CardInstance;
-  owner: 'player1' | 'player2';
-  gs: GameState;
-  onClose: () => void;
-  compact?: boolean;
-}) {
-  const opp = owner === 'player1' ? 'player2' : 'player1';
-  const art = getCardCoverSources(card.data);
-  return (
-    // 👇 Поменяли bottom-2 на bottom-36 👇
-    <div
-      className={`absolute z-layer-ui ${compact ? 'left-2 right-2 bottom-100' : 'top-12 right-2'}`}
-      style={{ width: compact ? 'auto' : 'clamp(200px, 17vw, 280px)' }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="bg-[#0f0f18]/98 backdrop-blur-sm rounded-xl shadow-2xl border border-[#c9a84c]/30 overflow-hidden">
-        <button
-          onClick={onClose}
-          className="absolute top-1 right-1 z-layer-ui text-gray-400 hover:text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-700 text-sm transition"
-        >
-          ✕
-        </button>
-
-        <div
-          className={`relative overflow-hidden ${COLOR_ART[card.data.color]}`}
-          style={{ height: 'clamp(70px, 8vw, 120px)' }}
-        >
-          {art.src && (
-            <img
-              src={art.src}
-              data-fallback={art.fallback}
-              alt=""
-              className="w-full h-full object-cover"
-              loading="lazy"
-              onError={(e) => handleImageErrorWithFallback(e.currentTarget)}
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0f0f18]/98" />
-          <div
-            className="absolute bottom-1 left-1/2 -translate-x-1/2"
-            style={{ fontSize: 'clamp(28px, 3vw, 42px)' }}
-          >
-            {card.data.emoji}
-          </div>
-        </div>
-
-        <div className="p-3 -mt-2 relative z-layer-cards">
-          <div className="flex items-start gap-2 mb-1.5">
-            <div className="flex-1 min-w-0">
-              <div
-                className="font-heading font-bold text-white"
-                style={{ fontSize: 'clamp(11px, 1.1vw, 15px)' }}
-              >
-                {card.data.name}
-              </div>
-              <div
-                className="text-gray-400 font-body"
-                style={{ fontSize: 'clamp(8px, 0.8vw, 11px)' }}
-              >
-                {card.data.type === 'creature'
-                  ? 'Существо'
-                  : card.data.type === 'spell'
-                    ? 'Заклинание'
-                    : card.data.type === 'enchantment'
-                      ? 'Наложение'
-                      : 'Земля'}
-                {' · '}
-                <span
-                  className={
-                    card.data.rarity === 'mythic'
-                      ? 'text-orange-400'
-                      : card.data.rarity === 'rare'
-                        ? 'text-[#f0d68a]'
-                        : ''
-                  }
-                >
-                  {card.data.rarity === 'mythic'
-                    ? '★★★'
-                    : card.data.rarity === 'rare'
-                      ? '★★'
-                      : card.data.rarity === 'uncommon'
-                        ? '★'
-                        : '○'}
-                </span>
-              </div>
-            </div>
-            <span
-              className="bg-blue-600 text-white font-bold rounded-full flex items-center justify-center font-heading shadow"
-              style={{
-                width: 'clamp(20px, 2vw, 28px)',
-                height: 'clamp(20px, 2vw, 28px)',
-                fontSize: 'clamp(10px, 1vw, 14px)',
-              }}
+              variant={isLand ? 'default' : canPlay ? 'default' : 'secondary'}
+              className={cn('rounded-full flex items-center justify-center font-bold font-heading min-w-[22px] h-[22px] px-1.5', isLand && 'bg-[#c9a84c] text-black', canPlay && !isLand && 'bg-blue-500 text-white', !canPlay && !isLand && 'bg-gray-700 text-gray-400')}
+              style={{ fontSize: 'clamp(8px, 0.9vw, 12px)' }}
             >
               {card.data.cost}
-            </span>
+            </Badge>
           </div>
-
-          {card.keywords.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-1.5">
-              {card.keywords.map((k) => (
-                <span
-                  key={k}
-                  className="bg-[#2a1a3a] text-purple-200 px-1.5 py-0.5 rounded border border-purple-800/30"
-                  style={{ fontSize: 'clamp(8px, 0.8vw, 10px)' }}
-                >
-                  {KW[k]}
-                </span>
-              ))}
-            </div>
-          )}
-
-          <div
-            className="text-gray-300 mb-1.5 leading-snug font-body"
-            style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
-          >
-            {card.data.description}
-          </div>
-
-          {card.data.flavor && (
-            <div className="border-t border-[#c9a84c]/15 pt-1.5 mt-1.5">
-              <p
-                className="text-[#c9a84c]/60 italic leading-relaxed font-body"
-                style={{ fontSize: 'clamp(8px, 0.8vw, 11px)' }}
-              >
-                {card.data.flavor}
-              </p>
-            </div>
-          )}
-
+          <h3 className="font-heading text-white font-bold leading-tight mt-auto" style={{ fontSize: 'clamp(5px, 0.7vw, 9px)' }}>{card.data.name}</h3>
           {card.data.type === 'creature' && (
-            <div
-              className="flex gap-3 mt-1.5 bg-black/40 rounded-lg px-3 py-1 font-heading"
-              style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
-            >
-              <span>⚔️ {getEffectiveAttack(card, gs[owner], gs[opp])}</span>
-              <span>
-                ❤️ {getEffectiveHealth(card, gs[owner])}/{card.maxHealth}
-              </span>
-              {card.frozen > 0 && <span className="text-cyan-400">❄️{card.frozen}</span>}
-              {card.summoningSickness && <span className="text-yellow-400">💤</span>}
+            <div className="flex justify-between items-end mt-0.5">
+              <Badge variant="destructive" className="bg-red-700/90 text-red-300 font-bold font-heading rounded px-1" style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}>
+                {card.data.attack}⚔
+              </Badge>
+              <Badge className="bg-green-700/90 text-green-300 font-bold font-heading rounded px-1" style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}>
+                {card.data.health}❤
+              </Badge>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+          {card.data.type === 'land' && <div className="text-[#c9a84c] font-bold text-center" style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}>🏔️</div>}
+          {card.data.type === 'spell' && <div className="text-blue-300 text-center" style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}>✨</div>}
+          {card.data.type === 'enchantment' && <div className="text-purple-300 text-center" style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}>🔮</div>}
+        </CardContent>
+        {canPlay && !selected && <div className={`absolute top-1 right-1 rounded-full animate-pulse z-layer-card-effects ${isLand ? 'bg-[#c9a84c]' : 'bg-green-400'}`} style={{ width: 'clamp(4px, 0.5vw, 8px)', height: 'clamp(4px, 0.5vw, 8px)' }} />}
+      </CardVisual>
+    </CardContainer>
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   MAIN GAME BOARD
-   ═══════════════════════════════════════════════════════ */
+/* ═══ MAIN GAME BOARD ═══ */
 export function GameBoard({ mode, onBack }: Props) {
   const [gs, setGs] = useState<GameState>(createInitialGameState);
   const [selectedHand, setSelectedHand] = useState<string | null>(null);
   const [selectedAttacker, setSelectedAttacker] = useState<string | null>(null);
   const [selectedAttackerSlot, setSelectedAttackerSlot] = useState<number | null>(null);
-  const [inspected, setInspected] = useState<{
-    card: CardInstance;
-    owner: 'player1' | 'player2';
-  } | null>(null);
+  const [inspected, setInspected] = useState<{ card: CardInstance; owner: 'player1' | 'player2' } | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
   const [aiActionStatus, setAiActionStatus] = useState<string | null>(null);
   const [showTurnTransition, setShowTurnTransition] = useState(false);
-  const [showLog, setShowLog] = useState(false);
   const seenStoryEventsRef = useRef<Set<number>>(new Set());
   const [dragCardUid, setDragCardUid] = useState<string | null>(null);
   const [dropZoneActive, setDropZoneActive] = useState(false);
   const [attackAnimUid, setAttackAnimUid] = useState<string | null>(null);
   const [damageAnimUid, setDamageAnimUid] = useState<string | null>(null);
-  const [playAnim, setPlayAnim] = useState<{ name: string; emoji: string; color: string } | null>(
-    null
-  );
-  const [deathAnim, setDeathAnim] = useState<{ name: string; emoji: string; color: string } | null>(
-    null
-  );
-  const [isCompactUI, setIsCompactUI] = useState(false);
-  const [damageNumbers, setDamageNumbers] = useState<
-    Array<{ id: number; value: number; x: number; y: number; type: 'damage' | 'heal' | 'buff' }>
-  >([]);
-  const [targetingLine, setTargetingLine] = useState<{
-    startX: number;
-    startY: number;
-    endX: number;
-    endY: number;
-  } | null>(null);
+  const [playAnim, setPlayAnim] = useState<{ name: string; emoji: string; color: string } | null>(null);
+  const [deathAnim, setDeathAnim] = useState<{ name: string; emoji: string; color: string } | null>(null);
+  const [damageNumbers, setDamageNumbers] = useState<Array<{ id: number; value: number; x: number; y: number; type: 'damage' | 'heal' | 'buff' }>>([]);
+  const [targetingLine, setTargetingLine] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const attackAnimTimerRef = useRef<number | null>(null);
   const damageAnimTimerRef = useRef<number | null>(null);
@@ -845,23 +557,16 @@ export function GameBoard({ mode, onBack }: Props) {
     const currentP1 = me.field.map((c) => c.uid);
     const currentP2 = enemy.field.map((c) => c.uid);
     const prev = prevFieldRef.current;
-
     if (prev.p1.length > 0 || prev.p2.length > 0) {
       const diedP1 = prev.p1.filter((uid) => !currentP1.includes(uid));
       const diedP2 = prev.p2.filter((uid) => !currentP2.includes(uid));
       const allDied = [...diedP1, ...diedP2];
-
       if (allDied.length > 0) {
         const allGraveCards = [...me.graveyard, ...enemy.graveyard];
         const deadCard = allGraveCards.find((c) => allDied.includes(c.uid));
         if (deadCard && !deathAnim) {
-          setDeathAnim({
-            name: deadCard.data.name,
-            emoji: deadCard.data.emoji,
-            color: deadCard.data.color,
-          });
+          setDeathAnim({ name: deadCard.data.name, emoji: deadCard.data.emoji, color: deadCard.data.color });
         }
-
         const recent = gs.log.slice(-5).join(' ');
         for (const [cardId, quote] of Object.entries(DEATH_QUOTES)) {
           if (recent.includes(cardId) || recent.toLowerCase().includes(cardId.replace(/_/g, ' '))) {
@@ -871,27 +576,20 @@ export function GameBoard({ mode, onBack }: Props) {
         }
       }
     }
-
     prevFieldRef.current = { p1: currentP1, p2: currentP2 };
-  }, [me.field, enemy.field]); // eslint-disable-line
+  }, [me.field, enemy.field]);
 
   useEffect(() => {
-    const ev = STORY_EVENTS.find(
-      (e) => e.turnTrigger === gs.turnNumber && !seenStoryEventsRef.current.has(e.turnTrigger)
-    );
+    const ev = STORY_EVENTS.find((e) => e.turnTrigger === gs.turnNumber && !seenStoryEventsRef.current.has(e.turnTrigger));
     if (ev) {
       addMessage('story', ev.text, ev.emoji, 5000);
       seenStoryEventsRef.current.add(ev.turnTrigger);
     }
   }, [gs.turnNumber, addMessage]);
 
-  const hasPlayableLand =
-    me.hand.some((c) => c.data.type === 'land') && me.landsPlayed < me.maxLandsPerTurn;
+  const hasPlayableLand = me.hand.some((c) => c.data.type === 'land') && me.landsPlayed < me.maxLandsPerTurn;
   const hasPlayableCard = me.hand.some((c) => c.data.type !== 'land' && c.data.cost <= me.mana);
-  const hasAttackers = me.field.some(
-    (c) =>
-      !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !c.keywords.includes('defender')
-  );
+  const hasAttackers = me.field.some((c) => !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !c.keywords.includes('defender'));
   const landPlayed = me.landsPlayed > 0;
 
   const phase = (() => {
@@ -902,70 +600,40 @@ export function GameBoard({ mode, onBack }: Props) {
     return 'done' as const;
   })();
 
-  const showCardNarrative = useCallback(
-    (cardId: string) => {
-      const n = CARD_NARRATIVES[cardId];
-      if (n) addMessage('narrative', n, '📖', 5000);
-    },
-    [addMessage]
-  );
+  const showCardNarrative = useCallback((cardId: string) => {
+    const n = CARD_NARRATIVES[cardId];
+    if (n) addMessage('narrative', n, '📖', 5000);
+  }, [addMessage]);
 
   const getHint = (): string => {
     if (gs.gameOver) return '🏁 Игра окончена!';
     if (!myTurn) return `⏳ ${AI_CHARACTER.name} размышляет...`;
     if (selectedAttacker) return '🎯 Выберите ЦЕЛЬ: вражеское существо или «В героя»';
     if (dragCardUid) return '🖱️ Перетащите карту на ПОЛЕ чтобы разыграть';
-    if (gs.turnNumber <= 2 && !landPlayed && hasPlayableLand)
-      return '🏔️ ШАГ 1: Перетащите ЗЕМЛЮ на поле (или двойной клик)';
-    if (gs.turnNumber <= 2 && landPlayed && hasPlayableCard)
-      return '🃏 ШАГ 2: Перетащите существо на поле';
-    if (gs.turnNumber <= 2 && !hasPlayableCard && hasAttackers)
-      return '⚔️ ШАГ 3: Кликните существо с зелёной рамкой → атакуйте';
+    if (gs.turnNumber <= 2 && !landPlayed && hasPlayableLand) return '🏔️ ШАГ 1: Перетащите ЗЕМЛЮ на поле (или двойной клик)';
+    if (gs.turnNumber <= 2 && landPlayed && hasPlayableCard) return '🃏 ШАГ 2: Перетащите существо на поле';
+    if (gs.turnNumber <= 2 && !hasPlayableCard && hasAttackers) return '⚔️ ШАГ 3: Кликните существо с зелёной рамкой → атакуйте';
     if (gs.turnNumber <= 2 && !hasPlayableCard && !hasAttackers) return '⏭️ Нажмите «Конец хода»';
-    if (hasPlayableLand && !landPlayed)
-      return '🏔️ Разыграйте ЗЕМЛЮ (перетащите на поле или двойной клик)';
+    if (hasPlayableLand && !landPlayed) return '🏔️ Разыграйте ЗЕМЛЮ (перетащите на поле или двойной клик)';
     if (hasPlayableCard && hasAttackers) return '🃏 Играйте карту или ⚔️ атакуйте';
     if (hasPlayableCard) return '🃏 Перетащите карту на поле или двойной клик';
     if (hasAttackers) return '⚔️ Выберите существо для атаки (зелёная рамка)';
     return '⏭️ Нажмите «Конец хода»';
   };
 
-  useEffect(() => {
-    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-  }, [gs.log.length]);
-
   const triggerCombatAnims = useCallback((attackerUid?: string, defenderUid?: string) => {
-    if (attackAnimTimerRef.current) {
-      window.clearTimeout(attackAnimTimerRef.current);
-      attackAnimTimerRef.current = null;
-    }
-    if (damageAnimTimerRef.current) {
-      window.clearTimeout(damageAnimTimerRef.current);
-      damageAnimTimerRef.current = null;
-    }
-
+    if (attackAnimTimerRef.current) { window.clearTimeout(attackAnimTimerRef.current); attackAnimTimerRef.current = null; }
+    if (damageAnimTimerRef.current) { window.clearTimeout(damageAnimTimerRef.current); damageAnimTimerRef.current = null; }
     if (attackerUid) setAttackAnimUid(attackerUid);
     if (defenderUid) setDamageAnimUid(defenderUid);
-
-    if (attackerUid) {
-      attackAnimTimerRef.current = window.setTimeout(() => {
-        setAttackAnimUid(null);
-      }, 650);
-    }
-    if (defenderUid) {
-      damageAnimTimerRef.current = window.setTimeout(() => {
-        setDamageAnimUid(null);
-      }, 250);
-    }
+    if (attackerUid) { attackAnimTimerRef.current = window.setTimeout(() => setAttackAnimUid(null), 650); }
+    if (defenderUid) { damageAnimTimerRef.current = window.setTimeout(() => setDamageAnimUid(null), 250); }
   }, []);
 
-  // Spawn damage number popup
   const showDamageNumber = useCallback((value: number, x: number, y: number, type: 'damage' | 'heal' | 'buff' = 'damage') => {
     const id = Date.now() + Math.random();
     setDamageNumbers(prev => [...prev, { id, value, x, y, type }]);
-    setTimeout(() => {
-      setDamageNumbers(prev => prev.filter(dn => dn.id !== id));
-    }, 800);
+    setTimeout(() => setDamageNumbers(prev => prev.filter(dn => dn.id !== id)), 800);
   }, []);
 
   useEffect(() => {
@@ -979,43 +647,23 @@ export function GameBoard({ mode, onBack }: Props) {
     };
   }, []);
 
-  const runAIAnimations = useCallback(
-    (
-      actions: {
-        type: 'attack-hero' | 'attack-creature';
-        attackerUid: string;
-        defenderUid?: string;
-      }[]
-    ) => {
-      if (!actions || actions.length === 0) return;
-      if (aiAnimTimerRef.current) {
-        window.clearTimeout(aiAnimTimerRef.current);
-        aiAnimTimerRef.current = null;
-      }
-      let idx = 0;
-      const step = () => {
-        const act = actions[idx];
-        if (!act) return;
-        triggerCombatAnims(
-          act.attackerUid,
-          act.type === 'attack-creature' ? act.defenderUid : undefined
-        );
-        idx += 1;
-        if (idx < actions.length) {
-          aiAnimTimerRef.current = window.setTimeout(step, 750);
-        }
-      };
-      step();
-    },
-    [triggerCombatAnims]
-  );
+  const runAIAnimations = useCallback((actions: { type: 'attack-hero' | 'attack-creature'; attackerUid: string; defenderUid?: string; }[]) => {
+    if (!actions || actions.length === 0) return;
+    if (aiAnimTimerRef.current) { window.clearTimeout(aiAnimTimerRef.current); aiAnimTimerRef.current = null; }
+    let idx = 0;
+    const step = () => {
+      const act = actions[idx];
+      if (!act) return;
+      triggerCombatAnims(act.attackerUid, act.type === 'attack-creature' ? act.defenderUid : undefined);
+      idx += 1;
+      if (idx < actions.length) { aiAnimTimerRef.current = window.setTimeout(step, 750); }
+    };
+    step();
+  }, [triggerCombatAnims]);
 
   const runAI = useCallback(() => {
     if (mode !== 'ai' || gs.currentTurn !== 'player2' || gs.gameOver) return;
-    if (aiTurnTimerRef.current) {
-      window.clearTimeout(aiTurnTimerRef.current);
-      aiTurnTimerRef.current = null;
-    }
+    if (aiTurnTimerRef.current) { window.clearTimeout(aiTurnTimerRef.current); aiTurnTimerRef.current = null; }
     setAiThinking(true);
     setAiActionStatus(null);
     aiTurnTimerRef.current = window.setTimeout(() => {
@@ -1023,68 +671,43 @@ export function GameBoard({ mode, onBack }: Props) {
       if (!mountedRef.current) return;
       const result = aiTurn(gs);
       setGs(result.state);
-
       if (result.actions && result.actions.length > 0) {
-        const atkInfo = result.actions.find(
-          (a) => a.type === 'attack-hero' || a.type === 'attack-creature'
-        );
+        const atkInfo = result.actions.find((a) => a.type === 'attack-hero' || a.type === 'attack-creature');
         if (atkInfo) {
           const attacker = result.state.player2.field.find((c) => c.uid === atkInfo.attackerUid);
-          if (attacker)
-            setAiActionStatus(
-              atkInfo.type === 'attack-hero'
-                ? `⚔️ ${attacker.data.emoji} ${attacker.data.name} атакует героя!`
-                : `⚔️ ${attacker.data.emoji} ${attacker.data.name} атакует!`
-            );
+          if (attacker) setAiActionStatus(atkInfo.type === 'attack-hero' ? `⚔️ ${attacker.data.emoji} ${attacker.data.name} атакует героя!` : `⚔️ ${attacker.data.emoji} ${attacker.data.name} атакует!`);
         }
         runAIAnimations(result.actions);
       }
       const lastCard = result.state.player2.field[result.state.player2.field.length - 1];
-      if (lastCard && (!result.actions || result.actions.length === 0)) {
-        setAiActionStatus(`✨ Сыграно: ${lastCard.data.emoji} ${lastCard.data.name}`);
-      }
+      if (lastCard && (!result.actions || result.actions.length === 0)) { setAiActionStatus(`✨ Сыграно: ${lastCard.data.emoji} ${lastCard.data.name}`); }
       if (lastCard) showCardNarrative(lastCard.data.id);
-
-      const lore = getAILoreComment(
-        lastCard?.data.id || '',
-        result.state.player2.health,
-        result.state.player1.health,
-        result.state.turnNumber
-      );
+      const lore = getAILoreComment(lastCard?.data.id || '', result.state.player2.health, result.state.player1.health, result.state.turnNumber);
       addMessage('ai', lore, AI_CHARACTER.avatarEmoji, 6000);
       setAiThinking(false);
-
-      setTimeout(() => {
-        if (mountedRef.current) setAiActionStatus(null);
-      }, 2500);
+      setTimeout(() => { if (mountedRef.current) setAiActionStatus(null); }, 2500);
     }, 1200);
   }, [mode, gs, showCardNarrative, addMessage, runAIAnimations]);
 
   useEffect(() => {
-    if (mode === 'ai' && gs.currentTurn === 'player2' && !gs.gameOver) {
-      const t = setTimeout(runAI, 500);
-      return () => clearTimeout(t);
-    }
+    if (mode === 'ai' && gs.currentTurn === 'player2' && !gs.gameOver) { const t = setTimeout(runAI, 500); return () => clearTimeout(t); }
   }, [gs.currentTurn, mode, gs.gameOver, runAI]);
 
-  const doPlayCard = useCallback(
-    (uid: string) => {
-      const card = me.hand.find((c) => c.uid === uid);
-      if (!card || !myTurn || gs.gameOver) return false;
-      const next = playCard(gs, 'player1', uid);
-      if (next !== gs) {
-        setPlayAnim({ name: card.data.name, emoji: card.data.emoji, color: card.data.color });
-        setGs(next);
-        setSelectedHand(null);
-        setInspected(null);
-        addMessage('action', `Разыграно: ${card.data.emoji} ${card.data.name}`, '🃏', 5000);
-        showCardNarrative(card.data.id);
-        return true;
-      }
-      return false;
-    },
-    [gs, me.hand, myTurn, showCardNarrative, addMessage]
-  );
+  const doPlayCard = useCallback((uid: string) => {
+    const card = me.hand.find((c) => c.uid === uid);
+    if (!card || !myTurn || gs.gameOver) return false;
+    const next = playCard(gs, 'player1', uid);
+    if (next !== gs) {
+      setPlayAnim({ name: card.data.name, emoji: card.data.emoji, color: card.data.color });
+      setGs(next);
+      setSelectedHand(null);
+      setInspected(null);
+      addMessage('action', `Разыграно: ${card.data.emoji} ${card.data.name}`, '🃏', 5000);
+      showCardNarrative(card.data.id);
+      return true;
+    }
+    return false;
+  }, [gs, me.hand, myTurn, showCardNarrative, addMessage]);
 
   const handleDragStart = (e: React.DragEvent, uid: string) => {
     setDragCardUid(uid);
@@ -1094,44 +717,17 @@ export function GameBoard({ mode, onBack }: Props) {
     const el = e.currentTarget as HTMLDivElement;
     e.dataTransfer.setDragImage(el, el.offsetWidth / 2, el.offsetHeight / 2);
   };
-
-  const handleDragEnd = () => {
-    setDragCardUid(null);
-    setDropZoneActive(false);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    if (!dragCardUid) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDropZoneActive(true);
-  };
-
-  const handleDragLeave = () => {
-    setDropZoneActive(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDropZoneActive(false);
-    if (dragCardUid) {
-      doPlayCard(dragCardUid);
-      setDragCardUid(null);
-    }
-  };
+  const handleDragEnd = () => { setDragCardUid(null); setDropZoneActive(false); };
+  const handleDragOver = (e: React.DragEvent) => { if (!dragCardUid) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropZoneActive(true); };
+  const handleDragLeave = () => { setDropZoneActive(false); };
+  const handleDrop = (e: React.DragEvent) => { e.preventDefault(); setDropZoneActive(false); if (dragCardUid) { doPlayCard(dragCardUid); setDragCardUid(null); } };
 
   const clickHand = (uid: string) => {
     const card = me.hand.find((c) => c.uid === uid);
     if (!card) return;
     setSelectedAttacker(null);
-    if (!myTurn || gs.gameOver) {
-      setInspected({ card, owner: 'player1' });
-      return;
-    }
-    if (selectedHand === uid) {
-      doPlayCard(uid);
-      return;
-    }
+    if (!myTurn || gs.gameOver) { setInspected({ card, owner: 'player1' }); return; }
+    if (selectedHand === uid) { doPlayCard(uid); return; }
     setSelectedHand(uid);
     setInspected({ card, owner: 'player1' });
   };
@@ -1140,45 +736,12 @@ export function GameBoard({ mode, onBack }: Props) {
     const card = me.field.find((c) => c.uid === uid);
     if (!card) return;
     const slotIndex = me.field.indexOf(card);
-    
-    if (!myTurn || gs.gameOver) {
-      setInspected({ card, owner: 'player1' });
-      return;
-    }
-    const canAct =
-      !card.summoningSickness &&
-      !card.hasAttacked &&
-      card.frozen <= 0 &&
-      !card.keywords.includes('defender');
+    if (!myTurn || gs.gameOver) { setInspected({ card, owner: 'player1' }); return; }
+    const canAct = !card.summoningSickness && !card.hasAttacked && card.frozen <= 0 && !card.keywords.includes('defender');
     if (canAct) {
-      if (selectedAttacker === uid) {
-        setSelectedAttacker(null);
-        setSelectedAttackerSlot(null);
-        setInspected(null);
-        setTargetingLine(null);
-      } else {
-        setSelectedAttacker(uid);
-        setSelectedAttackerSlot(slotIndex);
-        setSelectedHand(null);
-        setInspected(null);
-        // Show targeting line from attacker
-        const attackerRef = cardRefsMap.current.get(uid);
-        if (attackerRef) {
-          const rect = attackerRef.getBoundingClientRect();
-          setTargetingLine({
-            startX: rect.left + rect.width / 2,
-            startY: rect.top + rect.height / 2,
-            endX: rect.left + rect.width / 2,
-            endY: rect.top + rect.height / 2,
-          });
-        }
-      }
-    } else {
-      setInspected({ card, owner: 'player1' });
-      setSelectedAttacker(null);
-      setSelectedAttackerSlot(null);
-      setTargetingLine(null);
-    }
+      if (selectedAttacker === uid) { setSelectedAttacker(null); setSelectedAttackerSlot(null); setInspected(null); setTargetingLine(null); }
+      else { setSelectedAttacker(uid); setSelectedAttackerSlot(slotIndex); setSelectedHand(null); setInspected(null); const attackerRef = cardRefsMap.current.get(uid); if (attackerRef) { const rect = attackerRef.getBoundingClientRect(); setTargetingLine({ startX: rect.left + rect.width / 2, startY: rect.top + rect.height / 2, endX: rect.left + rect.width / 2, endY: rect.top + rect.height / 2 }); } }
+    } else { setInspected({ card, owner: 'player1' }); setSelectedAttacker(null); setSelectedAttackerSlot(null); setTargetingLine(null); }
   };
 
   const clickEnemyCreature = (uid: string) => {
@@ -1189,26 +752,13 @@ export function GameBoard({ mode, onBack }: Props) {
       if (!attackerCard) return;
       const next = attackCreature(gs, 'player1', selectedAttacker, uid);
       if (next !== gs) {
-        // Calculate damage for visual feedback
         const atk = getEffectiveAttack(attackerCard, me, enemy);
         const defenderRef = cardRefsMap.current.get(uid);
-        if (defenderRef) {
-          const rect = defenderRef.getBoundingClientRect();
-          showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage');
-        }
-        
+        if (defenderRef) { const rect = defenderRef.getBoundingClientRect(); showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage'); }
         setGs(next);
-        addMessage(
-          'action',
-          `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} → ${card.data.emoji} ${card.data.name}`,
-          '⚔️',
-          5000
-        );
+        addMessage('action', `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} → ${card.data.emoji} ${card.data.name}`, '⚔️', 5000);
         triggerCombatAnims(selectedAttacker, uid);
-        setSelectedAttacker(null);
-        setSelectedAttackerSlot(null);
-        setInspected(null);
-        setTargetingLine(null);
+        setSelectedAttacker(null); setSelectedAttackerSlot(null); setInspected(null); setTargetingLine(null);
       }
       return;
     }
@@ -1222,675 +772,113 @@ export function GameBoard({ mode, onBack }: Props) {
     if (!attackerCard) return;
     const next = attackPlayer(gs, 'player1', selectedAttacker);
     if (next !== gs) {
-      // Calculate damage for visual feedback - target enemy hero area
       const atk = getEffectiveAttack(attackerCard, me, enemy);
       const enemyHeroElement = document.querySelector('[data-enemy-hero]');
-      if (enemyHeroElement) {
-        const rect = enemyHeroElement.getBoundingClientRect();
-        showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage');
-      }
-      
+      if (enemyHeroElement) { const rect = enemyHeroElement.getBoundingClientRect(); showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage'); }
       setGs(next);
-      addMessage(
-        'action',
-        `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} наносит удар Хранителю!`,
-        '💥',
-        5000
-      );
+      addMessage('action', `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} наносит удар Хранителю!`, '💥', 5000);
       triggerCombatAnims(selectedAttacker, undefined);
-      setSelectedAttacker(null);
-      setSelectedAttackerSlot(null);
-      setInspected(null);
-      setTargetingLine(null);
+      setSelectedAttacker(null); setSelectedAttackerSlot(null); setInspected(null); setTargetingLine(null);
     }
   };
 
   const clickEndTurn = () => {
     if (!myTurn || gs.gameOver) return;
-    setGs((prev) => {
-      const nextGs = endTurn(prev);
-      if (mode === 'ai' && nextGs.currentTurn === 'player2') {
-        setShowTurnTransition(true);
-        setTimeout(() => {
-          if (mountedRef.current) setShowTurnTransition(false);
-        }, 1200);
-      }
-      return nextGs;
-    });
-    setSelectedHand(null);
-    setSelectedAttacker(null);
-    setInspected(null);
+    setGs((prev) => { const nextGs = endTurn(prev); if (mode === 'ai' && nextGs.currentTurn === 'player2') { setShowTurnTransition(true); setTimeout(() => { if (mountedRef.current) setShowTurnTransition(false); }, 1200); } return nextGs; });
+    setSelectedHand(null); setSelectedAttacker(null); setInspected(null);
   };
 
-  const restart = () => {
-    setGs(createInitialGameState());
-    setSelectedHand(null);
-    setSelectedAttacker(null);
-    setInspected(null);
-    setPlayAnim(null);
-    setDeathAnim(null);
-    seenStoryEventsRef.current = new Set();
-    prevFieldRef.current = { p1: [], p2: [] };
-    cardRefsMap.current.clear();
-    clearMessages();
-  };
+  const restart = () => { setGs(createInitialGameState()); setSelectedHand(null); setSelectedAttacker(null); setInspected(null); setPlayAnim(null); setDeathAnim(null); seenStoryEventsRef.current = new Set(); prevFieldRef.current = { p1: [], p2: [] }; cardRefsMap.current.clear(); clearMessages(); };
 
-  const clickBF = () => {
-    if (inspected && !selectedAttacker) {
-      setInspected(null);
-      setSelectedHand(null);
-    }
-  };
+  const clickBF = () => { if (inspected && !selectedAttacker) { setInspected(null); setSelectedHand(null); } };
 
   const phases = [
     { id: 'land', icon: '🏔️', label: 'Земля', active: phase === 'land', done: landPlayed },
-    {
-      id: 'play',
-      icon: '🃏',
-      label: 'Карты',
-      active: phase === 'play',
-      done: !hasPlayableCard && landPlayed,
-    },
+    { id: 'play', icon: '🃏', label: 'Карты', active: phase === 'play', done: !hasPlayableCard && landPlayed },
     { id: 'attack', icon: '⚔️', label: 'Атака', active: phase === 'attack', done: !hasAttackers },
     { id: 'done', icon: '⏭️', label: 'Конец', active: phase === 'done', done: false },
   ];
 
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 768px)');
-    const apply = () => setIsCompactUI(media.matches);
-    apply();
-    media.addEventListener('change', apply);
-    return () => media.removeEventListener('change', apply);
-  }, []);
-
   return (
-    <div className="game-grid">
-      {playAnim && (
-        <CardPlayAnimation
-          cardName={playAnim.name}
-          cardEmoji={playAnim.emoji}
-          cardColor={playAnim.color}
-          onDone={() => setPlayAnim(null)}
-        />
-      )}
-
-      {deathAnim && (
-        <CardDeathAnimation
-          cardName={deathAnim.name}
-          cardEmoji={deathAnim.emoji}
-          cardColor={deathAnim.color}
-          onDone={() => setDeathAnim(null)}
-        />
-      )}
-
-      {!showLog && (
-        <MessageFeed messages={messages} onDismiss={dismissMessage} compact={isCompactUI} />
-      )}
-
+    <div className="game-grid" onClick={clickBF}>
       {/* TOP BAR */}
       <div className="zone-topbar">
-        <button
-          onClick={onBack}
-          className="text-gray-500 hover:text-[#f0d68a] font-heading px-2 py-1 rounded hover:bg-[#1a1508] transition"
-          style={{ fontSize: 'clamp(10px, 1vw, 14px)' }}
-          title="Выйти в меню"
-        >
-          ← Меню
-        </button>
         <div className="flex items-center gap-3">
-          <span
-            className="text-gray-600 font-heading"
-            style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
-          >
-            Ход {gs.turnNumber}
-          </span>
-          <span
-            className={`font-heading font-bold px-3 py-0.5 rounded-full border ${
-              isP1Turn
-                ? 'text-green-300 bg-green-900/30 border-green-600/30'
-                : 'text-red-300 bg-red-900/30 border-red-600/30'
-            }`}
-            style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
-          >
-            {isP1Turn ? '🟢 ВАШ ХОД' : `🔴 ${AI_CHARACTER.name}`}
-          </span>
+          <button onClick={onBack} className="text-gray-400 hover:text-white transition text-sm px-2 py-1">← Назад</button>
+          <span className="text-[#c9a84c] font-heading font-bold" style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}>ОмскГathering</span>
         </div>
-        <div className="flex gap-1">
-          <button
-            onClick={() => setShowLog(!showLog)}
-            className={`font-heading px-2 py-1 rounded transition flex items-center gap-1 border ${
-              showLog
-                ? 'bg-[#2a1a08] text-[#f0d68a] border-[#c9a84c]/40'
-                : 'text-gray-500 hover:text-[#f0d68a] border-transparent hover:border-[#c9a84c]/20 hover:bg-[#1a1508]'
-            }`}
-            style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
-            title="Журнал действий"
-          >
-            📜 Лог
-          </button>
-          <button
-            onClick={restart}
-            className="text-gray-500 hover:text-[#f0d68a] font-heading px-2 py-1 rounded hover:bg-[#1a1508] transition"
-            style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
-            title="Новая игра"
-          >
-            🔄
-          </button>
+        <div className="flex items-center gap-4">
+          <span className="text-gray-400" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>Ход {gs.turnNumber}</span>
+          {aiThinking && <span className="text-cyan-400 animate-pulse" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>🤖 Думает...</span>}
         </div>
       </div>
 
       {/* ENEMY HERO ZONE */}
-      <div className="zone-enemy-hero">
-        <div className="hero-zone">
-          <PlayerArea
-            player={enemy}
-            isCurrentPlayer={!isP1Turn}
-            label={mode === 'ai' ? `${AI_CHARACTER.avatarEmoji} ${AI_CHARACTER.name}` : 'Игрок 2'}
-            isTop
-            dataEnemyHero
-          />
-        </div>
+      <div className="zone-enemy-hero" data-enemy-hero="true">
+        <PlayerArea player={enemy} isCurrentPlayer={!isP1Turn} label="🗿 Хранитель Омска" dataEnemyHero={true} />
       </div>
 
       {/* ENEMY BOARD ZONE */}
       <div className="zone-enemy-board">
         <div className="board-zone enemy">
-          {enemy.field.length === 0 ? (
-            <div className="text-gray-600 italic text-center" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>
-              Поле противника пусто
-            </div>
-          ) : (
-            enemy.field.map((card) => {
-              const canActCard =
-                isP1Turn &&
-                !card.summoningSickness &&
-                !card.hasAttacked &&
-                card.frozen <= 0 &&
-                !card.keywords.includes('defender') &&
-                !gs.gameOver;
-
-              const attackAnim = attackAnimUid === card.uid;
-              const damageAnim = damageAnimUid === card.uid;
-
-              return (
-                <div
-                  key={card.uid}
-                  className="creature-slot occupied"
-                  ref={(el) => {
-                    if (el) cardRefsMap.current.set(card.uid, el);
-                    else cardRefsMap.current.delete(card.uid);
-                  }}
-                >
-                  <div
-                    className={cn(
-                      'game-card-container',
-                      selectedAttacker === card.uid && 'is-target',
-                      canActCard && 'can-act'
-                    )}
+          {Array.from({ length: 7 }, (_, i) => {
+            const card = enemy.field[i];
+            return (
+              <div key={i} className={`creature-slot ${card ? 'occupied' : ''} ${selectedAttacker && !gs.gameOver ? 'attack-lane' : ''}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+                {card && (
+                  <FieldCard
+                    card={card}
+                    player={enemy}
+                    opponent={me}
+                    isTarget={selectedAttacker !== null}
+                    canAct={false}
+                    attackAnim={attackAnimUid === card.uid}
+                    damageAnim={damageAnimUid === card.uid}
                     onClick={() => clickEnemyCreature(card.uid)}
-                    style={{ cursor: selectedAttacker ? 'crosshair' : 'default' }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && clickEnemyCreature(card.uid)}
-                  >
-                    <FieldCard
-                      card={card}
-                      player={enemy}
-                      opponent={me}
-                      selected={selectedAttacker === card.uid}
-                      isTarget={!!selectedAttacker}
-                      canAct={canActCard}
-                      attackAnim={attackAnim}
-                      damageAnim={damageAnim}
-                      cardRef={(el) => {
-                        if (el) cardRefsMap.current.set(card.uid, el);
-                        else cardRefsMap.current.delete(card.uid);
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })
-          )}
+                    cardRef={(el) => { if (el) cardRefsMap.current.set(card.uid, el); }}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* CENTER DIVIDER ZONE */}
+      {/* CENTER DIVIDER */}
       <div className="zone-divider">
         <div className="center-divider">
-          <div className="divider-phases">
-            {phases.map((p) => (
-              <div
-                key={p.id}
-                className={cn(
-                  'phase-pill',
-                  p.active && 'active',
-                  p.done && 'done',
-                  !p.active && !p.done && 'idle'
-                )}
-                title={p.label}
-              >
-                {p.icon}
-              </div>
-            ))}
-          </div>
-
           <div className="divider-buttons">
-            {selectedAttacker && (
-              <>
-                <button
-                  onClick={clickAttackHero}
-                  className="attack-hero-btn"
-                  title="Атаковать героя напрямую"
-                >
-                  ⚔️ В героя
-                </button>
-                <button
-                  onClick={() => setSelectedAttacker(null)}
-                  className="cancel-btn"
-                  title="Отменить выбор"
-                >
-                  ✕
-                </button>
-              </>
-            )}
-            {myTurn && !gs.gameOver && !selectedAttacker && (
-              <button
-                onClick={clickEndTurn}
-                className={cn(
-                  'end-turn-btn',
-                  phase === 'done' ? 'ready' : 'busy'
-                )}
-                title={phase === 'done' ? 'Нет действий — завершите ход' : 'Завершить ход досрочно'}
-              >
-                Конец хода ⏭️
-              </button>
-            )}
+            {selectedAttacker && !gs.gameOver && myTurn && <button onClick={clickAttackHero} className="attack-hero-btn">💥 В героя</button>}
+            {selectedAttacker && !gs.gameOver && myTurn && <button onClick={() => { setSelectedAttacker(null); setSelectedAttackerSlot(null); }} className="cancel-btn">Отмена</button>}
           </div>
-
           <div className="divider-hint">{getHint()}</div>
+          <div className="divider-buttons">
+            {!gs.gameOver && myTurn && <button onClick={clickEndTurn} className={`end-turn-btn ${phase === 'done' ? 'ready' : 'busy'}`} disabled={phase !== 'done'}>Конец хода ⏭️</button>}
+          </div>
         </div>
       </div>
 
       {/* PLAYER BOARD ZONE */}
       <div className="zone-player-board">
-        <div className="board-zone player">
-          {me.field.length === 0 ? (
-            <div className="text-gray-600 italic text-center" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>
-              Ваше поле пусто
-            </div>
-          ) : (
-            me.field.map((card) => {
-              const canActCard =
-                isP1Turn &&
-                !card.summoningSickness &&
-                !card.hasAttacked &&
-                card.frozen <= 0 &&
-                !card.keywords.includes('defender') &&
-                !gs.gameOver;
-
-              const isSelected = selectedAttacker === card.uid;
-              const attackAnim = attackAnimUid === card.uid;
-              const damageAnim = damageAnimUid === card.uid;
-
-              return (
-                <div
-                  key={card.uid}
-                  className="creature-slot occupied"
-                  ref={(el) => {
-                    if (el) cardRefsMap.current.set(card.uid, el);
-                    else cardRefsMap.current.delete(card.uid);
-                  }}
-                >
-                  <div
-                    className={cn(
-                      'game-card-container',
-                      isSelected && 'attacker-selected',
-                      canActCard && !isSelected && 'can-act'
-                    )}
-                    onClick={() => clickMyCreature(card.uid)}
-                    style={{ cursor: canActCard ? 'pointer' : 'default' }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && clickMyCreature(card.uid)}
-                  >
-                    <FieldCard
-                      card={card}
-                      player={me}
-                      opponent={enemy}
-                      selected={isSelected}
-                      canAct={canActCard}
-                      attackAnim={attackAnim}
-                      damageAnim={damageAnim}
-                      cardRef={(el) => {
-                        if (el) cardRefsMap.current.set(card.uid, el);
-                        else cardRefsMap.current.delete(card.uid);
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* PLAYER HERO ZONE */}
-      <div className="zone-player-hero">
-        <div className="hero-zone">
-          <PlayerArea
-            player={me}
-            isCurrentPlayer={isP1Turn}
-            label="Вы"
-            isTop={false}
-          />
-        </div>
-      </div>
-
-      {/* ACTION BAR ZONE */}
-      <div className="zone-actionbar">
-        <div className="action-bar">
-          <span className={cn('phase-pill', phase === 'land' && 'active', landPlayed && 'done')}>
-            🏔️ Земля
-          </span>
-          <span className={cn('phase-pill', phase === 'play' && 'active', !hasPlayableCard && landPlayed && 'done')}>
-            🃏 Карты
-          </span>
-          <span className={cn('phase-pill', phase === 'attack' && 'active', !hasAttackers && 'done')}>
-            ⚔️ Атака
-          </span>
-          <span className={cn('phase-pill', phase === 'done' && 'active')}>
-            ⏭️ Конец
-          </span>
-        </div>
-      </div>
-
-      {/* HAND ZONE */}
-      <div className="zone-hand">
-        <div className="hand-zone">
-          {me.hand.length === 0 && (
-            <div className="text-gray-600 italic py-2 font-body" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>
-              Рука пуста
-            </div>
-          )}
-          {me.hand.map((card) => {
-            const isLand = card.data.type === 'land';
-            const canPlay =
-              myTurn &&
-              !gs.gameOver &&
-              (isLand ? me.landsPlayed < me.maxLandsPerTurn : card.data.cost <= me.mana);
+        <div className={`board-zone player ${dropZoneActive ? 'drop-target' : ''}`}>
+          {Array.from({ length: 7 }, (_, i) => {
+            const card = me.field[i];
+            const canAct = card && !card.summoningSickness && !card.hasAttacked && card.frozen <= 0 && !card.keywords.includes('defender');
             return (
-              <div
-                key={card.uid}
-                className={cn(
-                  'hand-card-wrapper',
-                  selectedHand === card.uid && 'selected',
-                  !canPlay && 'not-playable'
-                )}
-                onClick={() => clickHand(card.uid)}
-                draggable={canPlay}
-                onDragStart={(e) => handleDragStart(e, card.uid)}
-                onDragEnd={handleDragEnd}
-              >
-                <HandCard
-                  card={card}
-                  selected={selectedHand === card.uid}
-                  canPlay={canPlay}
-                  isLand={isLand}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <Sheet open={showLog} onOpenChange={setShowLog}>
-        <SheetContent
-          side="right"
-          className="bg-[#0f0f18]/98 backdrop-blur border-l-[#c9a84c]/20 w-[clamp(260px,28vw,360px)] sm:max-w-[360px] flex flex-col p-0"
-        >
-          <SheetHeader className="border-b border-[#c9a84c]/15 px-4 py-3">
-            <SheetTitle
-              className="text-[#f0d68a] font-heading font-bold flex items-center gap-2"
-              style={{ fontSize: 'clamp(12px, 1.2vw, 16px)' }}
-            >
-              📜 Хроника
-            </SheetTitle>
-            <SheetDescription
-              className="text-gray-500 font-body"
-              style={{ fontSize: 'clamp(9px, 0.9vw, 11px)' }}
-            >
-              Последние {Math.min(gs.log.length, 50)} действий
-            </SheetDescription>
-          </SheetHeader>
-          <div className="overflow-y-auto px-3 py-2 flex-1" ref={logRef}>
-            {gs.log.slice(-50).map((e, i) => (
-              <div
-                key={i}
-                className="text-gray-400 py-1 border-b border-gray-800/30 font-body"
-                style={{ fontSize: 'clamp(9px, 0.9vw, 12px)' }}
-              >
-                {e}
-              </div>
-            ))}
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {inspected && !selectedAttacker && (
-        <CardPreview
-          card={inspected.card}
-          owner={inspected.owner}
-          gs={gs}
-          compact={isCompactUI}
-          onClose={() => {
-            setInspected(null);
-            setSelectedHand(null);
-          }}
-        />
-      )}
-
-      <div className="px-3 py-1 shrink-0">
-        <PlayerArea
-          player={enemy}
-          isCurrentPlayer={!isP1Turn}
-          label={mode === 'ai' ? `${AI_CHARACTER.avatarEmoji} ${AI_CHARACTER.name}` : 'Игрок 2'}
-          isTop
-          dataEnemyHero
-        />
-      </div>
-
-      {/* Action buttons - moved below enemy player area for better mobile UX */}
-      <div className="flex items-center justify-center gap-2 shrink-0 py-1 px-2">
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/20 to-transparent" />
-        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-center">
-          {selectedAttacker && (
-            <>
-              <button
-                onClick={clickAttackHero}
-                className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white rounded-lg font-heading font-bold shadow-lg shadow-red-700/30 animate-pulse transition whitespace-nowrap"
-                style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}
-                title="Атаковать героя напрямую"
-              >
-                ⚔️ В героя
-              </button>
-              <button
-                onClick={() => setSelectedAttacker(null)}
-                className="px-2 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition font-heading"
-                style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}
-                title="Отменить выбор"
-              >
-                ✕
-              </button>
-            </>
-          )}
-          {myTurn && !gs.gameOver && !selectedAttacker && (
-            <button
-              onClick={clickEndTurn}
-              className={`px-3 py-1.5 rounded-lg font-heading font-bold shadow-lg transition hover:scale-105 border whitespace-nowrap ${
-                phase === 'done'
-                  ? 'bg-gradient-to-r from-[#8b6914] to-[#c9a84c] hover:from-[#a07a1a] hover:to-[#d4b85a] text-white border-[#c9a84c]/50 animate-pulse shadow-[#c9a84c]/30'
-                  : 'bg-[#1a1a2a] hover:bg-[#2a2a3a] text-gray-400 border-gray-700/50'
-              }`}
-              style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}
-              title={phase === 'done' ? 'Нет действий — завершите ход' : 'Завершить ход досрочно'}
-            >
-              Конец хода ⏭️
-            </button>
-          )}
-        </div>
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/20 to-transparent" />
-      </div>
-
-      <div
-        className="flex justify-center gap-0.5 px-2 shrink-0"
-        style={{ height: 'clamp(18px, 2vw, 28px)' }}
-      >
-        {enemy.hand.map((_, i) => (
-          <div
-            key={i}
-            className="bg-gradient-to-b from-red-900/80 to-red-950 rounded border border-red-800/30 flex items-center justify-center relative overflow-hidden"
-            style={{
-              width: 'clamp(12px, 1.5vw, 22px)',
-              height: '100%',
-              fontSize: 'clamp(4px, 0.6vw, 7px)',
-            }}
-          >
-            {cardBackSrc && (
-              <img
-                src={cardBackSrc}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover opacity-90"
-                loading="lazy"
-                onError={(e) => handleImageErrorWithFallback(e.currentTarget)}
-              />
-            )}
-            <span className="relative z-layer-cards">🂠</span>
-          </div>
-        ))}
-        <span
-          className="text-gray-600 ml-0.5 self-center"
-          style={{ fontSize: 'clamp(7px, 0.8vw, 10px)' }}
-        >
-          {enemy.hand.length}
-        </span>
-      </div>
-
-      {enemy.enchantments.length > 0 && (
-        <div className="flex justify-center gap-1 px-2 shrink-0">
-          {enemy.enchantments.map((c) => (
-            <span
-              key={c.uid}
-              className="bg-purple-900/50 text-purple-200 rounded px-1.5 py-0.5 border border-purple-500/20 cursor-pointer hover:bg-purple-800/50 transition font-body"
-              style={{ fontSize: 'clamp(8px, 0.85vw, 11px)' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setInspected({ card: c, owner: 'player2' });
-              }}
-              title={`${c.data.name}: ${c.data.description}`}
-            >
-              {c.data.emoji} {c.data.name}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div
-        className={`flex-1 flex flex-col justify-between min-h-0 relative px-2 py-1 transition-all duration-300 ${
-          dropZoneActive ? 'bg-green-900/10 ring-2 ring-green-400/30 ring-inset rounded-xl' : ''
-        }`}
-        onClick={clickBF}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        {dropZoneActive && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-layer-ui">
-            <div className="bg-green-500/10 border-2 border-dashed border-green-400/40 rounded-2xl px-8 py-4 backdrop-blur-sm">
-              <p
-                className="text-green-300 font-heading animate-pulse"
-                style={{ fontSize: 'clamp(14px, 1.5vw, 20px)' }}
-              >
-                ↓ Отпустите карту здесь ↓
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Enemy field with 7 slots */}
-        <div className="board-slots py-1">
-          {Array.from({ length: 7 }).map((_, slotIndex) => {
-            const card = enemy.field[slotIndex];
-            const isTarget = !!selectedAttacker;
-            
-            return (
-              <div
-                key={slotIndex}
-                className={`board-slot ${isTarget ? 'is-valid-target' : ''} ${slotIndex === selectedAttackerSlot ? 'is-attacking' : ''}`}
-                data-slot-index={slotIndex}
-                data-player="enemy"
-              >
-                {card ? (
-                  <FieldCard
-                    card={card}
-                    player={enemy}
-                    opponent={me}
-                    isTarget={!!selectedAttacker}
-                    selected={inspected?.card.uid === card.uid && !selectedAttacker}
-                    attackAnim={attackAnimUid === card.uid}
-                    damageAnim={damageAnimUid === card.uid}
-                    cardRef={(el) => {
-                      if (el) cardRefsMap.current.set(card.uid, el);
-                      else cardRefsMap.current.delete(card.uid);
-                    }}
-                    onClick={() => clickEnemyCreature(card.uid)}
-                  />
-                ) : (
-                  <div className="board-slot-placeholder" aria-hidden="true" />
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Player field with 7 slots */}
-        <div className="board-slots py-1">
-          {Array.from({ length: 7 }).map((_, slotIndex) => {
-            const card = me.field[slotIndex];
-            const canAct =
-              myTurn &&
-              card &&
-              !card.summoningSickness &&
-              !card.hasAttacked &&
-              card.frozen <= 0 &&
-              !card.keywords.includes('defender') &&
-              !gs.gameOver;
-            const isAttacking = selectedAttacker && card ? selectedAttacker === card.uid : false;
-            
-            return (
-              <div
-                key={slotIndex}
-                className={`board-slot ${isAttacking ? 'is-attacking' : ''}`}
-                data-slot-index={slotIndex}
-                data-player="player"
-              >
-                {card ? (
+              <div key={i} className={`creature-slot ${card ? 'occupied' : ''} ${dropZoneActive ? 'drop-target' : ''}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+                {card && (
                   <FieldCard
                     card={card}
                     player={me}
                     opponent={enemy}
                     selected={selectedAttacker === card.uid}
-                    canAct={canAct}
+                    isTarget={false}
+                    canAct={canAct && myTurn}
                     attackAnim={attackAnimUid === card.uid}
                     damageAnim={damageAnimUid === card.uid}
-                    cardRef={(el) => {
-                      if (el) cardRefsMap.current.set(card.uid, el);
-                      else cardRefsMap.current.delete(card.uid);
-                    }}
                     onClick={() => clickMyCreature(card.uid)}
+                    cardRef={(el) => { if (el) cardRefsMap.current.set(card.uid, el); }}
                   />
-                ) : (
-                  <div className="board-slot-placeholder" aria-hidden="true" />
                 )}
               </div>
             );
@@ -1898,113 +886,30 @@ export function GameBoard({ mode, onBack }: Props) {
         </div>
       </div>
 
-      {me.enchantments.length > 0 && (
-        <div className="flex justify-center gap-1 px-2 shrink-0">
-          {me.enchantments.map((c) => (
-            <span
-              key={c.uid}
-              className="bg-purple-900/50 text-purple-200 rounded px-1.5 py-0.5 border border-purple-500/20 cursor-pointer hover:bg-purple-800/50 transition font-body"
-              style={{ fontSize: 'clamp(8px, 0.85vw, 11px)' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setInspected({ card: c, owner: 'player1' });
-              }}
-            >
-              {c.data.emoji} {c.data.name}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="px-3 py-1 shrink-0">
-        <PlayerArea player={me} isCurrentPlayer={isP1Turn} label="👤 Вы" />
+      {/* PLAYER HERO ZONE */}
+      <div className="zone-player-hero">
+        <PlayerArea player={me} isCurrentPlayer={isP1Turn} label="👤 Игрок" />
       </div>
 
-      {myTurn && !gs.gameOver && (
-        <div
-          className="flex items-center gap-2 px-3 shrink-0 bg-black/60 border-t border-[#c9a84c]/10"
-          style={{ height: isCompactUI ? 'clamp(30px, 5vh, 42px)' : 'clamp(28px, 4vh, 40px)' }}
-        >
-          <div className="flex items-center gap-0.5 shrink-0">
-            {phases.map((p, i) => (
-              <div key={p.id} className="flex items-center">
-                <div
-                  className={`px-1.5 py-0.5 rounded-full font-heading transition-all ${
-                    p.active
-                      ? 'bg-[#c9a84c]/30 text-[#f0d68a] scale-110'
-                      : p.done
-                        ? 'bg-gray-800/50 text-gray-700 line-through'
-                        : 'bg-gray-800/30 text-gray-700'
-                  }`}
-                  style={{ fontSize: 'clamp(10px, 1vw, 14px)' }}
-                >
-                  {p.icon}
-                </div>
-                {i < phases.length - 1 && (
-                  <span
-                    className="text-gray-800 mx-0.5"
-                    style={{ fontSize: 'clamp(8px, 0.8vw, 10px)' }}
-                  >
-                    ›
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-          <div
-            className={`flex-1 truncate font-body ${
-              selectedAttacker
-                ? 'text-red-300'
-                : dragCardUid
-                  ? 'text-green-300'
-                  : phase === 'land'
-                    ? 'text-[#f0d68a]'
-                    : phase === 'done'
-                      ? 'text-gray-600'
-                      : 'text-gray-400'
-            }`}
-            style={{ fontSize: 'clamp(11px, 1.1vw, 15px)' }}
-          >
-            {getHint()}
-          </div>
+      {/* ACTION BAR */}
+      <div className="zone-actionbar">
+        <div className="action-bar">
+          {phases.map((p) => (<span key={p.id} className={`phase-pill ${p.active ? 'active' : p.done ? 'done' : 'idle'}`}>{p.icon} {p.label}</span>))}
         </div>
-      )}
+      </div>
 
-      {/* ═══ ARC HAND LAYOUT (Stage 6) ═══ */}
-      <div
-        className="hand-container bg-black/70 shrink-0 border-t border-[#c9a84c]/10 relative z-layer-ui"
-        style={{
-          paddingBottom: isCompactUI ? 'max(0.375rem, env(safe-area-inset-bottom))' : undefined,
-        }}
-      >
-        <div className="hand-cards-arc">
-          {me.hand.length === 0 && (
-            <div
-              className="text-gray-600 italic py-2 font-body"
-              style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
-            >
-              Рука пуста
-            </div>
-          )}
-          {me.hand.map((card, index) => {
-            const isLand = card.data.type === 'land';
-            const canPlay =
-              myTurn &&
-              !gs.gameOver &&
-              (isLand ? me.landsPlayed < me.maxLandsPerTurn : card.data.cost <= me.mana);
-            const arcIndex = Math.min(index, 9); // Max 10 cards with arc
-            const isDragging = dragCardUid === card.uid;
+      {/* HAND ZONE */}
+      <div className="zone-hand" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+        <div className="hand-zone">
+          {me.hand.map((card, idx) => {
+            const canPlay = myTurn && !gs.gameOver && (card.data.type === 'land' ? me.landsPlayed < me.maxLandsPerTurn : card.data.cost <= me.mana);
             return (
-              <div
-                key={card.uid}
-                className={`hand-card-in-arc ${isDragging ? 'is-dragging' : ''}`}
-                data-arc-index={arcIndex}
-              >
-                <HandCard
+              <div key={card.uid} className="hand-card-wrapper" style={{ '--card-angle': `${(idx - (me.hand.length - 1) / 2) * 3}deg`, '--card-offset': `${Math.abs(idx - (me.hand.length - 1) / 2) * 2}px`, '--card-index': idx } as React.CSSProperties}>
+                <HandCardComponent
                   card={card}
                   selected={selectedHand === card.uid}
                   canPlay={canPlay}
-                  isLand={isLand}
+                  isLand={card.data.type === 'land'}
                   onClick={() => clickHand(card.uid)}
                   onDragStart={(e) => handleDragStart(e, card.uid)}
                   onDragEnd={handleDragEnd}
@@ -2015,159 +920,27 @@ export function GameBoard({ mode, onBack }: Props) {
         </div>
       </div>
 
-      {showTurnTransition && (
-        <div className="turn-banner z-layer-overlay">
-          <div className="turn-banner-text">
-            {AI_CHARACTER.avatarEmoji} ХОД ХРАНИТЕЛЯ
-          </div>
-          <div className="turn-banner-sub">{AI_CHARACTER.title}</div>
-        </div>
-      )}
+      {/* MESSAGE FEED */}
+      <MessageFeed messages={messages} onDismiss={dismissMessage} />
 
-      {aiThinking && (
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-layer-overlay pointer-events-none transition-opacity duration-500">
-          <div
-            className="bg-[#0f0f18]/95 rounded-2xl px-6 py-4 text-white flex flex-col items-center gap-2 shadow-2xl border border-[#c9a84c]/30"
-            style={{ width: isCompactUI ? 'min(92vw, 360px)' : undefined }}
-          >
-            <div className="animate-pulse" style={{ fontSize: 'clamp(36px, 4vw, 56px)' }}>
-              {AI_CHARACTER.avatarEmoji}
+      {/* DAMAGE NUMBERS */}
+      {damageNumbers.map((dn) => (<div key={dn.id} className={`damage-number ${dn.type}`} style={{ left: dn.x, top: dn.y }}>{dn.value}</div>))}
+
+      {/* TURN TRANSITION */}
+      {showTurnTransition && (<div className="turn-banner"><span className="turn-banner-text">ХОД ХРАНИТЕЛЯ</span><span className="turn-banner-sub">Подготовьтесь к бою</span></div>)}
+
+      {/* GAME OVER */}
+      {gs.gameOver && (
+        <div className="modal-overlay">
+          <div className="modal-overlay-content text-center">
+            <h2 className="font-title text-2xl text-[#c9a84c] mb-4">{me.health <= 0 ? '💀 Поражение' : '🏆 Победа!'}</h2>
+            <p className="text-gray-300 mb-6">{me.health <= 0 ? 'Омск пал...' : 'Омск спасен!'}</p>
+            <div className="flex gap-4 justify-center">
+              <button onClick={restart} className="px-6 py-2 rounded-lg bg-[#c9a84c] text-black font-bold">Играть снова</button>
+              <button onClick={onBack} className="px-6 py-2 rounded-lg border border-gray-600">В меню</button>
             </div>
-            <span
-              className="font-heading font-bold text-[#f0d68a]"
-              style={{ fontSize: 'clamp(12px, 1.2vw, 18px)' }}
-            >
-              {AI_CHARACTER.name}
-            </span>
-
-            {aiActionStatus ? (
-              <span
-                className="text-[#f0d68a] font-body text-center animate-fade-in"
-                style={{ fontSize: 'clamp(10px, 1.1vw, 15px)' }}
-              >
-                {aiActionStatus}
-              </span>
-            ) : (
-              <span
-                className="text-gray-500 font-body"
-                style={{ fontSize: 'clamp(9px, 0.9vw, 12px)' }}
-              >
-                размышляет о стратегии...
-              </span>
-            )}
-
-            {!aiActionStatus && (
-              <div className="flex gap-1.5">
-                <div className="w-2 h-2 bg-[#c9a84c] rounded-full animate-bounce" />
-                <div
-                  className="w-2 h-2 bg-[#c9a84c] rounded-full animate-bounce"
-                  style={{ animationDelay: '0.15s' }}
-                />
-                <div
-                  className="w-2 h-2 bg-[#c9a84c] rounded-full animate-bounce"
-                  style={{ animationDelay: '0.3s' }}
-                />
-              </div>
-            )}
           </div>
         </div>
-      )}
-
-      <Dialog open={gs.gameOver ?? false}>
-        <DialogContent
-          showClose={false}
-          className="bg-gradient-to-br from-[#1a1508] to-[#0f0f18] border-[#c9a84c]/40 text-center max-w-sm shadow-2xl"
-          onPointerDownOutside={(e) => e.preventDefault()}
-        >
-          <DialogHeader className="items-center">
-            <div style={{ fontSize: 'clamp(48px, 6vw, 72px)' }} className="mb-1">
-              {gs.winner === 'player1' ? '🏆' : '💀'}
-            </div>
-            <DialogTitle
-              className="font-title text-[#f0d68a]"
-              style={{ fontSize: 'clamp(24px, 3vw, 40px)' }}
-            >
-              {gs.winner === 'player1' ? 'Победа!' : 'Поражение!'}
-            </DialogTitle>
-            <DialogDescription
-              className="text-gray-300 italic font-body"
-              style={{ fontSize: 'clamp(11px, 1.1vw, 15px)' }}
-            >
-              {gs.winner === 'player1'
-                ? '«Ты покорил Омск... но Омск покорил тебя.»'
-                : '«Ты не смог покинуть Омск. Никто не может.»'}
-            </DialogDescription>
-          </DialogHeader>
-          <p className="text-gray-600 font-body" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)' }}>
-            Ходов: {gs.turnNumber} | HP: {me.health} vs {enemy.health}
-          </p>
-          <DialogFooter className="flex-row justify-center gap-3 sm:justify-center">
-            <Button
-              onClick={restart}
-              className="px-6 py-3 bg-gradient-to-r from-[#8b6914] to-[#c9a84c] hover:from-[#a07a1a] hover:to-[#d4b85a] text-white rounded-xl font-heading font-bold shadow-lg hover:scale-105 transition"
-              style={{ fontSize: 'clamp(12px, 1.2vw, 16px)' }}
-            >
-              🔄 Реванш
-            </Button>
-            <Button
-              variant="outline"
-              onClick={onBack}
-              className="px-6 py-3 bg-[#1a1a2a] hover:bg-[#2a2a3a] text-white rounded-xl font-heading font-bold shadow-lg hover:scale-105 transition border-gray-700/50"
-              style={{ fontSize: 'clamp(12px, 1.2vw, 16px)' }}
-            >
-              📋 Меню
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Damage Numbers Overlay */}
-      {damageNumbers.map((dn) => (
-        <div
-          key={dn.id}
-          className={`damage-number z-layer-overlay ${dn.type === 'heal' ? 'heal' : dn.type === 'buff' ? 'buff' : ''}`}
-          style={{
-            left: dn.x,
-            top: dn.y,
-            position: 'fixed',
-          }}
-        >
-          {dn.type === 'heal' ? '+' : ''}{dn.value}
-        </div>
-      ))}
-
-      {/* Targeting Line */}
-      {targetingLine && selectedAttacker && (
-        <svg
-          className="pointer-events-none fixed inset-0 z-layer-combat-effects"
-          style={{ width: '100vw', height: '100vh' }}
-        >
-          <line
-            x1={targetingLine.startX}
-            y1={targetingLine.startY}
-            x2={targetingLine.endX}
-            y2={targetingLine.endY}
-            stroke="url(#targetingGradient)"
-            strokeWidth="3"
-            strokeDasharray="8,4"
-            className="targeting-line"
-            style={{
-              filter: 'drop-shadow(0 0 8px rgba(255,100,0,0.8))',
-            }}
-          />
-          <defs>
-            <linearGradient id="targetingGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="rgba(255,100,0,0)" />
-              <stop offset="50%" stopColor="rgba(255,100,0,0.9)" />
-              <stop offset="100%" stopColor="rgba(255,100,0,0)" />
-            </linearGradient>
-          </defs>
-        </svg>
-      )}
-
-      {/* Low Health Warning */}
-      {me.health <= 10 && me.health > 0 && (
-        <div className="low-health-overlay" />
       )}
     </div>
   );
