@@ -853,7 +853,7 @@ export function GameBoard({ mode, onBack }: Props) {
           </div>
           <div className="divider-hint">{getHint()}</div>
           <div className="divider-buttons">
-            {!gs.gameOver && myTurn && <button onClick={clickEndTurn} className={`end-turn-btn ${phase === 'done' ? 'ready' : 'busy'}`} disabled={phase !== 'done'}>Конец хода ⏭️</button>}
+            {!gs.gameOver && myTurn && <button onClick={clickEndTurn} className="end-turn-btn ready">Конец хода ⏭️</button>}
           </div>
         </div>
       </div>

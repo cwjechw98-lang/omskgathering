@@ -608,13 +608,6 @@
 }
 
 .end-turn-btn.ready:active  { transform: scale(0.95); }
-.end-turn-btn.busy {
-  background: rgba(255,255,255,0.04);
-  border-color: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.22);
-  cursor: not-allowed;
-  box-shadow: none;
-}
 
 /* Attack hero button */
 .attack-hero-btn {
