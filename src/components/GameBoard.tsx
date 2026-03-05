@@ -27,6 +27,7 @@ import { Badge } from './ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
+import { CardPreview } from './game/CardPreview';
 
 interface Props {
   mode: 'ai' | 'local' | 'online';
@@ -922,6 +923,16 @@ export function GameBoard({ mode, onBack }: Props) {
           })}
         </div>
       </div>
+
+      {/* CARD PREVIEW */}
+      {inspected && !selectedAttacker && (
+        <CardPreview
+          card={inspected.card}
+          owner={inspected.owner}
+          gs={gs}
+          onClose={() => { setInspected(null); setSelectedHand(null); }}
+        />
+      )}
 
       {/* MESSAGE FEED */}
       <MessageFeed messages={messages} onDismiss={dismissMessage} />
