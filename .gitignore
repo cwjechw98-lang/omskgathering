@@ -16,3 +16,4 @@ Thumbs.db
 .env.*.local
 !.env.example
 .claude/
+".test-results"  
