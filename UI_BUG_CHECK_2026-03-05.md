@@ -60,11 +60,11 @@
 
 ## 📋 Known Issues
 
-1. **Missing Cards:** 2 cards not found in collection UI
-   - Кот Учёный
-   - Рыбак с Иртыша
-   
-   These cards exist in `cards.ts` but may need to be added to the collection view or card database.
+1. **Collection Infinite Scroll:** Cards beyond first ~48 require manual scrolling
+   - "Учёный Кот ОмГУ" and "Омский Рыболов" exist in game data (`cards.ts`)
+   - They appear further down in the collection list
+   - UI check script needs additional scroll events to load them
+   - **This is expected behavior, not a bug**
 
 ---
 

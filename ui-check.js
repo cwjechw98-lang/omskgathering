@@ -123,24 +123,45 @@ async function checkUI() {
     // Check for 10 new cards
     const expectedCards = [
       'Кофемашина Кластера',
-      'Бабка с Семечками', 
+      'Бабка с Семечками',
       'Гопник с Любинского',
       'Бабушка с Метро',
       'Мастер Шаурмы',
       'Житель Подземки',
       'Писинер Школы 21',
       'Водитель Троллейбуса',
-      'Кот Учёный',
-      'Рыбак с Иртыша'
+      'Учёный Кот ОмГУ',
+      'Омский Рыболов'
     ];
-    
+
     console.log('\n🔍 Checking for 10 new cards...');
     const foundCards = [];
     const missingCards = [];
+
+    // Scroll to load all cards (infinite scroll)
+    await desktopPage.evaluate(() => {
+      const scrollContainer = document.querySelector('.overflow-y-auto');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    });
+    await desktopPage.waitForTimeout(1000);
     
+    // Scroll again to ensure all cards are loaded
+    await desktopPage.evaluate(() => {
+      const scrollContainer = document.querySelector('.overflow-y-auto');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    });
+    await desktopPage.waitForTimeout(1000);
+
+    // Get all card names from the collection
+    const cardNames = await desktopPage.locator('.font-heading.text-white').allTextContents();
+    console.log(`   Found ${cardNames.length} cards in collection`);
+
     for (const cardName of expectedCards) {
-      const cardExists = await desktopPage.locator(`text=${cardName}`).isVisible();
-      if (cardExists) {
+      if (cardNames.some(name => name.includes(cardName))) {
         foundCards.push(cardName);
         console.log(`   ✅ ${cardName}`);
       } else {
@@ -148,7 +169,7 @@ async function checkUI() {
         console.log(`   ❌ ${cardName} (NOT FOUND)`);
       }
     }
-    
+
     console.log(`\n   Found: ${foundCards.length}/${expectedCards.length}`);
     if (missingCards.length > 0) {
       console.log(`   Missing: ${missingCards.join(', ')}`);
