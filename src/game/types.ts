@@ -48,4 +48,9 @@ export interface GameState {
   cantAttackNextTurn: boolean;
   lastDiceRoll: DiceRoll | null;
   aiComment: string | null;
+  // Mulligan state
+  mulliganPhase: boolean;
+  mulliganCount: number;
+  player1Keeping: boolean | null;
+  player2Keeping: boolean | null;
 }

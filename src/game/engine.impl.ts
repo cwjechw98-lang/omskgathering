@@ -57,6 +57,10 @@ export function createInitialGameState(): GameState {
     cantAttackNextTurn: false,
     lastDiceRoll: null,
     aiComment: null,
+    mulliganPhase: true,
+    mulliganCount: 0,
+    player1Keeping: null,
+    player2Keeping: null,
   };
 
   // Player 1 gets a proper first-turn draw (like in MTG, untap-upkeep-draw)
@@ -64,12 +68,76 @@ export function createInitialGameState(): GameState {
 
   state.log.push('⚔️ Битва за Омск начинается! Вы не можете покинуть Омск!');
   state.log.push('🔄 Ход 1: Ваш ход. Начните с розыгрыша ЗЕМЛИ! 🏔️');
+  state.log.push('🃏 Mulligan: оставьте руку с 2-4 землями (максимум 2 муллигана)');
 
   return state;
 }
 
 export function rollDice(sides: number): number {
   return Math.floor(Math.random() * sides) + 1;
+}
+
+/**
+ * Mulligan system:
+ * - Auto-keep if 2-4 lands in hand
+ * - Auto-mulligan if 0-1 or 5+ lands
+ * - Maximum 2 mulligans per game
+ * - After 2nd mulligan: scry 1 (look at top card, can put on bottom)
+ */
+export function takeMulligan(state: GameState, playerKey: 'player1' | 'player2'): GameState {
+  if (!state.mulliganPhase) return state;
+  if (state.mulliganCount >= 2) return state;
+
+  const newState = deepClone(state);
+  const player = newState[playerKey];
+
+  // Return hand to deck and shuffle
+  for (const card of player.hand) {
+    player.deck.push(card);
+  }
+  player.hand = [];
+
+  // Shuffle deck
+  for (let i = player.deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [player.deck[i], player.deck[j]] = [player.deck[j], player.deck[i]];
+  }
+
+  // Draw new hand (5 cards)
+  for (let i = 0; i < 5 && player.deck.length > 0; i++) {
+    const card = player.deck.shift();
+    if (card) player.hand.push(card);
+  }
+
+  newState.mulliganCount++;
+  newState.log.push(`🃏 ${playerKey === 'player1' ? 'Вы' : 'Противник'} взяли муллиган (${newState.mulliganCount}/2)`);
+
+  // Check if new hand is keepable
+  const landCount = player.hand.filter(c => c.data.type === 'land').length;
+  const isKeepable = landCount >= 2 && landCount <= 4;
+
+  if (newState.mulliganCount >= 2) {
+    // After 2nd mulligan, auto-keep and scry 1
+    newState.mulliganPhase = false;
+    newState.log.push('🔮 После 2го муллигана: просмотрите верхнюю карту (scry 1)');
+    // Simple scry: put top card on bottom if it's a land and player has 0 lands
+    if (player.hand.filter(c => c.data.type === 'land').length === 0 && player.deck.length > 0) {
+      const top = player.deck.shift();
+      if (top) {
+        player.deck.push(top);
+        newState.log.push('🔮 Scry: карта отправлена вниз колоды');
+      }
+    }
+  } else if (isKeepable) {
+    newState[playerKey === 'player1' ? 'player1Keeping' : 'player2Keeping'] = true;
+    // Check if both players kept
+    if (newState.player1Keeping && newState.player2Keeping) {
+      newState.mulliganPhase = false;
+      newState.log.push('✅ Оба игрока оставили руки. Игра начинается!');
+    }
+  }
+
+  return newState;
 }
 
 export function drawCard(player: PlayerState, log: string[]): boolean {
@@ -552,7 +620,9 @@ function applySpellEffect(
         target.currentHealth = -999;
         state.log.push(`🕳️ ${target.data.name} провалился в яму!`);
       } else {
-        state.log.push('🕳️ Нет подходящих целей.');
+        // Alternative: 2 damage to enemy hero
+        opponent.health -= 2;
+        state.log.push('🕳️ Яма на Дороге: 2 урона вражескому герою!');
       }
       break;
     }
@@ -562,18 +632,25 @@ function applySpellEffect(
       if (count > 0) {
         const top = player.deck.splice(0, count);
         top.sort((a, b) => b.data.cost - a.data.cost);
+        // Take top 2 best cards
         player.hand.push(top[0]);
-        state.log.push(`🔍 Пир-ревью: ${top[0].data.name} в руку!`);
-        for (let i = 1; i < top.length; i++) {
-          player.deck.push(top[i]);
+        if (top.length > 1) player.hand.push(top[1]);
+        state.log.push(`🔍 Пир-ревью: ${top[0].data.name} и ${top.length > 1 ? top[1].data.name : 'ничего'} в руку!`);
+        // Put rest back on top
+        for (let i = 2; i < top.length; i++) {
+          player.deck.unshift(top[i]);
         }
       }
       break;
     }
 
     case 'probka_lenina':
+      // Freeze all enemy creatures for 1 turn
+      for (const c of opponent.field) {
+        applyFreeze(c, 1);
+      }
       state.cantAttackNextTurn = true;
-      state.log.push('🚗 Пробка на Ленина! Враги не атакуют в следующий ход!');
+      state.log.push('🚗 Пробка на Ленина! Все вражеские существа заморожены!');
       break;
 
     case 'debug_mode': {

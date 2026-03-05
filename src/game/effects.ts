@@ -3,6 +3,7 @@ import {
   createInitialGameState as createInitialGameStateImpl,
   drawCard as drawCardImpl,
   playCard as playCardImpl,
+  takeMulligan as takeMulliganImpl,
 } from './engine.impl';
 
 export function createInitialGameState(): GameState {
@@ -19,4 +20,8 @@ export function playCard(
 
 export function drawCard(player: PlayerState, log: string[]): boolean {
   return drawCardImpl(player, log);
+}
+
+export function takeMulligan(state: GameState, playerKey: 'player1' | 'player2'): GameState {
+  return takeMulliganImpl(state, playerKey);
 }
