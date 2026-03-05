@@ -62,7 +62,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'komar_irtish',
     name: 'Иртышский Комар',
-    cost: 1,
+    cost: 2,
     color: 'black',
     type: 'creature',
     attack: 1,
@@ -119,7 +119,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'coffee_machine',
     name: 'Кофемашина Кластера',
-    cost: 1,
+    cost: 2,
     color: 'colorless',
     type: 'creature',
     attack: 0,
@@ -212,7 +212,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'zhitel_podzemki',
     name: 'Житель Подземки',
-    cost: 2,
+    cost: 3,
     color: 'black',
     type: 'creature',
     attack: 2,
@@ -786,7 +786,7 @@ export const ALL_CARDS: CardData[] = [
     cost: 2,
     color: 'green',
     type: 'spell',
-    description: 'Дайте случайному вашему существу +2/+2 навсегда. Восстановите 2 здоровья.',
+    description: 'Дайте случайному вашему существу +2/+2 навсегда. Восстановите 2 здоровья. Потяните карту.',
     flavor: '«Шаверма с двойным мясом — и ты непобедим!»',
     emoji: '🥙',
     rarity: 'common',
@@ -1003,7 +1003,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'bozhestvenniy_svet',
     name: 'Божественный Свет',
-    cost: 5,
+    cost: 4,
     color: 'white',
     type: 'spell',
     description: 'Восстановите 4 HP. Все ваши существа получают +1/+1 навсегда.',
@@ -1020,7 +1020,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'blagoustroistvo',
     name: 'Благоустройство',
-    cost: 2,
+    cost: 1,
     color: 'green',
     type: 'enchantment',
     description: 'Ваши существа получают +0/+2. +1 здоровье в начале хода.',
