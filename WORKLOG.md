@@ -479,6 +479,35 @@ Quality gates:
   - `npm run test:regression` -> 51/51 PASS,
   - `npm run build` -> PASS (local Node warning unchanged).
 
+### 2026-03-05 — UI Layer Audit & Fix (Этапы A+B)
+
+**Аудит интерфейса:**
+- Полный аудит z-index системы, мёртвого кода и отрисовки слоёв (3 параллельных агента)
+- Выявлено: 2 undefined CSS-переменных, 6 закомментированных state с живыми сеттерами (crash risk), отсутствующая визуализация колоды, 67 мёртвых CSS-классов
+
+**Этап A — Критические фиксы:**
+- Z-index: добавлены `--z-divider`, `--z-hero`, `--z-card-hover`, `--z-hand-hover`, `--z-hand-selected`; убраны хардкоды `65`, `1000`, `1001`
+- Восстановлены 6 state: `selectedAttackerSlot`, `aiActionStatus`, `showLog`, `playAnim`, `deathAnim`, `targetingLine` + импорт `getCardBackSource`
+- Исправлены dependency arrays в `useCallback` для `runAI` и `doPlayCard`
+- Добавлен `DeckStack` компонент — визуальная стопка колоды (с card-back.jpg) и сброса для обоих игроков
+- Hero-зоны: `[Колода] [Hero Stats] [Сброс]` через `.hero-zone-row` flexbox
+
+**Этап B — Анимации и чистка CSS:**
+- Draw animation: отслеживание новых карт в руке через `prevHandRef` → CSS `card-draw-animation` (0.35s slide-in)
+- Play animation: отслеживание новых карт на поле через `newlyPlayedUids` → CSS `card-play-animation` (0.4s spring-bounce)
+- Чистка: удалено ~67 мёртвых CSS-классов (`.hero-zone`, `.mana-pip`, `.game-card-container`, `.game-card`, card anatomy, `.hand-card-in-arc` + arc index variants)
+- CSS: 121 KB → 115 KB (-5%)
+
+**Дополнительно:**
+- `npm audit fix` — устранена high-severity уязвимость в rollup (GHSA-mw96-cpmx-2vgc)
+- Smoke-тест обновлён: заменён хрупкий `[class*="text-green"]` селектор на `screen.getByText(/Конец хода/)`
+
+**Quality Gates:**
+- `npm run lint` -> 0 errors, 7 warnings (без изменений)
+- `npm run test` -> 20/20 PASS
+- `npm run test:regression` -> 51/51 PASS
+- `npm run build` -> PASS (455 KB JS, 115 KB CSS)
+
 ### 2026-03-05
 - UI stabilization (mod.md) — Stage 3 complete.
 - Finalized centralized z-layer usage on game board/effects:

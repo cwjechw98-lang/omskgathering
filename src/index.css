@@ -73,6 +73,11 @@
   --z-hover: 70;
   --z-overlay: 80;
   --z-hand: 85;
+  --z-divider: 15;
+  --z-hero: 65;
+  --z-card-hover: 75;
+  --z-hand-hover: 100;
+  --z-hand-selected: 101;
 
   /* ═══ GAME GRID LAYOUT — Fixed row heights ═══ */
   --topbar-h: clamp(38px, 5vh, 50px);
@@ -126,7 +131,7 @@
 .zone-enemy-hero {
   grid-area: enemy-hero;
   overflow: visible;
-  z-index: 65;
+  z-index: var(--z-hero);
 }
 .zone-enemy-board {
   grid-area: enemy-board;
@@ -149,8 +154,22 @@
 .zone-player-hero {
   grid-area: player-hero;
   overflow: visible;
-  z-index: 65;
+  z-index: var(--z-hero);
 }
+
+/* Hero zone row layout — hero stats + deck + graveyard */
+.hero-zone-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1vw, 14px);
+  padding: 0 clamp(8px, 1.5vw, 16px);
+  height: 100%;
+}
+.hero-zone-row > :nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
 .zone-actionbar {
   grid-area: actionbar;
   overflow: hidden;
@@ -196,92 +215,6 @@
 }
 
 /* ═══ HERO ZONE ═══ */
-.hero-zone {
-  display: flex;
-  align-items: center;
-  gap: clamp(6px, 1vw, 14px);
-  padding: 0 clamp(8px, 1.5vw, 16px);
-  height: 100%;
-  transition: background 0.35s ease;
-}
-
-.hero-avatar {
-  width: clamp(32px, 4vw, 46px);
-  height: clamp(32px, 4vw, 46px);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: clamp(15px, 2.2vw, 26px);
-  transition: box-shadow 0.4s ease;
-}
-
-.hero-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(2px, 0.3vh, 5px);
-}
-
-.hero-name {
-  font-weight: 700;
-  font-size: clamp(10px, 1.2vw, 14px);
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.hero-hp-bar-track {
-  height: clamp(5px, 0.7vw, 9px);
-  background: rgba(255, 255, 255, 0.07);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.hero-hp-bar-fill {
-  height: 100%;
-  border-radius: 999px;
-  transition:
-    width 0.5s ease,
-    background-color 0.5s ease;
-}
-
-.hero-hp-text {
-  font-weight: 700;
-  font-size: clamp(11px, 1.3vw, 15px);
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: color 0.4s ease;
-}
-
-.hero-mana-pips {
-  display: flex;
-  gap: clamp(2px, 0.25vw, 4px);
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.mana-pip {
-  width: clamp(7px, 0.9vw, 11px);
-  height: clamp(7px, 0.9vw, 11px);
-  border-radius: 50%;
-  flex-shrink: 0;
-  transition:
-    background 0.3s ease,
-    box-shadow 0.3s ease;
-}
-
-.mana-pip.full {
-  background: #3b82f6;
-  box-shadow: 0 0 5px rgba(59, 130, 246, 0.65);
-}
-.mana-pip.spent {
-  background: rgba(30, 58, 138, 0.45);
-}
-
 /* ═══ DECK & GRAVEYARD ZONES ═══ */
 .deck-zone,
 .graveyard-zone {
@@ -420,222 +353,6 @@
     background 0.25s,
     border-color 0.25s,
     box-shadow 0.25s;
-}
-
-/* ═══ CARD CONTAINER ═══ */
-.game-card-container {
-  width: var(--field-card-w);
-  height: var(--field-card-h);
-  transform-origin: bottom center;
-  transition:
-    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-    z-index 0s;
-  position: relative;
-  z-index: var(--z-cards);
-}
-
-.creature-slot.occupied:hover .game-card-container {
-  transform: scale(1.08) translateY(-5px);
-  z-index: var(--z-card-hover);
-}
-
-.game-card-container.attacker-selected {
-  transform: scale(1.1) translateY(-8px);
-  z-index: var(--z-card-hover);
-}
-
-.game-card-container.is-target:hover {
-  transform: scale(1.06);
-  cursor: crosshair;
-}
-
-.game-card-container.can-act {
-  animation: canActFloat 2.5s ease-in-out infinite;
-}
-
-/* ═══ CARD VISUAL ═══ */
-.game-card {
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  user-select: none;
-  transition:
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-.game-card.color-white {
-  background: linear-gradient(160deg, #3c3222, #201c12);
-}
-.game-card.color-blue {
-  background: linear-gradient(160deg, #0e1e40, #070f22);
-}
-.game-card.color-black {
-  background: linear-gradient(160deg, #1c1024, #0e0912);
-}
-.game-card.color-red {
-  background: linear-gradient(160deg, #3c1212, #220a0a);
-}
-.game-card.color-green {
-  background: linear-gradient(160deg, #0c2a12, #081808);
-}
-.game-card.color-colorless {
-  background: linear-gradient(160deg, #282828, #161616);
-}
-
-.game-card.rarity-common {
-  border-color: rgba(150, 150, 150, 0.22);
-}
-.game-card.rarity-uncommon {
-  border-color: rgba(180, 220, 180, 0.38);
-}
-.game-card.rarity-rare {
-  border-color: rgba(200, 160, 55, 0.52);
-}
-.game-card.rarity-mythic {
-  border-color: rgba(220, 120, 35, 0.62);
-  box-shadow: 0 0 7px rgba(220, 120, 35, 0.22);
-}
-
-.game-card.can-act-glow {
-  border-color: rgba(74, 222, 128, 0.68);
-  box-shadow:
-    0 0 10px rgba(74, 222, 128, 0.28),
-    inset 0 0 5px rgba(74, 222, 128, 0.05);
-}
-
-.game-card.attacker-glow {
-  border-color: rgba(250, 204, 21, 0.88);
-  box-shadow:
-    0 0 20px rgba(250, 204, 21, 0.5),
-    0 0 5px rgba(250, 204, 21, 0.9),
-    inset 0 0 8px rgba(250, 204, 21, 0.08);
-}
-
-.game-card.is-target-glow {
-  border-color: rgba(239, 68, 68, 0.85);
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.45);
-  animation: targetPulse 0.85s ease-in-out infinite;
-}
-
-.game-card.frozen-look {
-  opacity: 0.65;
-  filter: saturate(0.45) hue-rotate(165deg);
-  border-color: rgba(103, 232, 249, 0.42);
-}
-
-/* Card anatomy */
-.card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: clamp(2px, 0.35vw, 5px) clamp(2px, 0.35vw, 5px) 0;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 2;
-}
-
-.card-emoji {
-  font-size: clamp(14px, 2vw, 28px);
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.card-cost {
-  width: clamp(15px, 1.9vw, 23px);
-  height: clamp(15px, 1.9vw, 23px);
-  border-radius: 50%;
-  background: #1a4db5;
-  color: #fff;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(7px, 0.85vw, 11px);
-  flex-shrink: 0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
-  position: relative;
-  z-index: 2;
-}
-
-.card-art-area {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
-}
-
-.card-bottom {
-  padding: clamp(2px, 0.28vw, 4px);
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.58);
-  position: relative;
-  z-index: 2;
-}
-
-.card-name {
-  color: #fff;
-  font-weight: 700;
-  font-size: clamp(5.5px, 0.7vw, 9.5px);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.15;
-}
-
-.card-keywords {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1px;
-  font-size: clamp(7px, 0.7vw, 10px);
-}
-.card-status {
-  display: flex;
-  gap: 2px;
-  font-size: clamp(6px, 0.65vw, 9px);
-}
-
-.card-stats {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2px;
-  margin-top: 1px;
-}
-
-.stat-atk {
-  background: rgba(185, 28, 28, 0.88);
-  color: #fff;
-  font-weight: 800;
-  font-size: clamp(7px, 0.9vw, 12px);
-  padding: 0 clamp(2px, 0.28vw, 4px);
-  border-radius: 3px;
-  line-height: 1.35;
-}
-
-.stat-hp {
-  color: #fff;
-  font-weight: 800;
-  font-size: clamp(7px, 0.9vw, 12px);
-  padding: 0 clamp(2px, 0.28vw, 4px);
-  border-radius: 3px;
-  line-height: 1.35;
-}
-.stat-hp.healthy {
-  background: rgba(21, 128, 61, 0.88);
-}
-.stat-hp.wounded {
-  background: rgba(185, 28, 28, 0.88);
 }
 
 /* ═══ CENTER DIVIDER ═══ */
@@ -865,13 +582,13 @@
 
 .hand-card-wrapper:hover {
   transform: rotate(0deg) translateY(-22px) scale(1.16);
-  z-index: 1000;
+  z-index: var(--z-hand-hover);
   filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.6));
 }
 
 .hand-card-wrapper.selected {
   transform: rotate(0deg) translateY(-28px) scale(1.2);
-  z-index: 1001;
+  z-index: var(--z-hand-selected);
   filter: drop-shadow(0 10px 20px rgba(250, 204, 21, 0.35));
 }
 
@@ -1902,89 +1619,6 @@ body {
   justify-content: center;
   align-items: flex-end;
   padding-bottom: 20px;
-}
-
-.hand-card-in-arc {
-  transition:
-    transform 0.15s ease-out,
-    z-index 0s linear 0.15s;
-  transform-origin: center bottom;
-  will-change: transform;
-}
-
-.hand-card-in-arc:hover,
-.hand-card-in-arc.is-dragging {
-  transform: translateY(-30px) scale(1.15) rotate(0deg) !important;
-  z-index: 1000 !important;
-  transition:
-    transform 0.2s ease-out,
-    z-index 0s linear;
-}
-
-/* Individual card rotations for arc effect */
-.hand-card-in-arc[data-arc-index='0'] {
-  transform: rotate(-8deg) translateY(5px);
-}
-.hand-card-in-arc[data-arc-index='1'] {
-  transform: rotate(-6deg) translateY(3px);
-}
-.hand-card-in-arc[data-arc-index='2'] {
-  transform: rotate(-4deg) translateY(2px);
-}
-.hand-card-in-arc[data-arc-index='3'] {
-  transform: rotate(-2deg) translateY(1px);
-}
-.hand-card-in-arc[data-arc-index='4'] {
-  transform: rotate(0deg);
-}
-.hand-card-in-arc[data-arc-index='5'] {
-  transform: rotate(2deg) translateY(1px);
-}
-.hand-card-in-arc[data-arc-index='6'] {
-  transform: rotate(4deg) translateY(2px);
-}
-.hand-card-in-arc[data-arc-index='7'] {
-  transform: rotate(6deg) translateY(3px);
-}
-.hand-card-in-arc[data-arc-index='8'] {
-  transform: rotate(8deg) translateY(5px);
-}
-.hand-card-in-arc[data-arc-index='9'] {
-  transform: rotate(10deg) translateY(8px);
-}
-
-/* Mobile: reduce arc intensity */
-@media (max-width: 768px) {
-  .hand-card-in-arc[data-arc-index='0'] {
-    transform: rotate(-5deg);
-  }
-  .hand-card-in-arc[data-arc-index='1'] {
-    transform: rotate(-4deg);
-  }
-  .hand-card-in-arc[data-arc-index='2'] {
-    transform: rotate(-3deg);
-  }
-  .hand-card-in-arc[data-arc-index='3'] {
-    transform: rotate(-2deg);
-  }
-  .hand-card-in-arc[data-arc-index='4'] {
-    transform: rotate(0deg);
-  }
-  .hand-card-in-arc[data-arc-index='5'] {
-    transform: rotate(2deg);
-  }
-  .hand-card-in-arc[data-arc-index='6'] {
-    transform: rotate(3deg);
-  }
-  .hand-card-in-arc[data-arc-index='7'] {
-    transform: rotate(4deg);
-  }
-  .hand-card-in-arc[data-arc-index='8'] {
-    transform: rotate(5deg);
-  }
-  .hand-card-in-arc[data-arc-index='9'] {
-    transform: rotate(6deg);
-  }
 }
 
 /* ═══════════════════════════════════════════════════════

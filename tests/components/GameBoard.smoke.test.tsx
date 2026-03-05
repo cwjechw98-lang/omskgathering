@@ -19,8 +19,8 @@ describe('GameBoard smoke', () => {
     expect(document.querySelector('.zone-topbar')).toBeInTheDocument();
     expect(document.querySelector('.zone-enemy-hero')).toBeInTheDocument();
     expect(document.querySelector('.zone-player-hero')).toBeInTheDocument();
-    // Check for turn indicator
-    expect(document.querySelector('[class*="text-green"]')).toBeInTheDocument();
+    // Check for end turn button
+    expect(screen.getByText(/Конец хода/)).toBeInTheDocument();
   });
 
   it('unmounts without throwing', () => {

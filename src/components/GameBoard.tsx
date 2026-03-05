@@ -26,6 +26,7 @@ import {
 } from '../data/lore';
 import {
   getCardCoverSources,
+  getCardBackSource,
   handleImageErrorWithFallback,
 } from '../utils/cardImages';
 import { Card as UICard, CardContent } from './ui/card';
@@ -716,37 +717,84 @@ function HandCardComponent({
   );
 }
 
+/* ═══ DECK STACK ═══ */
+function DeckStack({
+  count,
+  type,
+  cardBackSrc,
+  label,
+}: {
+  count: number;
+  type: 'deck' | 'graveyard';
+  cardBackSrc?: string;
+  label: string;
+}) {
+  const isDeck = type === 'deck';
+  return (
+    <Tooltip>
+      <TooltipTrigger>
+        <div className={isDeck ? 'deck-zone' : 'graveyard-zone'}>
+          {isDeck && cardBackSrc ? (
+            <img
+              src={cardBackSrc}
+              alt="Колода"
+              className="w-full h-full object-cover rounded-[5px] opacity-80"
+              draggable={false}
+            />
+          ) : (
+            <span style={{ fontSize: 'clamp(14px, 1.8vw, 22px)' }}>
+              {isDeck ? '🂠' : '💀'}
+            </span>
+          )}
+          <span className={isDeck ? 'deck-count' : 'graveyard-count'}>{count}</span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        {label}: {count}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 /* ═══ MAIN GAME BOARD ═══ */
 export function GameBoard({ mode, onBack }: Props) {
   const [gs, setGs] = useState<GameState>(createInitialGameState);
   const [selectedHand, setSelectedHand] = useState<string | null>(null);
   const [selectedAttacker, setSelectedAttacker] = useState<string | null>(null);
-  // const [selectedAttackerSlot, setSelectedAttackerSlot] = useState<number | null>(null); // TODO: remove unused
+  const selectedAttackerSlotState = useState<number | null>(null);
+  const setSelectedAttackerSlot = selectedAttackerSlotState[1];
   const [inspected, setInspected] = useState<{
     card: CardInstance;
     owner: 'player1' | 'player2';
   } | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
-  // const [aiActionStatus, setAiActionStatus] = useState<string | null>(null); // TODO: remove unused
+  const aiActionStatusState = useState<string | null>(null);
+  const setAiActionStatus = aiActionStatusState[1];
   const [showTurnTransition, setShowTurnTransition] = useState(false);
+  const showLogState = useState(false);
+  const setShowLog = showLogState[1];
   const seenStoryEventsRef = useRef<Set<number>>(new Set());
   const [dragCardUid, setDragCardUid] = useState<string | null>(null);
   const [dropZoneActive, setDropZoneActive] = useState(false);
   const [attackAnimUid, setAttackAnimUid] = useState<string | null>(null);
   const [damageAnimUid, setDamageAnimUid] = useState<string | null>(null);
-  // const [playAnim, setPlayAnim] = useState<{ name: string; emoji: string; color: string } | null>(null); // TODO: remove unused
-  // const [deathAnim, setDeathAnim] = useState<{ name: string; emoji: string; color: string } | null>(null); // TODO: remove unused
+  const playAnimState = useState<{ name: string; emoji: string; color: string } | null>(null);
+  const setPlayAnim = playAnimState[1];
+  const [deathAnim, setDeathAnim] = useState<{ name: string; emoji: string; color: string } | null>(null);
   const [damageNumbers, setDamageNumbers] = useState<
     Array<{ id: number; value: number; x: number; y: number; type: 'damage' | 'heal' | 'buff' }>
   >([]);
-  // const [targetingLine, setTargetingLine] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null); // TODO: remove unused
-  // const logRef = useRef<HTMLDivElement>(null); // TODO: remove unused
+  const targetingLineState = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
+  const setTargetingLine = targetingLineState[1];
   const attackAnimTimerRef = useRef<number | null>(null);
   const damageAnimTimerRef = useRef<number | null>(null);
   const aiAnimTimerRef = useRef<number | null>(null);
   const aiTurnTimerRef = useRef<number | null>(null);
   const mountedRef = useRef(true);
   const prevFieldRef = useRef<{ p1: string[]; p2: string[] }>({ p1: [], p2: [] });
+  const prevHandRef = useRef<string[]>([]);
+  const [newlyDrawnUids, setNewlyDrawnUids] = useState<Set<string>>(new Set());
+  const [newlyPlayedUids, setNewlyPlayedUids] = useState<Set<string>>(new Set());
   const cardRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const { messages, addMessage, clear: clearMessages, dismiss: dismissMessage } = useMessageFeed();
@@ -755,7 +803,7 @@ export function GameBoard({ mode, onBack }: Props) {
   const myTurn = mode === 'ai' ? isP1Turn : true;
   const me = gs.player1;
   const enemy = gs.player2;
-  // const cardBackSrc = getCardBackSource(); // TODO: remove unused
+  const cardBackSrc = getCardBackSource();
 
   useEffect(() => {
     const currentP1 = me.field.map((c) => c.uid);
@@ -786,6 +834,35 @@ export function GameBoard({ mode, onBack }: Props) {
     }
     prevFieldRef.current = { p1: currentP1, p2: currentP2 };
   }, [me.field, enemy.field]);
+
+  /* ── Draw animation: detect new cards in hand ── */
+  useEffect(() => {
+    const currentUids = me.hand.map((c) => c.uid);
+    const prevUids = prevHandRef.current;
+    if (prevUids.length > 0) {
+      const drawn = currentUids.filter((uid) => !prevUids.includes(uid));
+      if (drawn.length > 0) {
+        setNewlyDrawnUids(new Set(drawn));
+        const t = setTimeout(() => setNewlyDrawnUids(new Set()), 400);
+        return () => clearTimeout(t);
+      }
+    }
+    prevHandRef.current = currentUids;
+  }, [me.hand]);
+
+  /* ── Play animation: detect new cards on field ── */
+  useEffect(() => {
+    const currentP1 = me.field.map((c) => c.uid);
+    const prev = prevFieldRef.current.p1;
+    if (prev.length > 0) {
+      const played = currentP1.filter((uid) => !prev.includes(uid));
+      if (played.length > 0) {
+        setNewlyPlayedUids(new Set(played));
+        const t = setTimeout(() => setNewlyPlayedUids(new Set()), 450);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [me.field]);
 
   useEffect(() => {
     const ev = STORY_EVENTS.find(
@@ -957,7 +1034,7 @@ export function GameBoard({ mode, onBack }: Props) {
         if (mountedRef.current) setAiActionStatus(null);
       }, 2500);
     }, 1200);
-  }, [mode, gs, showCardNarrative, addMessage, runAIAnimations]);
+  }, [mode, gs, showCardNarrative, addMessage, runAIAnimations, setAiActionStatus]);
 
   useEffect(() => {
     if (mode === 'ai' && gs.currentTurn === 'player2' && !gs.gameOver) {
@@ -982,7 +1059,7 @@ export function GameBoard({ mode, onBack }: Props) {
       }
       return false;
     },
-    [gs, me.hand, myTurn, showCardNarrative, addMessage]
+    [gs, me.hand, myTurn, showCardNarrative, addMessage, setPlayAnim]
   );
 
   const handleDragStart = (e: React.DragEvent, uid: string) => {
@@ -1225,13 +1302,15 @@ export function GameBoard({ mode, onBack }: Props) {
       </div>
 
       {/* ENEMY HERO ZONE */}
-      <div className="zone-enemy-hero" data-enemy-hero="true">
+      <div className="zone-enemy-hero hero-zone-row" data-enemy-hero="true">
+        <DeckStack count={enemy.deck.length} type="deck" cardBackSrc={cardBackSrc} label="Колода Хранителя" />
         <PlayerArea
           player={enemy}
           isCurrentPlayer={!isP1Turn}
           label="🗿 Хранитель Омска"
           dataEnemyHero={true}
         />
+        <DeckStack count={enemy.graveyard.length} type="graveyard" label="Сброс Хранителя" />
       </div>
 
       {/* ENEMY BOARD ZONE */}
@@ -1318,20 +1397,22 @@ export function GameBoard({ mode, onBack }: Props) {
                 onDrop={handleDrop}
               >
                 {card && (
-                  <FieldCard
-                    card={card}
-                    player={me}
-                    opponent={enemy}
-                    selected={selectedAttacker === card.uid}
-                    isTarget={false}
-                    canAct={canAct && myTurn}
-                    attackAnim={attackAnimUid === card.uid}
-                    damageAnim={damageAnimUid === card.uid}
-                    onClick={() => clickMyCreature(card.uid)}
-                    cardRef={(el) => {
-                      if (el) cardRefsMap.current.set(card.uid, el);
-                    }}
-                  />
+                  <div className={newlyPlayedUids.has(card.uid) ? 'card-play-animation' : ''}>
+                    <FieldCard
+                      card={card}
+                      player={me}
+                      opponent={enemy}
+                      selected={selectedAttacker === card.uid}
+                      isTarget={false}
+                      canAct={canAct && myTurn}
+                      attackAnim={attackAnimUid === card.uid}
+                      damageAnim={damageAnimUid === card.uid}
+                      onClick={() => clickMyCreature(card.uid)}
+                      cardRef={(el) => {
+                        if (el) cardRefsMap.current.set(card.uid, el);
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             );
@@ -1340,8 +1421,10 @@ export function GameBoard({ mode, onBack }: Props) {
       </div>
 
       {/* PLAYER HERO ZONE */}
-      <div className="zone-player-hero">
+      <div className="zone-player-hero hero-zone-row">
+        <DeckStack count={me.deck.length} type="deck" cardBackSrc={cardBackSrc} label="Твоя колода" />
         <PlayerArea player={me} isCurrentPlayer={isP1Turn} label="👤 Игрок" />
+        <DeckStack count={me.graveyard.length} type="graveyard" label="Твой сброс" />
       </div>
 
       {/* ACTION BAR */}
@@ -1376,7 +1459,7 @@ export function GameBoard({ mode, onBack }: Props) {
             return (
               <div
                 key={card.uid}
-                className="hand-card-wrapper"
+                className={`hand-card-wrapper ${newlyDrawnUids.has(card.uid) ? 'card-draw-animation' : ''}`}
                 style={
                   {
                     '--card-angle': `${(idx - (me.hand.length - 1) / 2) * 3}deg`,
