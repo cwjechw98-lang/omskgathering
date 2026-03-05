@@ -43,7 +43,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'bird_omsk',
     name: 'Птица-Омич',
-    cost: 1,
+    cost: 2,
     color: 'white',
     type: 'creature',
     attack: 1,
@@ -230,7 +230,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'pisiner_21',
     name: 'Писинер Школы 21',
-    cost: 2,
+    cost: 3,
     color: 'blue',
     type: 'creature',
     attack: 1,
@@ -768,7 +768,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'segfault',
     name: 'Segmentation Fault',
-    cost: 1,
+    cost: 3,
     color: 'black',
     type: 'spell',
     description: '🎲 Бросьте D6: 1 → 2 урона своему, 2-6 → 3 урона вражескому.',
