@@ -1284,9 +1284,13 @@ export function GameBoard({ mode, onBack }: Props) {
             Ход {gs.turnNumber}
           </span>
           <button
-            onClick={() => setShowLog(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowLog(true);
+            }}
             className="text-gray-400 hover:text-[#f0d68a] transition text-sm px-2 py-1"
             title="Журнал действий"
+            style={{ pointerEvents: 'auto', zIndex: 999 }}
           >
             📜 Лог
           </button>
@@ -1517,12 +1521,16 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* ACTION LOG */}
       <ModalOverlay
         open={showLog}
-        onClose={() => setShowLog(false)}
+        onClose={(e) => {
+          e?.stopPropagation();
+          setShowLog(false);
+        }}
         title="📜 Журнал действий"
+        closeOnBackdrop={true}
       >
         <div
           className="flex flex-col gap-1 overflow-y-auto"
-          style={{ maxHeight: 'clamp(200px, 50vh, 400px)' }}
+          style={{ maxHeight: 'clamp(200px, 50vh, 400px)', position: 'relative', zIndex: 100 }}
         >
           {gs.log.length === 0 && (
             <p className="text-gray-500 italic text-center py-4">Журнал пуст</p>
