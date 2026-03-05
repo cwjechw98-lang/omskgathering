@@ -922,7 +922,7 @@ export function GameBoard({ mode, onBack }: Props) {
       (e) => e.turnTrigger === gs.turnNumber && !seenStoryEventsRef.current.has(e.turnTrigger)
     );
     if (ev) {
-      addMessage('story', ev.text, ev.emoji, 5000);
+      addMessage('story', ev.text, ev.emoji);
       seenStoryEventsRef.current.add(ev.turnTrigger);
     }
   }, [gs.turnNumber, addMessage]);
@@ -1075,13 +1075,8 @@ export function GameBoard({ mode, onBack }: Props) {
         setAiActionStatus(`✨ Сыграно: ${lastCard.data.emoji} ${lastCard.data.name}`);
       }
       if (lastCard) showCardNarrative(lastCard.data.id);
-      const lore = getAILoreComment(
-        lastCard?.data.id || '',
-        result.state.player2.health,
-        result.state.player1.health,
-        result.state.turnNumber
-      );
-      addMessage('ai', lore, AI_CHARACTER.avatarEmoji, 6000);
+      const lore = getAILoreComment(lastCard?.data.id || '');
+      addMessage('ai', lore, AI_CHARACTER.avatarEmoji);
       setAiThinking(false);
       setTimeout(() => {
         if (mountedRef.current) setAiActionStatus(null);

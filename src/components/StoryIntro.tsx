@@ -72,7 +72,7 @@ export function StoryIntro({ onComplete }: Props) {
       return;
     }
 
-    const dur = INTRO_SEQUENCE[step].duration;
+    const dur = 3000; // Default duration per slide
     const nextT = setTimeout(() => setStep((s) => s + 1), dur);
 
     return () => {
@@ -402,7 +402,7 @@ export function StoryIntro({ onComplete }: Props) {
         className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2"
         style={{ zIndex: 10 }}
       >
-        {INTRO_SEQUENCE.map((_, i) => (
+        {INTRO_SEQUENCE.map((__, i: number) => (
           <div
             key={i}
             className={`h-1.5 rounded-full transition-all duration-500 ${
