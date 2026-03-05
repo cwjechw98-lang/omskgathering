@@ -476,9 +476,11 @@ function FieldCard({
         )}
         role="button"
         tabIndex={0}
-        aria-label={`${card.data.name}: ${atk} атака, ${hp} здоровье`}
+        aria-label={`${card.data.name}: ${atk} атака, ${hp} здоровье${card.keywords.length > 0 ? ', ' + card.keywords.map(k => KW[k]).join(', ') : ''}`}
         onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
-        title={`${card.data.name}\n${card.data.description}\n⚔${atk} ❤${hp}`}
+        title={`${card.data.name}
+${card.data.description}
+⚔${atk} ❤${hp}${frozen ? '\n❄️ Заморожен' : ''}${sick ? '\n💤 Болезнь призыва' : ''}${card.keywords.length > 0 ? '\n' + card.keywords.map(k => KW[k]).join(', ') : ''}`}
       >
         <CardVisual
           className={cn(
@@ -526,31 +528,72 @@ function FieldCard({
               {card.data.name}
             </h3>
             {card.keywords.length > 0 && (
-              <div className="flex flex-wrap gap-px">
-                {card.keywords.slice(0, 4).map((k) => (
+              <div className="flex flex-wrap gap-0.5" style={{ marginTop: '2px' }}>
+                {card.keywords.slice(0, 5).map((k) => (
                   <Tooltip key={k}>
                     <TooltipTrigger>
-                      <Badge variant="keyword" style={{ fontSize: 'clamp(7px, 0.8vw, 12px)' }}>
+                      <Badge 
+                        variant="keyword" 
+                        className="shadow-sm"
+                        style={{ 
+                          fontSize: 'clamp(8px, 0.9vw, 13px)',
+                          padding: '1px 3px',
+                          minWidth: '18px'
+                        }}
+                      >
                         {KWS[k]}
                       </Badge>
                     </TooltipTrigger>
-                    <TooltipContent>{KW[k]}</TooltipContent>
+                    <TooltipContent side="top" className="text-xs">{KW[k]}</TooltipContent>
                   </Tooltip>
                 ))}
               </div>
             )}
             <div
-              className="flex items-center gap-0.5"
-              style={{ fontSize: 'clamp(7px, 0.8vw, 11px)' }}
+              className="flex items-center gap-1"
+              style={{ fontSize: 'clamp(8px, 0.9vw, 12px)' }}
             >
-              {frozen && <span title="Заморожен">❄️</span>}
-              {sick && <span title="Болезнь призыва">💤</span>}
-              {attacked && !sick && <span title="Атаковал">✅</span>}
-              {isDef && <span title="Защитник">🛡️</span>}
+              {frozen && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span className="text-cyan-400 animate-pulse" title="Заморожен">❄️</span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">Заморожен</TooltipContent>
+                </Tooltip>
+              )}
+              {sick && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span className="text-gray-400" title="Болезнь призыва">💤</span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">Болезнь призыва</TooltipContent>
+                </Tooltip>
+              )}
+              {attacked && !sick && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span className="text-green-600" title="Атаковал">✅</span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">Атаковал</TooltipContent>
+                </Tooltip>
+              )}
+              {isDef && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span className="text-blue-400" title="Защитник">🛡️</span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">Защитник</TooltipContent>
+                </Tooltip>
+              )}
               {canAct && (
-                <span className="text-green-400 animate-pulse" title="Может атаковать">
-                  ⚔️
-                </span>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span className="text-green-400 animate-pulse" title="Может атаковать">
+                      ⚔️
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">Может атаковать</TooltipContent>
+                </Tooltip>
               )}
             </div>
             {card.data.type === 'creature' && (
