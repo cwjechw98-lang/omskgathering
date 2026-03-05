@@ -276,7 +276,7 @@ function PlayerArea({
     <UICard
       data-enemy-hero={dataEnemyHero ? 'true' : undefined}
       className={cn(
-        'flex items-center gap-3 p-3 border transition-all shrink-0',
+        'flex items-center gap-2 p-2 border transition-all shrink-0',
         isCurrentPlayer
           ? 'bg-[#1a1508]/50 border-[#c9a84c]/30 shadow-lg shadow-[#c9a84c]/10'
           : 'bg-[#0f0f18]/50 border-gray-800/30'
@@ -284,33 +284,65 @@ function PlayerArea({
       role="region"
       aria-label={label}
     >
-      <div
-        className={cn(
-          'rounded-full flex items-center justify-center shrink-0 border',
-          isCurrentPlayer ? 'bg-[#2a1a08] border-[#c9a84c]/50' : 'bg-[#1a1a2a] border-gray-700/50'
-        )}
-        style={{
-          width: 'clamp(32px, 3.5vw, 48px)',
-          height: 'clamp(32px, 3.5vw, 48px)',
-          fontSize: 'clamp(14px, 1.8vw, 24px)',
-        }}
-      >
-        {label.includes('🗿') ? '🗿' : '👤'}
+      {/* Left: Card counters (hand, deck, graveyard) */}
+      <div className="flex flex-col gap-1">
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="outline" className="gap-1 text-[10px] h-5 px-1.5 min-w-[45px]">
+              <span>🤚</span>
+              <span>{player.hand.length}</span>
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top">Рука: {player.hand.length}</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="outline" className="gap-1 text-[10px] h-5 px-1.5 min-w-[45px]">
+              <span>📚</span>
+              <span>{player.deck.length}</span>
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top">Колода: {player.deck.length}</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="outline" className="gap-1 text-[10px] h-5 px-1.5 min-w-[45px]">
+              <span>💀</span>
+              <span>{player.graveyard.length}</span>
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top">Кладбище: {player.graveyard.length}</TooltipContent>
+        </Tooltip>
       </div>
+
+      {/* Center: Avatar + Name + HP + Mana */}
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2">
+          <div
+            className={cn(
+              'rounded-full flex items-center justify-center shrink-0 border',
+              isCurrentPlayer ? 'bg-[#2a1a08] border-[#c9a84c]/50' : 'bg-[#1a1a2a] border-gray-700/50'
+            )}
+            style={{
+              width: 'clamp(28px, 3vw, 40px)',
+              height: 'clamp(28px, 3vw, 40px)',
+              fontSize: 'clamp(12px, 1.5vw, 20px)',
+            }}
+          >
+            {label.includes('🗿') ? '🗿' : '👤'}
+          </div>
           <span
-            className="font-heading text-white font-bold"
-            style={{ fontSize: 'clamp(11px, 1.1vw, 14px)' }}
+            className="font-heading text-white font-bold truncate"
+            style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
           >
             {label}
           </span>
           {isCurrentPlayer && (
             <Badge
               variant="secondary"
-              className="animate-pulse bg-[#f0d68a]/20 text-[#f0d68a] border-transparent text-[10px] h-5 px-1.5"
+              className="animate-pulse bg-[#f0d68a]/20 text-[#f0d68a] border-transparent text-[9px] h-4 px-1"
             >
-              ⚡ Ход
+              ⚡
             </Badge>
           )}
         </div>
@@ -318,15 +350,15 @@ function PlayerArea({
           <Progress
             value={healthPercent}
             className={cn(
-              'h-4 transition-all duration-500',
+              'h-3.5 transition-all duration-500',
               healthVariant === 'success' && 'progress-success',
               healthVariant === 'warning' && 'progress-warning',
               healthVariant === 'danger' && 'progress-danger'
             )}
           />
           <span
-            className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white drop-shadow text-[10px]"
-            style={{ fontSize: 'clamp(9px, 0.9vw, 11px)' }}
+            className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white drop-shadow text-[9px]"
+            style={{ fontSize: 'clamp(8px, 0.8vw, 10px)' }}
           >
             ❤️ {player.health}/{player.maxHealth}
           </span>
@@ -339,38 +371,22 @@ function PlayerArea({
                   <Badge
                     key={i}
                     variant={i < player.mana ? 'mana-available' : 'mana-spent'}
-                    className="w-3 h-3 rounded-full p-0 min-w-0"
+                    className="w-2.5 h-2.5 rounded-full p-0 min-w-0"
                   />
                 ))}
               </div>
               <span
-                className="text-blue-300 font-heading font-bold"
-                style={{ fontSize: 'clamp(9px, 0.9vw, 12px)' }}
+                className="text-blue-300 font-heading font-bold truncate"
+                style={{ fontSize: 'clamp(8px, 0.8vw, 11px)' }}
               >
                 💎 {player.mana}/{player.maxMana}
               </span>
             </div>
           </TooltipTrigger>
           <TooltipContent side="top">
-            <p>
-              Мана: {player.mana} / {player.maxMana}
-            </p>
+            <p>Мана: {player.mana} / {player.maxMana}</p>
           </TooltipContent>
         </Tooltip>
-      </div>
-      <div className="flex flex-col items-end gap-1">
-        <Badge variant="outline" className="gap-1.5 text-xs min-w-[60px] h-6">
-          <span>🤚</span>
-          <span>{player.hand.length}</span>
-        </Badge>
-        <Badge variant="outline" className="gap-1.5 text-xs min-w-[60px] h-6">
-          <span>📚</span>
-          <span>{player.deck.length}</span>
-        </Badge>
-        <Badge variant="outline" className="gap-1.5 text-xs min-w-[60px] h-6">
-          <span>💀</span>
-          <span>{player.graveyard.length}</span>
-        </Badge>
       </div>
     </UICard>
   );
@@ -451,7 +467,6 @@ function FieldCard({
   const frozen = card.frozen > 0;
   const sick = card.summoningSickness;
   const attacked = card.hasAttacked;
-  const isDef = card.keywords.includes('defender');
   const art = getCardCoverSources(card.data);
 
   return (
@@ -577,14 +592,7 @@ ${card.data.description}
                   <TooltipContent side="top" className="text-xs">Атаковал</TooltipContent>
                 </Tooltip>
               )}
-              {isDef && (
-                <Tooltip>
-                  <TooltipTrigger>
-                    <span className="text-blue-400" title="Защитник">🛡️</span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">Защитник</TooltipContent>
-                </Tooltip>
-              )}
+              {/* Defender is shown in keywords, don't duplicate */}
               {canAct && (
                 <Tooltip>
                   <TooltipTrigger>
