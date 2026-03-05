@@ -805,10 +805,11 @@ export function GameBoard({ mode, onBack }: Props) {
       <div className="zone-topbar">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="text-gray-400 hover:text-white transition text-sm px-2 py-1">← Назад</button>
-          <span className="text-[#c9a84c] font-heading font-bold" style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}>ОмскГathering</span>
+          <span className="text-[#c9a84c] font-heading font-bold" style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}>OMSK: The Gathering</span>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-gray-400" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>Ход {gs.turnNumber}</span>
+          <button onClick={() => setShowLog(true)} className="text-gray-400 hover:text-[#f0d68a] transition text-sm px-2 py-1" title="Журнал действий">📜 Лог</button>
           {aiThinking && <span className="text-cyan-400 animate-pulse" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>🤖 Думает...</span>}
         </div>
       </div>

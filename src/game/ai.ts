@@ -169,8 +169,9 @@ function kw(card: CardInstance, keyword: string): boolean {
   return card.keywords.includes(keyword as CardInstance['keywords'][number]);
 }
 
-function canCreatureAttack(c: CardInstance): boolean {
-  return !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !kw(c, 'defender');
+function canCreatureAttack(c: CardInstance, gs: GameState): boolean {
+  const atk = getEffectiveAttack(c, gs.player2, gs.player1);
+  return !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !kw(c, 'defender') && atk > 0;
 }
 
 // Only 'defender' is a mandatory blocker in MTG rules.
@@ -250,7 +251,7 @@ export function aiTurn(state: GameState): {
 
   // ========== PHASE 3: ATTACK ==========
   // Recalculate attackers from current state
-  let attackers = gs.player2.field.filter(canCreatureAttack);
+  let attackers = gs.player2.field.filter((c) => canCreatureAttack(c, gs));
 
   // Check for lethal: can we kill the player this turn?
   const defenders = getPlayerDefenders(gs.player1);
@@ -271,7 +272,7 @@ export function aiTurn(state: GameState): {
   // Execute attacks one by one
   for (let i = 0; i < 20; i++) {
     // Refresh attacker list each iteration (creatures may have died)
-    attackers = gs.player2.field.filter(canCreatureAttack);
+    attackers = gs.player2.field.filter((c) => canCreatureAttack(c, gs));
     if (attackers.length === 0) break;
 
     const att = attackers[0]; // Take first available attacker
