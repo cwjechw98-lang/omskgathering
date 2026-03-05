@@ -35,6 +35,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
 import { CardPreview } from './game/CardPreview';
+import { ModalOverlay } from './ui/modal-overlay';
 
 interface Props {
   mode: 'ai' | 'local' | 'online';
@@ -771,8 +772,7 @@ export function GameBoard({ mode, onBack }: Props) {
   const aiActionStatusState = useState<string | null>(null);
   const setAiActionStatus = aiActionStatusState[1];
   const [showTurnTransition, setShowTurnTransition] = useState(false);
-  const showLogState = useState(false);
-  const setShowLog = showLogState[1];
+  const [showLog, setShowLog] = useState(false);
   const seenStoryEventsRef = useRef<Set<number>>(new Set());
   const [dragCardUid, setDragCardUid] = useState<string | null>(null);
   const [dropZoneActive, setDropZoneActive] = useState(false);
@@ -1513,6 +1513,34 @@ export function GameBoard({ mode, onBack }: Props) {
           <span className="turn-banner-sub">Подготовьтесь к бою</span>
         </div>
       )}
+
+      {/* ACTION LOG */}
+      <ModalOverlay
+        open={showLog}
+        onClose={() => setShowLog(false)}
+        title="📜 Журнал действий"
+      >
+        <div
+          className="flex flex-col gap-1 overflow-y-auto"
+          style={{ maxHeight: 'clamp(200px, 50vh, 400px)' }}
+        >
+          {gs.log.length === 0 && (
+            <p className="text-gray-500 italic text-center py-4">Журнал пуст</p>
+          )}
+          {gs.log.map((entry, i) => (
+            <div
+              key={i}
+              className="text-gray-300 font-body border-b border-gray-800/30 py-1.5 px-1"
+              style={{ fontSize: 'clamp(11px, 1.1vw, 14px)' }}
+            >
+              <span className="text-gray-500 mr-2" style={{ fontSize: 'clamp(9px, 0.9vw, 11px)' }}>
+                {i + 1}.
+              </span>
+              {entry}
+            </div>
+          ))}
+        </div>
+      </ModalOverlay>
 
       {/* GAME OVER */}
       {gs.gameOver && (

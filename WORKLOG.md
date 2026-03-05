@@ -502,11 +502,15 @@ Quality gates:
 - `npm audit fix` — устранена high-severity уязвимость в rollup (GHSA-mw96-cpmx-2vgc)
 - Smoke-тест обновлён: заменён хрупкий `[class*="text-green"]` селектор на `screen.getByText(/Конец хода/)`
 
+**Исправление журнала действий:**
+- Восстановлен рендер лога: кнопка "📜 Лог" теперь открывает `ModalOverlay` со списком `gs.log`
+- Пронумерованные записи, скроллируемый список, ESC/клик-вне для закрытия
+
 **Quality Gates:**
 - `npm run lint` -> 0 errors, 7 warnings (без изменений)
 - `npm run test` -> 20/20 PASS
 - `npm run test:regression` -> 51/51 PASS
-- `npm run build` -> PASS (455 KB JS, 115 KB CSS)
+- `npm run build` -> PASS (457 KB JS, 115 KB CSS)
 
 ### 2026-03-05
 - UI stabilization (mod.md) — Stage 3 complete.
