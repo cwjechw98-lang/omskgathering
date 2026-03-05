@@ -15,7 +15,7 @@ interface PlayerAreaProps {
 
 export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: PlayerAreaProps) {
   const healthPercent = Math.max(0, (player.health / player.maxHealth) * 100);
-  
+
   // Determine health bar color based on HP percentage
   const getHealthVariant = () => {
     const hpPercent = (player.health / player.maxHealth) * 100;
@@ -23,17 +23,17 @@ export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: Pl
     if (hpPercent > 30) return 'warning';
     return 'danger';
   };
-  
+
   const healthVariant = getHealthVariant();
 
   return (
     <Card
       data-enemy-hero={dataEnemyHero ? 'true' : undefined}
       className={cn(
-        "flex items-center gap-3 p-3 border transition-all shrink-0",
+        'flex items-center gap-3 p-3 border transition-all shrink-0',
         isCurrentPlayer
-          ? "bg-[#1a1508]/50 border-[#c9a84c]/30 shadow-lg shadow-[#c9a84c]/10"
-          : "bg-[#0f0f18]/50 border-gray-800/30"
+          ? 'bg-[#1a1508]/50 border-[#c9a84c]/30 shadow-lg shadow-[#c9a84c]/10'
+          : 'bg-[#0f0f18]/50 border-gray-800/30'
       )}
       role="region"
       aria-label={label}
@@ -42,8 +42,8 @@ export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: Pl
       <div className="flex flex-col items-center gap-1">
         <div
           className={cn(
-            "rounded-full flex items-center justify-center shrink-0 border",
-            isCurrentPlayer ? "bg-[#2a1a08] border-[#c9a84c]/50" : "bg-[#1a1a2a] border-gray-700/50"
+            'rounded-full flex items-center justify-center shrink-0 border',
+            isCurrentPlayer ? 'bg-[#2a1a08] border-[#c9a84c]/50' : 'bg-[#1a1a2a] border-gray-700/50'
           )}
           style={{
             width: 'clamp(32px, 3.5vw, 48px)',
@@ -73,7 +73,10 @@ export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: Pl
             {label}
           </span>
           {isCurrentPlayer && (
-            <Badge variant="secondary" className="animate-pulse bg-[#f0d68a]/20 text-[#f0d68a] border-transparent text-[10px] h-5 px-1.5">
+            <Badge
+              variant="secondary"
+              className="animate-pulse bg-[#f0d68a]/20 text-[#f0d68a] border-transparent text-[10px] h-5 px-1.5"
+            >
               ⚡ Ход
             </Badge>
           )}
@@ -84,10 +87,10 @@ export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: Pl
           <Progress
             value={healthPercent}
             className={cn(
-              "h-4 transition-all duration-500",
-              healthVariant === 'success' && "progress-success",
-              healthVariant === 'warning' && "progress-warning",
-              healthVariant === 'danger' && "progress-danger"
+              'h-4 transition-all duration-500',
+              healthVariant === 'success' && 'progress-success',
+              healthVariant === 'warning' && 'progress-warning',
+              healthVariant === 'danger' && 'progress-danger'
             )}
             aria-label={`Здоровье: ${player.health} из ${player.maxHealth}`}
             aria-valuemin={0}
@@ -112,7 +115,7 @@ export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: Pl
                 {Array.from({ length: Math.min(player.maxMana, 12) }, (_, i) => (
                   <Badge
                     key={i}
-                    variant={i < player.mana ? "mana-available" : "mana-spent"}
+                    variant={i < player.mana ? 'mana-available' : 'mana-spent'}
                     className="w-3 h-3 rounded-full p-0 min-w-0"
                     aria-label={i < player.mana ? 'Доступно' : 'Потрачено'}
                   />
@@ -127,7 +130,9 @@ export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: Pl
             </div>
           </TooltipTrigger>
           <TooltipContent side="top">
-            <p>Мана: {player.mana} / {player.maxMana}</p>
+            <p>
+              Мана: {player.mana} / {player.maxMana}
+            </p>
           </TooltipContent>
         </Tooltip>
       </div>

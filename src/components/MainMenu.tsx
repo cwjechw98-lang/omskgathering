@@ -159,7 +159,10 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
             onClick={() => onStartGame('ai')}
             className="w-full rounded-xl gap-2 md:gap-4 py-3 md:py-4"
           >
-            <span className="text-2xl md:text-3xl emoji-float inline-block flex-shrink-0" style={{ animationDelay: '0.5s' }}>
+            <span
+              className="text-2xl md:text-3xl emoji-float inline-block flex-shrink-0"
+              style={{ animationDelay: '0.5s' }}
+            >
               🗿
             </span>
             <div className="text-left min-w-0 flex-1">

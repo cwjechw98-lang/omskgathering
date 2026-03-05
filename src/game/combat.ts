@@ -1,5 +1,8 @@
 import { GameState } from './types';
-import { attackCreature as attackCreatureImpl, attackPlayer as attackPlayerImpl } from './engine.impl';
+import {
+  attackCreature as attackCreatureImpl,
+  attackPlayer as attackPlayerImpl,
+} from './engine.impl';
 
 export function attackPlayer(
   state: GameState,

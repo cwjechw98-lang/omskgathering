@@ -12,7 +12,7 @@ interface ModalOverlayProps {
 
 /**
  * Modal Overlay for choose/discover/look-top modes
- * 
+ *
  * Features:
  * - Darkens background with backdrop blur
  * - Blocks interaction with game board
@@ -31,13 +31,13 @@ export function ModalOverlay({
   // Close on ESC
   React.useEffect(() => {
     if (!open) return;
-    
+
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
       }
     };
-    
+
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [open, onClose]);
@@ -49,7 +49,7 @@ export function ModalOverlay({
     } else {
       document.body.style.overflow = '';
     }
-    
+
     return () => {
       document.body.style.overflow = '';
     };
@@ -69,10 +69,7 @@ export function ModalOverlay({
         }
       }}
     >
-      <div
-        className={cn('modal-overlay-content', className)}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className={cn('modal-overlay-content', className)} onClick={(e) => e.stopPropagation()}>
         {title && (
           <h2
             id="modal-title"
@@ -81,7 +78,7 @@ export function ModalOverlay({
             {title}
           </h2>
         )}
-        
+
         <button
           className="modal-overlay-close"
           onClick={onClose}
@@ -90,7 +87,7 @@ export function ModalOverlay({
         >
           ✕
         </button>
-        
+
         {children}
       </div>
     </div>

@@ -19,7 +19,8 @@ export function EffectsLayer() {
             top: dn.y,
           }}
         >
-          {dn.type === 'heal' ? '+' : ''}{dn.value}
+          {dn.type === 'heal' ? '+' : ''}
+          {dn.value}
         </div>
       ))}
 
@@ -58,9 +59,7 @@ export function EffectsLayer() {
       )}
 
       {/* Low Health Warning */}
-      {showLowHealthWarning && (
-        <div className="low-health-overlay" />
-      )}
+      {showLowHealthWarning && <div className="low-health-overlay" />}
     </div>
   );
 }

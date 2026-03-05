@@ -1,4 +1,11 @@
-import { useState, useCallback, useEffect, useRef, type HTMLAttributes, type ReactNode } from 'react';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type HTMLAttributes,
+  type ReactNode,
+} from 'react';
 import { GameState, CardInstance, PlayerState } from '../game/types';
 import {
   createInitialGameState,
@@ -18,7 +25,6 @@ import {
   AI_CHARACTER,
 } from '../data/lore';
 import {
-  getCardBackSource,
   getCardCoverSources,
   handleImageErrorWithFallback,
 } from '../utils/cardImages';
@@ -152,11 +158,16 @@ function MessageFeed({
         maxHeight: 'clamp(200px, 35vh, 400px)',
       }}
     >
-      <div ref={feedRef} className="flex flex-col gap-2 overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
+      <div
+        ref={feedRef}
+        className="flex flex-col gap-2 overflow-y-auto pr-1"
+        style={{ scrollbarWidth: 'none' }}
+      >
         {messages.map((msg) => {
           const age = nowMs - msg.createdAt;
           const fadeStart = msg.duration * 0.6;
-          const opacity = age > fadeStart ? Math.max(0, 1 - (age - fadeStart) / (msg.duration * 0.4)) : 1;
+          const opacity =
+            age > fadeStart ? Math.max(0, 1 - (age - fadeStart) / (msg.duration * 0.4)) : 1;
           const isAI = msg.type === 'ai';
 
           return (
@@ -182,13 +193,21 @@ function MessageFeed({
               {isAI && (
                 <div className="flex items-start gap-2">
                   <div className="shrink-0 flex flex-col items-center">
-                    <span style={{ fontSize: 'clamp(24px, 2.5vw, 36px)' }}>{AI_CHARACTER.avatarEmoji}</span>
-                    <span className="text-[#c9a84c] font-heading font-bold mt-0.5" style={{ fontSize: 'clamp(8px, 0.8vw, 11px)' }}>
+                    <span style={{ fontSize: 'clamp(24px, 2.5vw, 36px)' }}>
+                      {AI_CHARACTER.avatarEmoji}
+                    </span>
+                    <span
+                      className="text-[#c9a84c] font-heading font-bold mt-0.5"
+                      style={{ fontSize: 'clamp(8px, 0.8vw, 11px)' }}
+                    >
                       {AI_CHARACTER.name}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-gray-200 font-body leading-relaxed italic" style={{ fontSize: 'clamp(12px, 1.15vw, 16px)' }}>
+                    <p
+                      className="text-gray-200 font-body leading-relaxed italic"
+                      style={{ fontSize: 'clamp(12px, 1.15vw, 16px)' }}
+                    >
                       «{msg.text}»
                     </p>
                   </div>
@@ -231,7 +250,12 @@ function MessageFeed({
 }
 
 /* ═══ PLAYER AREA (inline) ═══ */
-function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: {
+function PlayerArea({
+  player,
+  isCurrentPlayer,
+  label,
+  dataEnemyHero,
+}: {
   player: PlayerState;
   isCurrentPlayer: boolean;
   label: string;
@@ -263,17 +287,27 @@ function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: {
           'rounded-full flex items-center justify-center shrink-0 border',
           isCurrentPlayer ? 'bg-[#2a1a08] border-[#c9a84c]/50' : 'bg-[#1a1a2a] border-gray-700/50'
         )}
-        style={{ width: 'clamp(32px, 3.5vw, 48px)', height: 'clamp(32px, 3.5vw, 48px)', fontSize: 'clamp(14px, 1.8vw, 24px)' }}
+        style={{
+          width: 'clamp(32px, 3.5vw, 48px)',
+          height: 'clamp(32px, 3.5vw, 48px)',
+          fontSize: 'clamp(14px, 1.8vw, 24px)',
+        }}
       >
         {label.includes('🗿') ? '🗿' : '👤'}
       </div>
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2">
-          <span className="font-heading text-white font-bold" style={{ fontSize: 'clamp(11px, 1.1vw, 14px)' }}>
+          <span
+            className="font-heading text-white font-bold"
+            style={{ fontSize: 'clamp(11px, 1.1vw, 14px)' }}
+          >
             {label}
           </span>
           {isCurrentPlayer && (
-            <Badge variant="secondary" className="animate-pulse bg-[#f0d68a]/20 text-[#f0d68a] border-transparent text-[10px] h-5 px-1.5">
+            <Badge
+              variant="secondary"
+              className="animate-pulse bg-[#f0d68a]/20 text-[#f0d68a] border-transparent text-[10px] h-5 px-1.5"
+            >
               ⚡ Ход
             </Badge>
           )}
@@ -288,7 +322,10 @@ function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: {
               healthVariant === 'danger' && 'progress-danger'
             )}
           />
-          <span className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white drop-shadow text-[10px]" style={{ fontSize: 'clamp(9px, 0.9vw, 11px)' }}>
+          <span
+            className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white drop-shadow text-[10px]"
+            style={{ fontSize: 'clamp(9px, 0.9vw, 11px)' }}
+          >
             ❤️ {player.health}/{player.maxHealth}
           </span>
         </div>
@@ -304,23 +341,33 @@ function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: {
                   />
                 ))}
               </div>
-              <span className="text-blue-300 font-heading font-bold" style={{ fontSize: 'clamp(9px, 0.9vw, 12px)' }}>
+              <span
+                className="text-blue-300 font-heading font-bold"
+                style={{ fontSize: 'clamp(9px, 0.9vw, 12px)' }}
+              >
                 💎 {player.mana}/{player.maxMana}
               </span>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top"><p>Мана: {player.mana} / {player.maxMana}</p></TooltipContent>
+          <TooltipContent side="top">
+            <p>
+              Мана: {player.mana} / {player.maxMana}
+            </p>
+          </TooltipContent>
         </Tooltip>
       </div>
       <div className="flex flex-col items-end gap-1">
         <Badge variant="outline" className="gap-1.5 text-xs min-w-[60px] h-6">
-          <span>🤚</span><span>{player.hand.length}</span>
+          <span>🤚</span>
+          <span>{player.hand.length}</span>
         </Badge>
         <Badge variant="outline" className="gap-1.5 text-xs min-w-[60px] h-6">
-          <span>📚</span><span>{player.deck.length}</span>
+          <span>📚</span>
+          <span>{player.deck.length}</span>
         </Badge>
         <Badge variant="outline" className="gap-1.5 text-xs min-w-[60px] h-6">
-          <span>💀</span><span>{player.graveyard.length}</span>
+          <span>💀</span>
+          <span>{player.graveyard.length}</span>
         </Badge>
       </div>
     </UICard>
@@ -328,28 +375,62 @@ function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: {
 }
 
 /* ═══ CARD CONTAINERS ═══ */
-function CardSlot({ className, children, style }: { className?: string; children: ReactNode; style?: React.CSSProperties }) {
+function CardSlot({
+  className,
+  children,
+  style,
+}: {
+  className?: string;
+  children: ReactNode;
+  style?: React.CSSProperties;
+}) {
   return (
-    <div className={cn('relative shrink-0', className)} style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)', ...style }}>
+    <div
+      className={cn('relative shrink-0', className)}
+      style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)', ...style }}
+    >
       {children}
     </div>
   );
 }
 
-function CardContainer({ className, children, ...props }: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
+function CardContainer({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
   return (
-    <div {...props} className={cn('relative w-full h-full transition-transform duration-200 ease-out transform-gpu origin-bottom', className)}>
+    <div
+      {...props}
+      className={cn(
+        'relative w-full h-full transition-transform duration-200 ease-out transform-gpu origin-bottom',
+        className
+      )}
+    >
       {children}
     </div>
   );
 }
 
 function CardVisual({ className, children }: { className?: string; children: ReactNode }) {
-  return <UICard className={cn('relative w-full h-full overflow-hidden', className)}>{children}</UICard>;
+  return (
+    <UICard className={cn('relative w-full h-full overflow-hidden', className)}>{children}</UICard>
+  );
 }
 
 /* ═══ FIELD CARD ═══ */
-function FieldCard({ card, player, opponent, selected, isTarget, canAct, attackAnim, damageAnim, onClick, cardRef }: {
+function FieldCard({
+  card,
+  player,
+  opponent,
+  selected,
+  isTarget,
+  canAct,
+  attackAnim,
+  damageAnim,
+  onClick,
+  cardRef,
+}: {
   card: CardInstance;
   player: GameState['player1'];
   opponent?: GameState['player1'];
@@ -377,10 +458,15 @@ function FieldCard({ card, player, opponent, selected, isTarget, canAct, attackA
         className={cn(
           'card-container card-field-container cursor-pointer',
           selected && 'ring-2 ring-yellow-400 shadow-yellow-400/50 shadow-lg scale-105',
-          isTarget && 'ring-2 ring-red-500 shadow-red-500/40 shadow-lg animate-pulse cursor-crosshair',
+          isTarget &&
+            'ring-2 ring-red-500 shadow-red-500/40 shadow-lg animate-pulse cursor-crosshair',
           canAct && 'ring-2 ring-green-400/70 shadow-green-400/30 shadow-md hover:scale-105',
           frozen && 'ring-1 ring-cyan-400/50 opacity-70',
-          !selected && !isTarget && !canAct && !frozen && 'ring-1 ring-gray-600/40 hover:ring-gray-400/60',
+          !selected &&
+            !isTarget &&
+            !canAct &&
+            !frozen &&
+            'ring-1 ring-gray-600/40 hover:ring-gray-400/60',
           attackAnim && 'card-attack-animation',
           damageAnim && 'card-damage-animation'
         )}
@@ -390,55 +476,103 @@ function FieldCard({ card, player, opponent, selected, isTarget, canAct, attackA
         onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
         title={`${card.data.name}\n${card.data.description}\n⚔${atk} ❤${hp}`}
       >
-        <CardVisual className={cn('card-frame card-in-field card-visual', card.data.rarity === 'mythic' && 'card-frame-mythic', card.data.rarity === 'rare' && 'card-frame-rare')}>
+        <CardVisual
+          className={cn(
+            'card-frame card-in-field card-visual',
+            card.data.rarity === 'mythic' && 'card-frame-mythic',
+            card.data.rarity === 'rare' && 'card-frame-rare'
+          )}
+        >
           {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
-            <div className={`card-foil-overlay pointer-events-none z-layer-card-effects ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
+            <div
+              className={`card-foil-overlay pointer-events-none z-layer-card-effects ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`}
+            />
           )}
           <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} />
           {art.src && (
-            <img src={art.src} data-fallback={art.fallback} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy" onError={(e) => handleImageErrorWithFallback(e.currentTarget)} />
+            <img
+              src={art.src}
+              data-fallback={art.fallback}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover opacity-40"
+              loading="lazy"
+              onError={(e) => handleImageErrorWithFallback(e.currentTarget)}
+            />
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" />
           <CardContent className="relative z-layer-cards flex flex-col h-full p-[clamp(2px,0.4vw,6px)] text-white">
             <div className="flex justify-between items-start">
               <Tooltip>
-                <TooltipTrigger><span style={{ fontSize: 'clamp(16px, 2.2vw, 32px)' }}>{card.data.emoji}</span></TooltipTrigger>
+                <TooltipTrigger>
+                  <span style={{ fontSize: 'clamp(16px, 2.2vw, 32px)' }}>{card.data.emoji}</span>
+                </TooltipTrigger>
                 <TooltipContent side="top">{card.data.name}</TooltipContent>
               </Tooltip>
-              <Badge variant="secondary" className="bg-blue-600/90 text-white font-bold font-heading shadow min-w-[24px] h-6 px-1.5 flex items-center justify-center">
+              <Badge
+                variant="secondary"
+                className="bg-blue-600/90 text-white font-bold font-heading shadow min-w-[24px] h-6 px-1.5 flex items-center justify-center"
+              >
                 {card.data.cost}
               </Badge>
             </div>
-            <h3 className="font-heading text-white font-bold truncate mt-auto" style={{ fontSize: 'clamp(6px, 0.85vw, 11px)' }}>{card.data.name}</h3>
+            <h3
+              className="font-heading text-white font-bold truncate mt-auto"
+              style={{ fontSize: 'clamp(6px, 0.85vw, 11px)' }}
+            >
+              {card.data.name}
+            </h3>
             {card.keywords.length > 0 && (
               <div className="flex flex-wrap gap-px">
                 {card.keywords.slice(0, 4).map((k) => (
                   <Tooltip key={k}>
-                    <TooltipTrigger><Badge variant="keyword" style={{ fontSize: 'clamp(7px, 0.8vw, 12px)' }}>{KWS[k]}</Badge></TooltipTrigger>
+                    <TooltipTrigger>
+                      <Badge variant="keyword" style={{ fontSize: 'clamp(7px, 0.8vw, 12px)' }}>
+                        {KWS[k]}
+                      </Badge>
+                    </TooltipTrigger>
                     <TooltipContent>{KW[k]}</TooltipContent>
                   </Tooltip>
                 ))}
               </div>
             )}
-            <div className="flex items-center gap-0.5" style={{ fontSize: 'clamp(7px, 0.8vw, 11px)' }}>
+            <div
+              className="flex items-center gap-0.5"
+              style={{ fontSize: 'clamp(7px, 0.8vw, 11px)' }}
+            >
               {frozen && <span title="Заморожен">❄️</span>}
               {sick && <span title="Болезнь призыва">💤</span>}
               {attacked && !sick && <span title="Атаковал">✅</span>}
               {isDef && <span title="Защитник">🛡️</span>}
-              {canAct && <span className="text-green-400 animate-pulse" title="Может атаковать">⚔️</span>}
+              {canAct && (
+                <span className="text-green-400 animate-pulse" title="Может атаковать">
+                  ⚔️
+                </span>
+              )}
             </div>
             {card.data.type === 'creature' && (
               <div className="flex justify-between items-end mt-auto">
-                <Badge variant="destructive" className="bg-red-700/90 text-white rounded px-1 font-bold font-heading" style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}>
+                <Badge
+                  variant="destructive"
+                  className="bg-red-700/90 text-white rounded px-1 font-bold font-heading"
+                  style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}
+                >
                   {atk}⚔
                 </Badge>
-                <Badge className={cn('rounded px-1 font-bold font-heading text-white', hp <= card.maxHealth / 2 ? 'bg-red-600/90' : 'bg-green-700/90')} style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}>
+                <Badge
+                  className={cn(
+                    'rounded px-1 font-bold font-heading text-white',
+                    hp <= card.maxHealth / 2 ? 'bg-red-600/90' : 'bg-green-700/90'
+                  )}
+                  style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}
+                >
                   {hp}❤
                 </Badge>
               </div>
             )}
           </CardContent>
-          {frozen && <div className="absolute inset-0 bg-cyan-300/15 pointer-events-none z-layer-card-effects" />}
+          {frozen && (
+            <div className="absolute inset-0 bg-cyan-300/15 pointer-events-none z-layer-card-effects" />
+          )}
         </CardVisual>
       </CardContainer>
     </CardSlot>
@@ -446,7 +580,15 @@ function FieldCard({ card, player, opponent, selected, isTarget, canAct, attackA
 }
 
 /* ═══ HAND CARD ═══ */
-function HandCardComponent({ card, selected, canPlay, isLand, onClick, onDragStart, onDragEnd }: {
+function HandCardComponent({
+  card,
+  selected,
+  canPlay,
+  isLand,
+  onClick,
+  onDragStart,
+  onDragEnd,
+}: {
   card: CardInstance;
   selected?: boolean;
   canPlay?: boolean;
@@ -465,8 +607,11 @@ function HandCardComponent({ card, selected, canPlay, isLand, onClick, onDragSta
       onDragEnd={onDragEnd}
       className={cn(
         'card-container card-hand-container cursor-pointer rounded-lg',
-        selected && 'border-yellow-400 shadow-yellow-400/50 shadow-lg -translate-y-4 scale-110 z-layer-hover',
-        canPlay && isLand && 'border-[#c9a84c] shadow-[#c9a84c]/30 shadow-lg card-glow hover:scale-105',
+        selected &&
+          'border-yellow-400 shadow-yellow-400/50 shadow-lg -translate-y-4 scale-110 z-layer-hover',
+        canPlay &&
+          isLand &&
+          'border-[#c9a84c] shadow-[#c9a84c]/30 shadow-lg card-glow hover:scale-105',
         canPlay && !isLand && 'border-green-500/60 shadow-green-500/15 shadow-md hover:scale-105',
         !canPlay && !selected && 'border-gray-700/40 opacity-45',
         canPlay && 'cursor-grab active:cursor-grabbing'
@@ -479,11 +624,21 @@ function HandCardComponent({ card, selected, canPlay, isLand, onClick, onDragSta
     >
       <CardVisual className="card-frame card-in-hand card-visual border-2">
         {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
-          <div className={`card-foil-overlay pointer-events-none z-layer-card-effects ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`} />
+          <div
+            className={`card-foil-overlay pointer-events-none z-layer-card-effects ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`}
+          />
         )}
         <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} />
         {art.src && (
-          <img src={art.src} data-fallback={art.fallback} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" loading="lazy" draggable={false} onError={(e) => handleImageErrorWithFallback(e.currentTarget)} />
+          <img
+            src={art.src}
+            data-fallback={art.fallback}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-30"
+            loading="lazy"
+            draggable={false}
+            onError={(e) => handleImageErrorWithFallback(e.currentTarget)}
+          />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80" />
         <CardContent className="relative z-layer-cards flex flex-col h-full p-[clamp(2px,0.3vw,5px)] text-white">
@@ -491,28 +646,71 @@ function HandCardComponent({ card, selected, canPlay, isLand, onClick, onDragSta
             <span style={{ fontSize: 'clamp(14px, 1.8vw, 28px)' }}>{card.data.emoji}</span>
             <Badge
               variant={isLand ? 'default' : canPlay ? 'default' : 'secondary'}
-              className={cn('rounded-full flex items-center justify-center font-bold font-heading min-w-[22px] h-[22px] px-1.5', isLand && 'bg-[#c9a84c] text-black', canPlay && !isLand && 'bg-blue-500 text-white', !canPlay && !isLand && 'bg-gray-700 text-gray-400')}
+              className={cn(
+                'rounded-full flex items-center justify-center font-bold font-heading min-w-[22px] h-[22px] px-1.5',
+                isLand && 'bg-[#c9a84c] text-black',
+                canPlay && !isLand && 'bg-blue-500 text-white',
+                !canPlay && !isLand && 'bg-gray-700 text-gray-400'
+              )}
               style={{ fontSize: 'clamp(8px, 0.9vw, 12px)' }}
             >
               {card.data.cost}
             </Badge>
           </div>
-          <h3 className="font-heading text-white font-bold leading-tight mt-auto" style={{ fontSize: 'clamp(5px, 0.7vw, 9px)' }}>{card.data.name}</h3>
+          <h3
+            className="font-heading text-white font-bold leading-tight mt-auto"
+            style={{ fontSize: 'clamp(5px, 0.7vw, 9px)' }}
+          >
+            {card.data.name}
+          </h3>
           {card.data.type === 'creature' && (
             <div className="flex justify-between items-end mt-0.5">
-              <Badge variant="destructive" className="bg-red-700/90 text-red-300 font-bold font-heading rounded px-1" style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}>
+              <Badge
+                variant="destructive"
+                className="bg-red-700/90 text-red-300 font-bold font-heading rounded px-1"
+                style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}
+              >
                 {card.data.attack}⚔
               </Badge>
-              <Badge className="bg-green-700/90 text-green-300 font-bold font-heading rounded px-1" style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}>
+              <Badge
+                className="bg-green-700/90 text-green-300 font-bold font-heading rounded px-1"
+                style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}
+              >
                 {card.data.health}❤
               </Badge>
             </div>
           )}
-          {card.data.type === 'land' && <div className="text-[#c9a84c] font-bold text-center" style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}>🏔️</div>}
-          {card.data.type === 'spell' && <div className="text-blue-300 text-center" style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}>✨</div>}
-          {card.data.type === 'enchantment' && <div className="text-purple-300 text-center" style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}>🔮</div>}
+          {card.data.type === 'land' && (
+            <div
+              className="text-[#c9a84c] font-bold text-center"
+              style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}
+            >
+              🏔️
+            </div>
+          )}
+          {card.data.type === 'spell' && (
+            <div
+              className="text-blue-300 text-center"
+              style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}
+            >
+              ✨
+            </div>
+          )}
+          {card.data.type === 'enchantment' && (
+            <div
+              className="text-purple-300 text-center"
+              style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}
+            >
+              🔮
+            </div>
+          )}
         </CardContent>
-        {canPlay && !selected && <div className={`absolute top-1 right-1 rounded-full animate-pulse z-layer-card-effects ${isLand ? 'bg-[#c9a84c]' : 'bg-green-400'}`} style={{ width: 'clamp(4px, 0.5vw, 8px)', height: 'clamp(4px, 0.5vw, 8px)' }} />}
+        {canPlay && !selected && (
+          <div
+            className={`absolute top-1 right-1 rounded-full animate-pulse z-layer-card-effects ${isLand ? 'bg-[#c9a84c]' : 'bg-green-400'}`}
+            style={{ width: 'clamp(4px, 0.5vw, 8px)', height: 'clamp(4px, 0.5vw, 8px)' }}
+          />
+        )}
       </CardVisual>
     </CardContainer>
   );
@@ -523,21 +721,26 @@ export function GameBoard({ mode, onBack }: Props) {
   const [gs, setGs] = useState<GameState>(createInitialGameState);
   const [selectedHand, setSelectedHand] = useState<string | null>(null);
   const [selectedAttacker, setSelectedAttacker] = useState<string | null>(null);
-  const [selectedAttackerSlot, setSelectedAttackerSlot] = useState<number | null>(null);
-  const [inspected, setInspected] = useState<{ card: CardInstance; owner: 'player1' | 'player2' } | null>(null);
+  // const [selectedAttackerSlot, setSelectedAttackerSlot] = useState<number | null>(null); // TODO: remove unused
+  const [inspected, setInspected] = useState<{
+    card: CardInstance;
+    owner: 'player1' | 'player2';
+  } | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
-  const [aiActionStatus, setAiActionStatus] = useState<string | null>(null);
+  // const [aiActionStatus, setAiActionStatus] = useState<string | null>(null); // TODO: remove unused
   const [showTurnTransition, setShowTurnTransition] = useState(false);
   const seenStoryEventsRef = useRef<Set<number>>(new Set());
   const [dragCardUid, setDragCardUid] = useState<string | null>(null);
   const [dropZoneActive, setDropZoneActive] = useState(false);
   const [attackAnimUid, setAttackAnimUid] = useState<string | null>(null);
   const [damageAnimUid, setDamageAnimUid] = useState<string | null>(null);
-  const [playAnim, setPlayAnim] = useState<{ name: string; emoji: string; color: string } | null>(null);
-  const [deathAnim, setDeathAnim] = useState<{ name: string; emoji: string; color: string } | null>(null);
-  const [damageNumbers, setDamageNumbers] = useState<Array<{ id: number; value: number; x: number; y: number; type: 'damage' | 'heal' | 'buff' }>>([]);
-  const [targetingLine, setTargetingLine] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
-  const logRef = useRef<HTMLDivElement>(null);
+  // const [playAnim, setPlayAnim] = useState<{ name: string; emoji: string; color: string } | null>(null); // TODO: remove unused
+  // const [deathAnim, setDeathAnim] = useState<{ name: string; emoji: string; color: string } | null>(null); // TODO: remove unused
+  const [damageNumbers, setDamageNumbers] = useState<
+    Array<{ id: number; value: number; x: number; y: number; type: 'damage' | 'heal' | 'buff' }>
+  >([]);
+  // const [targetingLine, setTargetingLine] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null); // TODO: remove unused
+  // const logRef = useRef<HTMLDivElement>(null); // TODO: remove unused
   const attackAnimTimerRef = useRef<number | null>(null);
   const damageAnimTimerRef = useRef<number | null>(null);
   const aiAnimTimerRef = useRef<number | null>(null);
@@ -552,7 +755,7 @@ export function GameBoard({ mode, onBack }: Props) {
   const myTurn = mode === 'ai' ? isP1Turn : true;
   const me = gs.player1;
   const enemy = gs.player2;
-  const cardBackSrc = getCardBackSource();
+  // const cardBackSrc = getCardBackSource(); // TODO: remove unused
 
   useEffect(() => {
     const currentP1 = me.field.map((c) => c.uid);
@@ -566,7 +769,11 @@ export function GameBoard({ mode, onBack }: Props) {
         const allGraveCards = [...me.graveyard, ...enemy.graveyard];
         const deadCard = allGraveCards.find((c) => allDied.includes(c.uid));
         if (deadCard && !deathAnim) {
-          setDeathAnim({ name: deadCard.data.name, emoji: deadCard.data.emoji, color: deadCard.data.color });
+          setDeathAnim({
+            name: deadCard.data.name,
+            emoji: deadCard.data.emoji,
+            color: deadCard.data.color,
+          });
         }
         const recent = gs.log.slice(-5).join(' ');
         for (const [cardId, quote] of Object.entries(DEATH_QUOTES)) {
@@ -581,16 +788,22 @@ export function GameBoard({ mode, onBack }: Props) {
   }, [me.field, enemy.field]);
 
   useEffect(() => {
-    const ev = STORY_EVENTS.find((e) => e.turnTrigger === gs.turnNumber && !seenStoryEventsRef.current.has(e.turnTrigger));
+    const ev = STORY_EVENTS.find(
+      (e) => e.turnTrigger === gs.turnNumber && !seenStoryEventsRef.current.has(e.turnTrigger)
+    );
     if (ev) {
       addMessage('story', ev.text, ev.emoji, 5000);
       seenStoryEventsRef.current.add(ev.turnTrigger);
     }
   }, [gs.turnNumber, addMessage]);
 
-  const hasPlayableLand = me.hand.some((c) => c.data.type === 'land') && me.landsPlayed < me.maxLandsPerTurn;
+  const hasPlayableLand =
+    me.hand.some((c) => c.data.type === 'land') && me.landsPlayed < me.maxLandsPerTurn;
   const hasPlayableCard = me.hand.some((c) => c.data.type !== 'land' && c.data.cost <= me.mana);
-  const hasAttackers = me.field.some((c) => !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !c.keywords.includes('defender'));
+  const hasAttackers = me.field.some(
+    (c) =>
+      !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !c.keywords.includes('defender')
+  );
   const landPlayed = me.landsPlayed > 0;
 
   const phase = (() => {
@@ -601,21 +814,28 @@ export function GameBoard({ mode, onBack }: Props) {
     return 'done' as const;
   })();
 
-  const showCardNarrative = useCallback((cardId: string) => {
-    const n = CARD_NARRATIVES[cardId];
-    if (n) addMessage('narrative', n, '📖', 5000);
-  }, [addMessage]);
+  const showCardNarrative = useCallback(
+    (cardId: string) => {
+      const n = CARD_NARRATIVES[cardId];
+      if (n) addMessage('narrative', n, '📖', 5000);
+    },
+    [addMessage]
+  );
 
   const getHint = (): string => {
     if (gs.gameOver) return '🏁 Игра окончена!';
     if (!myTurn) return `⏳ ${AI_CHARACTER.name} размышляет...`;
     if (selectedAttacker) return '🎯 Выберите ЦЕЛЬ: вражеское существо или «В героя»';
     if (dragCardUid) return '🖱️ Перетащите карту на ПОЛЕ чтобы разыграть';
-    if (gs.turnNumber <= 2 && !landPlayed && hasPlayableLand) return '🏔️ ШАГ 1: Перетащите ЗЕМЛЮ на поле (или двойной клик)';
-    if (gs.turnNumber <= 2 && landPlayed && hasPlayableCard) return '🃏 ШАГ 2: Перетащите существо на поле';
-    if (gs.turnNumber <= 2 && !hasPlayableCard && hasAttackers) return '⚔️ ШАГ 3: Кликните существо с зелёной рамкой → атакуйте';
+    if (gs.turnNumber <= 2 && !landPlayed && hasPlayableLand)
+      return '🏔️ ШАГ 1: Перетащите ЗЕМЛЮ на поле (или двойной клик)';
+    if (gs.turnNumber <= 2 && landPlayed && hasPlayableCard)
+      return '🃏 ШАГ 2: Перетащите существо на поле';
+    if (gs.turnNumber <= 2 && !hasPlayableCard && hasAttackers)
+      return '⚔️ ШАГ 3: Кликните существо с зелёной рамкой → атакуйте';
     if (gs.turnNumber <= 2 && !hasPlayableCard && !hasAttackers) return '⏭️ Нажмите «Конец хода»';
-    if (hasPlayableLand && !landPlayed) return '🏔️ Разыграйте ЗЕМЛЮ (перетащите на поле или двойной клик)';
+    if (hasPlayableLand && !landPlayed)
+      return '🏔️ Разыграйте ЗЕМЛЮ (перетащите на поле или двойной клик)';
     if (hasPlayableCard && hasAttackers) return '🃏 Играйте карту или ⚔️ атакуйте';
     if (hasPlayableCard) return '🃏 Перетащите карту на поле или двойной клик';
     if (hasAttackers) return '⚔️ Выберите существо для атаки (зелёная рамка)';
@@ -623,19 +843,32 @@ export function GameBoard({ mode, onBack }: Props) {
   };
 
   const triggerCombatAnims = useCallback((attackerUid?: string, defenderUid?: string) => {
-    if (attackAnimTimerRef.current) { window.clearTimeout(attackAnimTimerRef.current); attackAnimTimerRef.current = null; }
-    if (damageAnimTimerRef.current) { window.clearTimeout(damageAnimTimerRef.current); damageAnimTimerRef.current = null; }
+    if (attackAnimTimerRef.current) {
+      window.clearTimeout(attackAnimTimerRef.current);
+      attackAnimTimerRef.current = null;
+    }
+    if (damageAnimTimerRef.current) {
+      window.clearTimeout(damageAnimTimerRef.current);
+      damageAnimTimerRef.current = null;
+    }
     if (attackerUid) setAttackAnimUid(attackerUid);
     if (defenderUid) setDamageAnimUid(defenderUid);
-    if (attackerUid) { attackAnimTimerRef.current = window.setTimeout(() => setAttackAnimUid(null), 650); }
-    if (defenderUid) { damageAnimTimerRef.current = window.setTimeout(() => setDamageAnimUid(null), 250); }
+    if (attackerUid) {
+      attackAnimTimerRef.current = window.setTimeout(() => setAttackAnimUid(null), 650);
+    }
+    if (defenderUid) {
+      damageAnimTimerRef.current = window.setTimeout(() => setDamageAnimUid(null), 250);
+    }
   }, []);
 
-  const showDamageNumber = useCallback((value: number, x: number, y: number, type: 'damage' | 'heal' | 'buff' = 'damage') => {
-    const id = Date.now() + Math.random();
-    setDamageNumbers(prev => [...prev, { id, value, x, y, type }]);
-    setTimeout(() => setDamageNumbers(prev => prev.filter(dn => dn.id !== id)), 800);
-  }, []);
+  const showDamageNumber = useCallback(
+    (value: number, x: number, y: number, type: 'damage' | 'heal' | 'buff' = 'damage') => {
+      const id = Date.now() + Math.random();
+      setDamageNumbers((prev) => [...prev, { id, value, x, y, type }]);
+      setTimeout(() => setDamageNumbers((prev) => prev.filter((dn) => dn.id !== id)), 800);
+    },
+    []
+  );
 
   useEffect(() => {
     mountedRef.current = true;
@@ -648,23 +881,43 @@ export function GameBoard({ mode, onBack }: Props) {
     };
   }, []);
 
-  const runAIAnimations = useCallback((actions: { type: 'attack-hero' | 'attack-creature'; attackerUid: string; defenderUid?: string; }[]) => {
-    if (!actions || actions.length === 0) return;
-    if (aiAnimTimerRef.current) { window.clearTimeout(aiAnimTimerRef.current); aiAnimTimerRef.current = null; }
-    let idx = 0;
-    const step = () => {
-      const act = actions[idx];
-      if (!act) return;
-      triggerCombatAnims(act.attackerUid, act.type === 'attack-creature' ? act.defenderUid : undefined);
-      idx += 1;
-      if (idx < actions.length) { aiAnimTimerRef.current = window.setTimeout(step, 750); }
-    };
-    step();
-  }, [triggerCombatAnims]);
+  const runAIAnimations = useCallback(
+    (
+      actions: {
+        type: 'attack-hero' | 'attack-creature';
+        attackerUid: string;
+        defenderUid?: string;
+      }[]
+    ) => {
+      if (!actions || actions.length === 0) return;
+      if (aiAnimTimerRef.current) {
+        window.clearTimeout(aiAnimTimerRef.current);
+        aiAnimTimerRef.current = null;
+      }
+      let idx = 0;
+      const step = () => {
+        const act = actions[idx];
+        if (!act) return;
+        triggerCombatAnims(
+          act.attackerUid,
+          act.type === 'attack-creature' ? act.defenderUid : undefined
+        );
+        idx += 1;
+        if (idx < actions.length) {
+          aiAnimTimerRef.current = window.setTimeout(step, 750);
+        }
+      };
+      step();
+    },
+    [triggerCombatAnims]
+  );
 
   const runAI = useCallback(() => {
     if (mode !== 'ai' || gs.currentTurn !== 'player2' || gs.gameOver) return;
-    if (aiTurnTimerRef.current) { window.clearTimeout(aiTurnTimerRef.current); aiTurnTimerRef.current = null; }
+    if (aiTurnTimerRef.current) {
+      window.clearTimeout(aiTurnTimerRef.current);
+      aiTurnTimerRef.current = null;
+    }
     setAiThinking(true);
     setAiActionStatus(null);
     aiTurnTimerRef.current = window.setTimeout(() => {
@@ -673,42 +926,64 @@ export function GameBoard({ mode, onBack }: Props) {
       const result = aiTurn(gs);
       setGs(result.state);
       if (result.actions && result.actions.length > 0) {
-        const atkInfo = result.actions.find((a) => a.type === 'attack-hero' || a.type === 'attack-creature');
+        const atkInfo = result.actions.find(
+          (a) => a.type === 'attack-hero' || a.type === 'attack-creature'
+        );
         if (atkInfo) {
           const attacker = result.state.player2.field.find((c) => c.uid === atkInfo.attackerUid);
-          if (attacker) setAiActionStatus(atkInfo.type === 'attack-hero' ? `⚔️ ${attacker.data.emoji} ${attacker.data.name} атакует героя!` : `⚔️ ${attacker.data.emoji} ${attacker.data.name} атакует!`);
+          if (attacker)
+            setAiActionStatus(
+              atkInfo.type === 'attack-hero'
+                ? `⚔️ ${attacker.data.emoji} ${attacker.data.name} атакует героя!`
+                : `⚔️ ${attacker.data.emoji} ${attacker.data.name} атакует!`
+            );
         }
         runAIAnimations(result.actions);
       }
       const lastCard = result.state.player2.field[result.state.player2.field.length - 1];
-      if (lastCard && (!result.actions || result.actions.length === 0)) { setAiActionStatus(`✨ Сыграно: ${lastCard.data.emoji} ${lastCard.data.name}`); }
+      if (lastCard && (!result.actions || result.actions.length === 0)) {
+        setAiActionStatus(`✨ Сыграно: ${lastCard.data.emoji} ${lastCard.data.name}`);
+      }
       if (lastCard) showCardNarrative(lastCard.data.id);
-      const lore = getAILoreComment(lastCard?.data.id || '', result.state.player2.health, result.state.player1.health, result.state.turnNumber);
+      const lore = getAILoreComment(
+        lastCard?.data.id || '',
+        result.state.player2.health,
+        result.state.player1.health,
+        result.state.turnNumber
+      );
       addMessage('ai', lore, AI_CHARACTER.avatarEmoji, 6000);
       setAiThinking(false);
-      setTimeout(() => { if (mountedRef.current) setAiActionStatus(null); }, 2500);
+      setTimeout(() => {
+        if (mountedRef.current) setAiActionStatus(null);
+      }, 2500);
     }, 1200);
   }, [mode, gs, showCardNarrative, addMessage, runAIAnimations]);
 
   useEffect(() => {
-    if (mode === 'ai' && gs.currentTurn === 'player2' && !gs.gameOver) { const t = setTimeout(runAI, 500); return () => clearTimeout(t); }
+    if (mode === 'ai' && gs.currentTurn === 'player2' && !gs.gameOver) {
+      const t = setTimeout(runAI, 500);
+      return () => clearTimeout(t);
+    }
   }, [gs.currentTurn, mode, gs.gameOver, runAI]);
 
-  const doPlayCard = useCallback((uid: string) => {
-    const card = me.hand.find((c) => c.uid === uid);
-    if (!card || !myTurn || gs.gameOver) return false;
-    const next = playCard(gs, 'player1', uid);
-    if (next !== gs) {
-      setPlayAnim({ name: card.data.name, emoji: card.data.emoji, color: card.data.color });
-      setGs(next);
-      setSelectedHand(null);
-      setInspected(null);
-      addMessage('action', `Разыграно: ${card.data.emoji} ${card.data.name}`, '🃏', 5000);
-      showCardNarrative(card.data.id);
-      return true;
-    }
-    return false;
-  }, [gs, me.hand, myTurn, showCardNarrative, addMessage]);
+  const doPlayCard = useCallback(
+    (uid: string) => {
+      const card = me.hand.find((c) => c.uid === uid);
+      if (!card || !myTurn || gs.gameOver) return false;
+      const next = playCard(gs, 'player1', uid);
+      if (next !== gs) {
+        setPlayAnim({ name: card.data.name, emoji: card.data.emoji, color: card.data.color });
+        setGs(next);
+        setSelectedHand(null);
+        setInspected(null);
+        addMessage('action', `Разыграно: ${card.data.emoji} ${card.data.name}`, '🃏', 5000);
+        showCardNarrative(card.data.id);
+        return true;
+      }
+      return false;
+    },
+    [gs, me.hand, myTurn, showCardNarrative, addMessage]
+  );
 
   const handleDragStart = (e: React.DragEvent, uid: string) => {
     setDragCardUid(uid);
@@ -718,17 +993,40 @@ export function GameBoard({ mode, onBack }: Props) {
     const el = e.currentTarget as HTMLDivElement;
     e.dataTransfer.setDragImage(el, el.offsetWidth / 2, el.offsetHeight / 2);
   };
-  const handleDragEnd = () => { setDragCardUid(null); setDropZoneActive(false); };
-  const handleDragOver = (e: React.DragEvent) => { if (!dragCardUid) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropZoneActive(true); };
-  const handleDragLeave = () => { setDropZoneActive(false); };
-  const handleDrop = (e: React.DragEvent) => { e.preventDefault(); setDropZoneActive(false); if (dragCardUid) { doPlayCard(dragCardUid); setDragCardUid(null); } };
+  const handleDragEnd = () => {
+    setDragCardUid(null);
+    setDropZoneActive(false);
+  };
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!dragCardUid) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDropZoneActive(true);
+  };
+  const handleDragLeave = () => {
+    setDropZoneActive(false);
+  };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDropZoneActive(false);
+    if (dragCardUid) {
+      doPlayCard(dragCardUid);
+      setDragCardUid(null);
+    }
+  };
 
   const clickHand = (uid: string) => {
     const card = me.hand.find((c) => c.uid === uid);
     if (!card) return;
     setSelectedAttacker(null);
-    if (!myTurn || gs.gameOver) { setInspected({ card, owner: 'player1' }); return; }
-    if (selectedHand === uid) { doPlayCard(uid); return; }
+    if (!myTurn || gs.gameOver) {
+      setInspected({ card, owner: 'player1' });
+      return;
+    }
+    if (selectedHand === uid) {
+      doPlayCard(uid);
+      return;
+    }
     setSelectedHand(uid);
     setInspected({ card, owner: 'player1' });
   };
@@ -737,12 +1035,43 @@ export function GameBoard({ mode, onBack }: Props) {
     const card = me.field.find((c) => c.uid === uid);
     if (!card) return;
     const slotIndex = me.field.indexOf(card);
-    if (!myTurn || gs.gameOver) { setInspected({ card, owner: 'player1' }); return; }
-    const canAct = !card.summoningSickness && !card.hasAttacked && card.frozen <= 0 && !card.keywords.includes('defender');
+    if (!myTurn || gs.gameOver) {
+      setInspected({ card, owner: 'player1' });
+      return;
+    }
+    const canAct =
+      !card.summoningSickness &&
+      !card.hasAttacked &&
+      card.frozen <= 0 &&
+      !card.keywords.includes('defender');
     if (canAct) {
-      if (selectedAttacker === uid) { setSelectedAttacker(null); setSelectedAttackerSlot(null); setInspected(null); setTargetingLine(null); }
-      else { setSelectedAttacker(uid); setSelectedAttackerSlot(slotIndex); setSelectedHand(null); setInspected(null); const attackerRef = cardRefsMap.current.get(uid); if (attackerRef) { const rect = attackerRef.getBoundingClientRect(); setTargetingLine({ startX: rect.left + rect.width / 2, startY: rect.top + rect.height / 2, endX: rect.left + rect.width / 2, endY: rect.top + rect.height / 2 }); } }
-    } else { setInspected({ card, owner: 'player1' }); setSelectedAttacker(null); setSelectedAttackerSlot(null); setTargetingLine(null); }
+      if (selectedAttacker === uid) {
+        setSelectedAttacker(null);
+        setSelectedAttackerSlot(null);
+        setInspected(null);
+        setTargetingLine(null);
+      } else {
+        setSelectedAttacker(uid);
+        setSelectedAttackerSlot(slotIndex);
+        setSelectedHand(null);
+        setInspected(null);
+        const attackerRef = cardRefsMap.current.get(uid);
+        if (attackerRef) {
+          const rect = attackerRef.getBoundingClientRect();
+          setTargetingLine({
+            startX: rect.left + rect.width / 2,
+            startY: rect.top + rect.height / 2,
+            endX: rect.left + rect.width / 2,
+            endY: rect.top + rect.height / 2,
+          });
+        }
+      }
+    } else {
+      setInspected({ card, owner: 'player1' });
+      setSelectedAttacker(null);
+      setSelectedAttackerSlot(null);
+      setTargetingLine(null);
+    }
   };
 
   const clickEnemyCreature = (uid: string) => {
@@ -755,11 +1084,22 @@ export function GameBoard({ mode, onBack }: Props) {
       if (next !== gs) {
         const atk = getEffectiveAttack(attackerCard, me, enemy);
         const defenderRef = cardRefsMap.current.get(uid);
-        if (defenderRef) { const rect = defenderRef.getBoundingClientRect(); showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage'); }
+        if (defenderRef) {
+          const rect = defenderRef.getBoundingClientRect();
+          showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage');
+        }
         setGs(next);
-        addMessage('action', `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} → ${card.data.emoji} ${card.data.name}`, '⚔️', 5000);
+        addMessage(
+          'action',
+          `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} → ${card.data.emoji} ${card.data.name}`,
+          '⚔️',
+          5000
+        );
         triggerCombatAnims(selectedAttacker, uid);
-        setSelectedAttacker(null); setSelectedAttackerSlot(null); setInspected(null); setTargetingLine(null);
+        setSelectedAttacker(null);
+        setSelectedAttackerSlot(null);
+        setInspected(null);
+        setTargetingLine(null);
       }
       return;
     }
@@ -775,27 +1115,71 @@ export function GameBoard({ mode, onBack }: Props) {
     if (next !== gs) {
       const atk = getEffectiveAttack(attackerCard, me, enemy);
       const enemyHeroElement = document.querySelector('[data-enemy-hero]');
-      if (enemyHeroElement) { const rect = enemyHeroElement.getBoundingClientRect(); showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage'); }
+      if (enemyHeroElement) {
+        const rect = enemyHeroElement.getBoundingClientRect();
+        showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage');
+      }
       setGs(next);
-      addMessage('action', `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} наносит удар Хранителю!`, '💥', 5000);
+      addMessage(
+        'action',
+        `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} наносит удар Хранителю!`,
+        '💥',
+        5000
+      );
       triggerCombatAnims(selectedAttacker, undefined);
-      setSelectedAttacker(null); setSelectedAttackerSlot(null); setInspected(null); setTargetingLine(null);
+      setSelectedAttacker(null);
+      setSelectedAttackerSlot(null);
+      setInspected(null);
+      setTargetingLine(null);
     }
   };
 
   const clickEndTurn = () => {
     if (!myTurn || gs.gameOver) return;
-    setGs((prev) => { const nextGs = endTurn(prev); if (mode === 'ai' && nextGs.currentTurn === 'player2') { setShowTurnTransition(true); setTimeout(() => { if (mountedRef.current) setShowTurnTransition(false); }, 1200); } return nextGs; });
-    setSelectedHand(null); setSelectedAttacker(null); setInspected(null);
+    setGs((prev) => {
+      const nextGs = endTurn(prev);
+      if (mode === 'ai' && nextGs.currentTurn === 'player2') {
+        setShowTurnTransition(true);
+        setTimeout(() => {
+          if (mountedRef.current) setShowTurnTransition(false);
+        }, 1200);
+      }
+      return nextGs;
+    });
+    setSelectedHand(null);
+    setSelectedAttacker(null);
+    setInspected(null);
   };
 
-  const restart = () => { setGs(createInitialGameState()); setSelectedHand(null); setSelectedAttacker(null); setInspected(null); setPlayAnim(null); setDeathAnim(null); seenStoryEventsRef.current = new Set(); prevFieldRef.current = { p1: [], p2: [] }; cardRefsMap.current.clear(); clearMessages(); };
+  const restart = () => {
+    setGs(createInitialGameState());
+    setSelectedHand(null);
+    setSelectedAttacker(null);
+    setInspected(null);
+    setPlayAnim(null);
+    setDeathAnim(null);
+    seenStoryEventsRef.current = new Set();
+    prevFieldRef.current = { p1: [], p2: [] };
+    cardRefsMap.current.clear();
+    clearMessages();
+  };
 
-  const clickBF = () => { if (inspected && !selectedAttacker) { setInspected(null); setSelectedHand(null); } };
+  const clickBF = () => {
+    if (inspected && !selectedAttacker) {
+      setInspected(null);
+      setSelectedHand(null);
+    }
+  };
 
   const phases = [
     { id: 'land', icon: '🏔️', label: 'Земля', active: phase === 'land', done: landPlayed },
-    { id: 'play', icon: '🃏', label: 'Карты', active: phase === 'play', done: !hasPlayableCard && landPlayed },
+    {
+      id: 'play',
+      icon: '🃏',
+      label: 'Карты',
+      active: phase === 'play',
+      done: !hasPlayableCard && landPlayed,
+    },
     { id: 'attack', icon: '⚔️', label: 'Атака', active: phase === 'attack', done: !hasAttackers },
     { id: 'done', icon: '⏭️', label: 'Конец', active: phase === 'done', done: false },
   ];
@@ -805,19 +1189,49 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* TOP BAR */}
       <div className="zone-topbar">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="text-gray-400 hover:text-white transition text-sm px-2 py-1">← Назад</button>
-          <span className="text-[#c9a84c] font-heading font-bold" style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}>OMSK: The Gathering</span>
+          <button
+            onClick={onBack}
+            className="text-gray-400 hover:text-white transition text-sm px-2 py-1"
+          >
+            ← Назад
+          </button>
+          <span
+            className="text-[#c9a84c] font-heading font-bold"
+            style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}
+          >
+            OMSK: The Gathering
+          </span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-gray-400" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>Ход {gs.turnNumber}</span>
-          <button onClick={() => setShowLog(true)} className="text-gray-400 hover:text-[#f0d68a] transition text-sm px-2 py-1" title="Журнал действий">📜 Лог</button>
-          {aiThinking && <span className="text-cyan-400 animate-pulse" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>🤖 Думает...</span>}
+          <span className="text-gray-400" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>
+            Ход {gs.turnNumber}
+          </span>
+          <button
+            onClick={() => setShowLog(true)}
+            className="text-gray-400 hover:text-[#f0d68a] transition text-sm px-2 py-1"
+            title="Журнал действий"
+          >
+            📜 Лог
+          </button>
+          {aiThinking && (
+            <span
+              className="text-cyan-400 animate-pulse"
+              style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
+            >
+              🤖 Думает...
+            </span>
+          )}
         </div>
       </div>
 
       {/* ENEMY HERO ZONE */}
       <div className="zone-enemy-hero" data-enemy-hero="true">
-        <PlayerArea player={enemy} isCurrentPlayer={!isP1Turn} label="🗿 Хранитель Омска" dataEnemyHero={true} />
+        <PlayerArea
+          player={enemy}
+          isCurrentPlayer={!isP1Turn}
+          label="🗿 Хранитель Омска"
+          dataEnemyHero={true}
+        />
       </div>
 
       {/* ENEMY BOARD ZONE */}
@@ -826,7 +1240,13 @@ export function GameBoard({ mode, onBack }: Props) {
           {Array.from({ length: 7 }, (_, i) => {
             const card = enemy.field[i];
             return (
-              <div key={i} className={`creature-slot ${card ? 'occupied' : ''} ${selectedAttacker && !gs.gameOver ? 'attack-lane' : ''}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+              <div
+                key={i}
+                className={`creature-slot ${card ? 'occupied' : ''} ${selectedAttacker && !gs.gameOver ? 'attack-lane' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 {card && (
                   <FieldCard
                     card={card}
@@ -837,7 +1257,9 @@ export function GameBoard({ mode, onBack }: Props) {
                     attackAnim={attackAnimUid === card.uid}
                     damageAnim={damageAnimUid === card.uid}
                     onClick={() => clickEnemyCreature(card.uid)}
-                    cardRef={(el) => { if (el) cardRefsMap.current.set(card.uid, el); }}
+                    cardRef={(el) => {
+                      if (el) cardRefsMap.current.set(card.uid, el);
+                    }}
                   />
                 )}
               </div>
@@ -852,11 +1274,25 @@ export function GameBoard({ mode, onBack }: Props) {
           <div className="divider-buttons">
             {selectedAttacker && !gs.gameOver && myTurn && (
               <>
-                <button onClick={clickAttackHero} className="attack-hero-btn">💥 В героя</button>
-                <button onClick={() => { setSelectedAttacker(null); setSelectedAttackerSlot(null); }} className="cancel-btn">Отмена</button>
+                <button onClick={clickAttackHero} className="attack-hero-btn">
+                  💥 В героя
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedAttacker(null);
+                    setSelectedAttackerSlot(null);
+                  }}
+                  className="cancel-btn"
+                >
+                  Отмена
+                </button>
               </>
             )}
-            {!gs.gameOver && myTurn && <button onClick={clickEndTurn} className="end-turn-btn ready">Конец хода ⏭️</button>}
+            {!gs.gameOver && myTurn && (
+              <button onClick={clickEndTurn} className="end-turn-btn ready">
+                Конец хода ⏭️
+              </button>
+            )}
           </div>
           <div className="divider-hint">{getHint()}</div>
         </div>
@@ -867,9 +1303,20 @@ export function GameBoard({ mode, onBack }: Props) {
         <div className={`board-zone player ${dropZoneActive ? 'drop-target' : ''}`}>
           {Array.from({ length: 7 }, (_, i) => {
             const card = me.field[i];
-            const canAct = card && !card.summoningSickness && !card.hasAttacked && card.frozen <= 0 && !card.keywords.includes('defender');
+            const canAct =
+              card &&
+              !card.summoningSickness &&
+              !card.hasAttacked &&
+              card.frozen <= 0 &&
+              !card.keywords.includes('defender');
             return (
-              <div key={i} className={`creature-slot ${card ? 'occupied' : ''} ${dropZoneActive ? 'drop-target' : ''}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+              <div
+                key={i}
+                className={`creature-slot ${card ? 'occupied' : ''} ${dropZoneActive ? 'drop-target' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 {card && (
                   <FieldCard
                     card={card}
@@ -881,7 +1328,9 @@ export function GameBoard({ mode, onBack }: Props) {
                     attackAnim={attackAnimUid === card.uid}
                     damageAnim={damageAnimUid === card.uid}
                     onClick={() => clickMyCreature(card.uid)}
-                    cardRef={(el) => { if (el) cardRefsMap.current.set(card.uid, el); }}
+                    cardRef={(el) => {
+                      if (el) cardRefsMap.current.set(card.uid, el);
+                    }}
                   />
                 )}
               </div>
@@ -898,17 +1347,44 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* ACTION BAR */}
       <div className="zone-actionbar">
         <div className="action-bar">
-          {phases.map((p) => (<span key={p.id} className={`phase-pill ${p.active ? 'active' : p.done ? 'done' : 'idle'}`}>{p.icon} {p.label}</span>))}
+          {phases.map((p) => (
+            <span
+              key={p.id}
+              className={`phase-pill ${p.active ? 'active' : p.done ? 'done' : 'idle'}`}
+            >
+              {p.icon} {p.label}
+            </span>
+          ))}
         </div>
       </div>
 
       {/* HAND ZONE */}
-      <div className="zone-hand" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+      <div
+        className="zone-hand"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <div className="hand-zone">
           {me.hand.map((card, idx) => {
-            const canPlay = myTurn && !gs.gameOver && (card.data.type === 'land' ? me.landsPlayed < me.maxLandsPerTurn : card.data.cost <= me.mana);
+            const canPlay =
+              myTurn &&
+              !gs.gameOver &&
+              (card.data.type === 'land'
+                ? me.landsPlayed < me.maxLandsPerTurn
+                : card.data.cost <= me.mana);
             return (
-              <div key={card.uid} className="hand-card-wrapper" style={{ '--card-angle': `${(idx - (me.hand.length - 1) / 2) * 3}deg`, '--card-offset': `${Math.abs(idx - (me.hand.length - 1) / 2) * 2}px`, '--card-index': idx } as React.CSSProperties}>
+              <div
+                key={card.uid}
+                className="hand-card-wrapper"
+                style={
+                  {
+                    '--card-angle': `${(idx - (me.hand.length - 1) / 2) * 3}deg`,
+                    '--card-offset': `${Math.abs(idx - (me.hand.length - 1) / 2) * 2}px`,
+                    '--card-index': idx,
+                  } as React.CSSProperties
+                }
+              >
                 <HandCardComponent
                   card={card}
                   selected={selectedHand === card.uid}
@@ -930,7 +1406,10 @@ export function GameBoard({ mode, onBack }: Props) {
           card={inspected.card}
           owner={inspected.owner}
           gs={gs}
-          onClose={() => { setInspected(null); setSelectedHand(null); }}
+          onClose={() => {
+            setInspected(null);
+            setSelectedHand(null);
+          }}
         />
       )}
 
@@ -938,20 +1417,38 @@ export function GameBoard({ mode, onBack }: Props) {
       <MessageFeed messages={messages} onDismiss={dismissMessage} />
 
       {/* DAMAGE NUMBERS */}
-      {damageNumbers.map((dn) => (<div key={dn.id} className={`damage-number ${dn.type}`} style={{ left: dn.x, top: dn.y }}>{dn.value}</div>))}
+      {damageNumbers.map((dn) => (
+        <div key={dn.id} className={`damage-number ${dn.type}`} style={{ left: dn.x, top: dn.y }}>
+          {dn.value}
+        </div>
+      ))}
 
       {/* TURN TRANSITION */}
-      {showTurnTransition && (<div className="turn-banner"><span className="turn-banner-text">ХОД ХРАНИТЕЛЯ</span><span className="turn-banner-sub">Подготовьтесь к бою</span></div>)}
+      {showTurnTransition && (
+        <div className="turn-banner">
+          <span className="turn-banner-text">ХОД ХРАНИТЕЛЯ</span>
+          <span className="turn-banner-sub">Подготовьтесь к бою</span>
+        </div>
+      )}
 
       {/* GAME OVER */}
       {gs.gameOver && (
         <div className="modal-overlay">
           <div className="modal-overlay-content text-center">
-            <h2 className="font-title text-2xl text-[#c9a84c] mb-4">{me.health <= 0 ? '💀 Поражение' : '🏆 Победа!'}</h2>
+            <h2 className="font-title text-2xl text-[#c9a84c] mb-4">
+              {me.health <= 0 ? '💀 Поражение' : '🏆 Победа!'}
+            </h2>
             <p className="text-gray-300 mb-6">{me.health <= 0 ? 'Омск пал...' : 'Омск спасен!'}</p>
             <div className="flex gap-4 justify-center">
-              <button onClick={restart} className="px-6 py-2 rounded-lg bg-[#c9a84c] text-black font-bold">Играть снова</button>
-              <button onClick={onBack} className="px-6 py-2 rounded-lg border border-gray-600">В меню</button>
+              <button
+                onClick={restart}
+                className="px-6 py-2 rounded-lg bg-[#c9a84c] text-black font-bold"
+              >
+                Играть снова
+              </button>
+              <button onClick={onBack} className="px-6 py-2 rounded-lg border border-gray-600">
+                В меню
+              </button>
             </div>
           </div>
         </div>

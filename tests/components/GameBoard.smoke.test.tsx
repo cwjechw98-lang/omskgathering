@@ -14,11 +14,13 @@ function renderWithProviders() {
 describe('GameBoard smoke', () => {
   it('renders main game UI in ai mode', () => {
     renderWithProviders();
-    expect(screen.getByText('👤 Вы')).toBeInTheDocument();
-    // Note: There are currently two "Конец хода" buttons due to layout refactoring in progress
-    // The new grid layout uses .end-turn-btn class
-    const endTurnButtons = screen.getAllByText('Конец хода ⏭️');
-    expect(endTurnButtons.length).toBeGreaterThanOrEqual(1);
+    // Check for game grid structure
+    expect(document.querySelector('.game-grid')).toBeInTheDocument();
+    expect(document.querySelector('.zone-topbar')).toBeInTheDocument();
+    expect(document.querySelector('.zone-enemy-hero')).toBeInTheDocument();
+    expect(document.querySelector('.zone-player-hero')).toBeInTheDocument();
+    // Check for turn indicator
+    expect(document.querySelector('[class*="text-green"]')).toBeInTheDocument();
   });
 
   it('unmounts without throwing', () => {

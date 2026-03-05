@@ -161,7 +161,9 @@ export function CardPreview({
               <span>
                 &#10084;&#65039; {getEffectiveHealth(card, gs[owner])}/{card.maxHealth}
               </span>
-              {card.frozen > 0 && <span className="text-cyan-400">&#10052;&#65039;{card.frozen}</span>}
+              {card.frozen > 0 && (
+                <span className="text-cyan-400">&#10052;&#65039;{card.frozen}</span>
+              )}
               {card.summoningSickness && <span className="text-yellow-400">&#128164;</span>}
             </div>
           )}

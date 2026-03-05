@@ -15,10 +15,10 @@ export type ReplayActionType =
 export interface ReplayAction {
   type: ReplayActionType;
   player: 'player1' | 'player2';
-  cardId?: string;      // uid карты
-  sourceId?: string;    // uid атакующего
-  targetId?: string;    // uid цели
-  turn: number;         // номер хода
+  cardId?: string; // uid карты
+  sourceId?: string; // uid атакующего
+  targetId?: string; // uid цели
+  turn: number; // номер хода
 }
 
 /**
@@ -33,10 +33,7 @@ export interface ReplayLog {
 /**
  * Record a replay action
  */
-export function recordAction(
-  action: ReplayAction,
-  log: ReplayAction[]
-): ReplayAction[] {
+export function recordAction(action: ReplayAction, log: ReplayAction[]): ReplayAction[] {
   return [...log, action];
 }
 

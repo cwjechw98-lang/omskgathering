@@ -19,7 +19,12 @@ interface EffectsContextType {
   damageNumbers: DamageNumber[];
   targetingLine: TargetingLine | null;
   showLowHealthWarning: boolean;
-  showDamageNumber: (value: number, x: number, y: number, type?: 'damage' | 'heal' | 'buff') => void;
+  showDamageNumber: (
+    value: number,
+    x: number,
+    y: number,
+    type?: 'damage' | 'heal' | 'buff'
+  ) => void;
   setTargetingLine: (line: TargetingLine | null) => void;
   setShowLowHealthWarning: (show: boolean) => void;
 }
@@ -31,18 +36,16 @@ export function EffectsProvider({ children }: { children: ReactNode }) {
   const [targetingLine, setTargetingLineState] = useState<TargetingLine | null>(null);
   const [showLowHealthWarning, setShowLowHealthWarning] = useState(false);
 
-  const showDamageNumber = useCallback((
-    value: number,
-    x: number,
-    y: number,
-    type: 'damage' | 'heal' | 'buff' = 'damage'
-  ) => {
-    const id = Date.now() + Math.random();
-    setDamageNumbers(prev => [...prev, { id, value, x, y, type }]);
-    setTimeout(() => {
-      setDamageNumbers(prev => prev.filter(dn => dn.id !== id));
-    }, 800);
-  }, []);
+  const showDamageNumber = useCallback(
+    (value: number, x: number, y: number, type: 'damage' | 'heal' | 'buff' = 'damage') => {
+      const id = Date.now() + Math.random();
+      setDamageNumbers((prev) => [...prev, { id, value, x, y, type }]);
+      setTimeout(() => {
+        setDamageNumbers((prev) => prev.filter((dn) => dn.id !== id));
+      }, 800);
+    },
+    []
+  );
 
   const setTargetingLine = useCallback((line: TargetingLine | null) => {
     setTargetingLineState(line);

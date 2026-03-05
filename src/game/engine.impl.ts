@@ -260,7 +260,9 @@ export function playCard(
       drawCard(player, newState.log);
       newState.log.push('🐱 Учёный Кот: +1 карта за заклинание!');
     }
-    const arkhivarCount = player.field.filter((c) => c.data.id === 'arkhivar_omskoi_kreposti').length;
+    const arkhivarCount = player.field.filter(
+      (c) => c.data.id === 'arkhivar_omskoi_kreposti'
+    ).length;
     for (let ai = 0; ai < arkhivarCount; ai++) {
       drawCard(player, newState.log);
       newState.log.push('🗝️ Архивариус Крепости: +1 карта за заклинание!');
@@ -676,7 +678,8 @@ function applySpellEffect(
     case 'svodka_112': {
       if (opponent.field.length > 0) {
         const target = [...opponent.field].sort(
-          (a, b) => getEffectiveAttack(b, opponent, player) - getEffectiveAttack(a, opponent, player)
+          (a, b) =>
+            getEffectiveAttack(b, opponent, player) - getEffectiveAttack(a, opponent, player)
         )[0];
         target.currentHealth -= 2;
         state.log.push(`🚨 Сводка 112: 2 урона ${target.data.name}.`);
