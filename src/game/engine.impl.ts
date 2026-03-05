@@ -272,6 +272,13 @@ export function playCard(
     newState.log.push(`✨ ${card.data.emoji} ${card.data.name} наложено!`);
   }
 
+  // Rosgvardiya: counter enemy spells
+  if (opponent.field.some((c) => c.data.id === 'rosgvardiya') && card.data.type === 'spell') {
+    // Destroy the spell instead
+    player.graveyard.push(card); // Spell goes to graveyard
+    newState.log.push(`🛡️ Росгвардия: ${card.data.name} заблокирована!`);
+  }
+
   cleanupDead(newState);
   return newState;
 }
@@ -603,6 +610,40 @@ function applySpellEffect(
       drawCard(player, state.log);
       state.log.push('😊 Омский Оптимизм: +6 здоровья, +1 карта!');
       break;
+
+    case 'nalogovaya_inspektsiya': {
+      if (opponent.hand.length > 0) {
+        const idx = Math.floor(Math.random() * opponent.hand.length);
+        const discarded = opponent.hand.splice(idx, 1)[0];
+        opponent.graveyard.push(discarded);
+        state.log.push(`💀 Налоговая Инспекция: ${discarded.data.name} сброшена!`);
+      } else {
+        state.log.push('💀 Налоговая Инспекция: у врага нет карт.');
+      }
+      break;
+    }
+
+    case 'posledniy_argument': {
+      for (const c of opponent.field) {
+        c.currentHealth -= 3;
+      }
+      opponent.health -= 3;
+      state.log.push('🔥 Последний Аргумент: 3 урона всем врагам и герою!');
+      break;
+    }
+
+    case 'uskorennyy_rost': {
+      if (player.field.length > 0) {
+        const target = player.field[Math.floor(Math.random() * player.field.length)];
+        target.tempBuffAttack += 2;
+        target.hasAttacked = false; // Can attack immediately
+        target.summoningSickness = false;
+        state.log.push(`🌱 Ускоренный Рост: ${target.data.name} получает +2/+0 и ускорение!`);
+      } else {
+        state.log.push('🌱 Ускоренный Рост: нет целей.');
+      }
+      break;
+    }
 
     case 'norminette': {
       const targets = opponent.field.filter(
@@ -999,6 +1040,16 @@ export function endTurn(state: GameState): GameState {
   drawCard(nextPlayer, newState.log);
 
   // === Enchantment effects ===
+  // Biblioteka OmGTU: draw if hand ≤ 2
+  if (nextPlayer.enchantments.some((c) => c.data.id === 'biblioteka_omgtu')) {
+    while (nextPlayer.hand.length < 3) {
+      if (!drawCard(nextPlayer, newState.log)) break;
+    }
+    if (nextPlayer.hand.length >= 3) {
+      newState.log.push('📚 Библиотека ОмГТУ: карты до 3!');
+    }
+  }
+
   // Metro: extra draw
   if (nextPlayer.enchantments.some((c) => c.data.id === 'metro_mechta')) {
     drawCard(nextPlayer, newState.log);

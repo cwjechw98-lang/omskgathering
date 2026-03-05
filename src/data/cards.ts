@@ -1229,6 +1229,86 @@ export const ALL_CARDS: CardData[] = [
       310
     ),
   },
+
+  // ===== НОВЫЕ КАРТЫ (2026-03-05 Balance Update) =====
+  {
+    id: 'biblioteka_omgtu',
+    name: 'Библиотека ОмГТУ',
+    cost: 3,
+    color: 'blue',
+    type: 'enchantment',
+    description: 'В начале хода: если у вас ≤2 карт, потяните до 3.',
+    flavor: '«Знание — сила. Особенно когда не сдал диплом.»',
+    emoji: '📚',
+    rarity: 'uncommon',
+    imageUrl: img(
+      'magical university library with glowing books floating in air, students studying late at night',
+      401
+    ),
+  },
+  {
+    id: 'rosgvardiya',
+    name: 'Росгвардия',
+    cost: 2,
+    color: 'white',
+    type: 'creature',
+    attack: 1,
+    health: 3,
+    description: 'Защитник. Когда враг разыгрывает заклинание — вы можете уничтожить его.',
+    flavor: '«Порядок в городе — порядок в игре.»',
+    emoji: '🛡️',
+    keywords: ['defender'],
+    rarity: 'rare',
+    imageUrl: img(
+      'armored guard with shield and tactical gear, standing protectively, city background',
+      402
+    ),
+  },
+  {
+    id: 'posledniy_argument',
+    name: 'Последний Аргумент',
+    cost: 4,
+    color: 'red',
+    type: 'spell',
+    description: 'Нанесите 3 урона всем врагам и 3 урона вражескому герою.',
+    flavor: '«Когда дипломатия бессильна.»',
+    emoji: '🔥',
+    rarity: 'uncommon',
+    imageUrl: img(
+      'massive fiery explosion engulfing battlefield, dramatic red and orange flames',
+      403
+    ),
+  },
+  {
+    id: 'uskorennyy_rost',
+    name: 'Ускоренный Рост',
+    cost: 1,
+    color: 'green',
+    type: 'spell',
+    description: 'Существо получает +2/+0 и ускорение до конца хода.',
+    flavor: '«Сибирь не ждёт. Растём быстро.»',
+    emoji: '🌱',
+    rarity: 'common',
+    imageUrl: img(
+      'magical green vines rapidly growing around creature, nature acceleration spell',
+      404
+    ),
+  },
+  {
+    id: 'nalogovaya_inspektsiya',
+    name: 'Налоговая Инспекция',
+    cost: 3,
+    color: 'black',
+    type: 'spell',
+    description: 'Выберите карту в руке врага. Он сбрасывает её.',
+    flavor: '«У вас есть неоплаченные счета... в жизни и в игре.»',
+    emoji: '💀',
+    rarity: 'uncommon',
+    imageUrl: img(
+      'dark bureaucratic office with skeletal accountant, ominous paperwork and stamps',
+      405
+    ),
+  },
 ];
 
 export function createDeck(): CardData[] {
@@ -1236,8 +1316,22 @@ export function createDeck(): CardData[] {
   const nonLandCards = ALL_CARDS.filter((c) => c.type !== 'land' && c.id !== 'chinovnik');
   const landCards = ALL_CARDS.filter((c) => c.type === 'land');
 
+  // Cards with 3 copies for consistency (key gameplay cards)
+  const threeCopies = [
+    'norminette',
+    'siberian_gnev',
+    'yama_na_doroge',
+    'peer_review',
+    'probka_lenina',
+    'shaverma_power',
+  ];
+
   for (const card of nonLandCards) {
-    const copies = card.rarity === 'mythic' ? 1 : card.rarity === 'rare' ? 2 : 2;
+    let copies = card.rarity === 'mythic' ? 1 : card.rarity === 'rare' ? 2 : 2;
+    // Increase specific cards to 3 copies
+    if (threeCopies.includes(card.id)) {
+      copies = 3;
+    }
     for (let i = 0; i < copies; i++) {
       deck.push({ ...card });
     }
