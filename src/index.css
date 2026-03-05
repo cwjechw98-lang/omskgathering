@@ -608,21 +608,7 @@ body {
   overflow: hidden;
 }
 
-/* Protect grid from stretching */
-.game-grid > * {
-  min-height: 0;
-}
-
-/* Fixed heights for board zones */
-.enemy-board,
-.player-board {
-  height: var(--board-h);
-  overflow: hidden;
-}
-
-.hero-zone {
-  height: var(--hero-h);
-}
+/* ui-fix.md: dead grid CSS removed — layout uses flex, not CSS Grid rows */
 
 /* 2. РАЗЫГРЫВАНИЕ КАРТЫ: 0.3-0.5 сек с overshoot */
 @keyframes cardPlayToField {
@@ -911,6 +897,9 @@ body {
   gap: clamp(4px, 0.5vw, 10px);
   width: 100%;
   max-width: 100%;
+  flex-shrink: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .board-slot {

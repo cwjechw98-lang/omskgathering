@@ -34,7 +34,7 @@ function applyReplayAction(state: GameState, action: ReplayAction): GameState {
       // Just try to play the card - it will fail if not valid
       try {
         return playCard(state, action.player, action.cardId);
-      } catch (e) {
+      } catch {
         // Card might not exist in this replay context, skip
         return state;
       }
@@ -46,7 +46,7 @@ function applyReplayAction(state: GameState, action: ReplayAction): GameState {
       }
       try {
         return attackCreature(state, action.player, action.sourceId, action.targetId);
-      } catch (e) {
+      } catch {
         return state;
       }
     }
@@ -57,7 +57,7 @@ function applyReplayAction(state: GameState, action: ReplayAction): GameState {
       }
       try {
         return attackPlayer(state, action.player, action.sourceId);
-      } catch (e) {
+      } catch {
         return state;
       }
     }
@@ -79,13 +79,13 @@ function applyReplayAction(state: GameState, action: ReplayAction): GameState {
       }
       try {
         return playCard(state, action.player, action.cardId);
-      } catch (e) {
+      } catch {
         return state;
       }
     }
 
     default:
-      throw new Error(`Unknown replay action type: ${(action as any).type}`);
+      throw new Error(`Unknown replay action type: ${(action as ReplayAction).type}`);
   }
 }
 

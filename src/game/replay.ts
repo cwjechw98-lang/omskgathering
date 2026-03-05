@@ -1,5 +1,3 @@
-import type { GameState } from './types';
-
 /**
  * Replay action types
  */
