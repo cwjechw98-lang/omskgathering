@@ -142,7 +142,7 @@
 .zone-divider {
   grid-area: divider;
   overflow: visible;
-  z-index: var(--z-divider);
+  z-index: var(--z-cards);
   position: relative;
 }
 .zone-player-board {
@@ -172,8 +172,12 @@
 
 .zone-actionbar {
   grid-area: actionbar;
-  overflow: hidden;
+  overflow: visible;
   z-index: var(--z-ui);
+  pointer-events: none;
+}
+.zone-actionbar > * {
+  pointer-events: auto;
 }
 .zone-hand {
   grid-area: hand;
@@ -375,6 +379,7 @@
   top: 50%;
   height: 1px;
   transform: translateY(-50%);
+  z-index: 1;
   background: linear-gradient(
     to right,
     transparent 0%,
@@ -1795,19 +1800,23 @@ body {
 /* === TURN TRANSITION BANNER === */
 @keyframes turnBannerSlide {
   0% {
-    transform: translateX(-100%) scale(0.8);
+    transform: translate(-50%, -50%) scale(0.5);
     opacity: 0;
   }
-  20% {
-    transform: translateX(0) scale(1);
+  15% {
+    transform: translate(-50%, -50%) scale(1.08);
     opacity: 1;
   }
-  80% {
-    transform: translateX(0) scale(1);
+  25% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  75% {
+    transform: translate(-50%, -50%) scale(1);
     opacity: 1;
   }
   100% {
-    transform: translateX(100%) scale(0.8);
+    transform: translate(-50%, -50%) scale(0.8);
     opacity: 0;
   }
 }

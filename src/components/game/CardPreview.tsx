@@ -33,10 +33,14 @@ export function CardPreview({
   const art = getCardCoverSources(card.data);
   return (
     <div
-      className={`absolute z-40 ${compact ? 'left-2 right-2 bottom-100' : 'top-12 right-2'}`}
-      style={{ width: compact ? 'auto' : 'clamp(200px, 17vw, 280px)' }}
-      onClick={(e) => e.stopPropagation()}
+      className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none"
+      onClick={(e) => { e.stopPropagation(); onClose(); }}
     >
+      <div
+        className="pointer-events-auto"
+        style={{ width: compact ? 'min(90vw, 320px)' : 'clamp(220px, 20vw, 300px)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
       <div className="bg-[#0f0f18]/98 backdrop-blur-sm rounded-xl shadow-2xl border border-[#c9a84c]/30 overflow-hidden">
         <button
           onClick={onClose}
@@ -168,6 +172,7 @@ export function CardPreview({
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
