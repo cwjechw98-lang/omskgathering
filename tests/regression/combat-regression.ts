@@ -105,6 +105,10 @@ function makeState(player1: PlayerState, player2: PlayerState, currentTurn: 'pla
     cantAttackNextTurn: false,
     lastDiceRoll: null,
     aiComment: null,
+    mulliganPhase: false,
+    mulliganCount: 0,
+    player1Keeping: null,
+    player2Keeping: null,
   };
 }
 
