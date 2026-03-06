@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { ALL_CARDS } from '../data/cards';
-import { WORLD_LORE, AI_CHARACTER } from '../data/lore';
+import { WORLD_LORE } from '../data/lore';
 import { CardInstance } from '../game/types';
 import { generateUid, getEffectiveAttack, getEffectiveHealth } from '../game/engine';
 import { ParticleCanvas } from './effects/ParticleCanvas';
