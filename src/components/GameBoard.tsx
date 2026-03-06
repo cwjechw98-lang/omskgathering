@@ -276,7 +276,7 @@ function PlayerArea({
     <UICard
       data-enemy-hero={dataEnemyHero ? 'true' : undefined}
       className={cn(
-        'flex items-center gap-2 p-2 border transition-all shrink-0',
+        'flex flex-col gap-0.5 p-1.5 border transition-all shrink-0',
         isCurrentPlayer
           ? 'bg-[#1a1508]/50 border-[#c9a84c]/30 shadow-lg shadow-[#c9a84c]/10'
           : 'bg-[#0f0f18]/50 border-gray-800/30'
@@ -284,80 +284,80 @@ function PlayerArea({
       role="region"
       aria-label={label}
     >
-      {/* Left: Card counters (hand, deck, graveyard) */}
-      <div className="flex flex-col gap-1">
-        <Tooltip>
-          <TooltipTrigger>
-            <Badge variant="outline" className="gap-1 text-[10px] h-5 px-1.5 min-w-[45px]">
-              <span>🤚</span>
-              <span>{player.hand.length}</span>
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent side="top">Рука: {player.hand.length}</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger>
-            <Badge variant="outline" className="gap-1 text-[10px] h-5 px-1.5 min-w-[45px]">
-              <span>📚</span>
-              <span>{player.deck.length}</span>
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent side="top">Колода: {player.deck.length}</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger>
-            <Badge variant="outline" className="gap-1 text-[10px] h-5 px-1.5 min-w-[45px]">
-              <span>💀</span>
-              <span>{player.graveyard.length}</span>
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent side="top">Кладбище: {player.graveyard.length}</TooltipContent>
-        </Tooltip>
+      {/* Row 1: Avatar + Name + Counters */}
+      <div className="flex items-center gap-1.5 w-full">
+        <div
+          className={cn(
+            'rounded-full flex items-center justify-center shrink-0 border',
+            isCurrentPlayer ? 'bg-[#2a1a08] border-[#c9a84c]/50' : 'bg-[#1a1a2a] border-gray-700/50'
+          )}
+          style={{
+            width: 'clamp(24px, 2.5vw, 36px)',
+            height: 'clamp(24px, 2.5vw, 36px)',
+            fontSize: 'clamp(11px, 1.3vw, 18px)',
+          }}
+        >
+          {label.includes('🗿') ? '🗿' : '👤'}
+        </div>
+        <span
+          className="font-heading text-white font-bold truncate"
+          style={{ fontSize: 'clamp(9px, 1vw, 13px)' }}
+        >
+          {label}
+        </span>
+        {isCurrentPlayer && (
+          <Badge
+            variant="secondary"
+            className="animate-pulse bg-[#f0d68a]/20 text-[#f0d68a] border-transparent text-[9px] h-4 px-1"
+          >
+            ⚡
+          </Badge>
+        )}
+        <div className="flex items-center gap-1 ml-auto shrink-0">
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="outline" className="gap-0.5 text-[9px] h-4 px-1 min-w-0">
+                <span>🤚</span>
+                <span>{player.hand.length}</span>
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="top">Рука: {player.hand.length}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="outline" className="gap-0.5 text-[9px] h-4 px-1 min-w-0">
+                <span>📚</span>
+                <span>{player.deck.length}</span>
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="top">Колода: {player.deck.length}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="outline" className="gap-0.5 text-[9px] h-4 px-1 min-w-0">
+                <span>💀</span>
+                <span>{player.graveyard.length}</span>
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="top">Кладбище: {player.graveyard.length}</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
-      {/* Center: Avatar + Name + HP + Mana */}
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <div className="flex items-center gap-2">
-          <div
-            className={cn(
-              'rounded-full flex items-center justify-center shrink-0 border',
-              isCurrentPlayer ? 'bg-[#2a1a08] border-[#c9a84c]/50' : 'bg-[#1a1a2a] border-gray-700/50'
-            )}
-            style={{
-              width: 'clamp(28px, 3vw, 40px)',
-              height: 'clamp(28px, 3vw, 40px)',
-              fontSize: 'clamp(12px, 1.5vw, 20px)',
-            }}
-          >
-            {label.includes('🗿') ? '🗿' : '👤'}
-          </div>
-          <span
-            className="font-heading text-white font-bold truncate"
-            style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
-          >
-            {label}
-          </span>
-          {isCurrentPlayer && (
-            <Badge
-              variant="secondary"
-              className="animate-pulse bg-[#f0d68a]/20 text-[#f0d68a] border-transparent text-[9px] h-4 px-1"
-            >
-              ⚡
-            </Badge>
-          )}
-        </div>
-        <div className="relative">
+      {/* Row 2: HP bar + Mana */}
+      <div className="flex items-center gap-2 w-full">
+        <div className="relative flex-1 min-w-0">
           <Progress
             value={healthPercent}
             className={cn(
-              'h-3.5 transition-all duration-500',
+              'h-3 transition-all duration-500',
               healthVariant === 'success' && 'progress-success',
               healthVariant === 'warning' && 'progress-warning',
               healthVariant === 'danger' && 'progress-danger'
             )}
           />
           <span
-            className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white drop-shadow text-[9px]"
+            className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white drop-shadow"
             style={{ fontSize: 'clamp(8px, 0.8vw, 10px)' }}
           >
             ❤️ {player.health}/{player.maxHealth}
@@ -365,21 +365,21 @@ function PlayerArea({
         </div>
         <Tooltip>
           <TooltipTrigger>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 shrink-0">
               <div className="flex gap-px">
                 {Array.from({ length: Math.min(player.maxMana, 12) }, (_, i) => (
                   <Badge
                     key={i}
                     variant={i < player.mana ? 'mana-available' : 'mana-spent'}
-                    className="w-2.5 h-2.5 rounded-full p-0 min-w-0"
+                    className="w-2 h-2 rounded-full p-0 min-w-0"
                   />
                 ))}
               </div>
               <span
-                className="text-blue-300 font-heading font-bold truncate"
+                className="text-blue-300 font-heading font-bold"
                 style={{ fontSize: 'clamp(8px, 0.8vw, 11px)' }}
               >
-                💎 {player.mana}/{player.maxMana}
+                💎{player.mana}/{player.maxMana}
               </span>
             </div>
           </TooltipTrigger>
@@ -605,20 +605,20 @@ ${card.data.description}
               )}
             </div>
             {card.data.type === 'creature' && (
-              <div className="flex justify-between items-end mt-auto">
+              <div className="absolute bottom-0 left-0 right-0 flex justify-between items-end px-0.5 pb-0.5 pointer-events-none">
                 <Badge
                   variant="destructive"
-                  className="bg-red-700/90 text-white rounded px-1 font-bold font-heading"
-                  style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}
+                  className="bg-red-700/95 text-white rounded px-1 py-0 font-bold font-heading shadow-md leading-tight"
+                  style={{ fontSize: 'clamp(10px, 1.2vw, 14px)' }}
                 >
                   {atk}⚔
                 </Badge>
                 <Badge
                   className={cn(
-                    'rounded px-1 font-bold font-heading text-white',
-                    hp <= card.maxHealth / 2 ? 'bg-red-600/90' : 'bg-green-700/90'
+                    'rounded px-1 py-0 font-bold font-heading text-white shadow-md leading-tight',
+                    hp <= card.maxHealth / 2 ? 'bg-red-600/95' : 'bg-green-700/95'
                   )}
-                  style={{ fontSize: 'clamp(9px, 1.1vw, 14px)' }}
+                  style={{ fontSize: 'clamp(10px, 1.2vw, 14px)' }}
                 >
                   {hp}❤
                 </Badge>
@@ -722,14 +722,14 @@ function HandCardComponent({
             <div className="flex justify-between items-end mt-0.5">
               <Badge
                 variant="destructive"
-                className="bg-red-700/90 text-red-300 font-bold font-heading rounded px-1"
-                style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}
+                className="bg-red-700/90 text-red-300 font-bold font-heading rounded px-1 py-0 leading-tight"
+                style={{ fontSize: 'clamp(9px, 1vw, 12px)' }}
               >
                 {card.data.attack}⚔
               </Badge>
               <Badge
-                className="bg-green-700/90 text-green-300 font-bold font-heading rounded px-1"
-                style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}
+                className="bg-green-700/90 text-green-300 font-bold font-heading rounded px-1 py-0 leading-tight"
+                style={{ fontSize: 'clamp(9px, 1vw, 12px)' }}
               >
                 {card.data.health}❤
               </Badge>
@@ -1355,14 +1355,14 @@ export function GameBoard({ mode, onBack }: Props) {
 
       {/* ENEMY HERO ZONE */}
       <div className="zone-enemy-hero hero-zone-row" data-enemy-hero="true">
-        <DeckStack count={enemy.deck.length} type="deck" cardBackSrc={cardBackSrc} label="Колода Хранителя" />
+        <DeckStack count={enemy.deck.length} type="deck" cardBackSrc={cardBackSrc} label={mode === 'ai' ? 'Колода Хранителя' : 'Колода Игрока 2'} />
         <PlayerArea
           player={enemy}
           isCurrentPlayer={!isP1Turn}
-          label="🗿 Хранитель Омска"
+          label={mode === 'ai' ? '🗿 Хранитель Омска' : '👤 Игрок 2'}
           dataEnemyHero={true}
         />
-        <DeckStack count={enemy.graveyard.length} type="graveyard" label="Сброс Хранителя" />
+        <DeckStack count={enemy.graveyard.length} type="graveyard" label={mode === 'ai' ? 'Сброс Хранителя' : 'Сброс Игрока 2'} />
       </div>
 
       {/* ENEMY BOARD ZONE */}
@@ -1475,7 +1475,7 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* PLAYER HERO ZONE */}
       <div className="zone-player-hero hero-zone-row">
         <DeckStack count={me.deck.length} type="deck" cardBackSrc={cardBackSrc} label="Твоя колода" />
-        <PlayerArea player={me} isCurrentPlayer={isP1Turn} label="👤 Игрок" />
+        <PlayerArea player={me} isCurrentPlayer={isP1Turn} label={mode === 'ai' ? '👤 Игрок' : '👤 Игрок 1'} />
         <DeckStack count={me.graveyard.length} type="graveyard" label="Твой сброс" />
       </div>
 

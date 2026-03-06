@@ -752,7 +752,7 @@ function Experiments({ onBack }: { onBack: () => void }) {
     `${import.meta.env.BASE_URL}experiments/${modelId}-${prompt}.jpg`;
 
   return (
-    <div className="min-h-[100dvh] bg-[#0a0a0f] flex flex-col">
+    <div className="h-[100dvh] bg-[#0a0a0f] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="shrink-0 px-4 pt-4 pb-2 bg-black/80 border-b border-[#c9a84c]/15 relative z-10">
         <div className="max-w-5xl mx-auto">
