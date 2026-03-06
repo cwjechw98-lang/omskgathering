@@ -398,7 +398,7 @@ export function StoryIntro({ onComplete }: Props) {
         <p
           className={`leading-snug tracking-wide max-h-[70vh] overflow-y-auto ${
             isLast
-              ? 'font-title text-5xl md:text-7xl lg:text-8xl text-[#f0d68a] title-glow'
+              ? 'font-title text-3xl md:text-5xl lg:text-6xl text-[#f0d68a] title-glow'
               : 'font-heading text-xl md:text-3xl lg:text-4xl text-gray-100'
           }`}
           style={
