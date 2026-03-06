@@ -53,7 +53,7 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
   if (screen === 'experiments') return <Experiments onBack={() => setScreen('menu')} />;
 
   return (
-    <div className="min-h-[100dvh] bg-[#0a0a0f] flex flex-col items-center justify-center py-8 px-4 relative overflow-y-auto">
+    <div className="h-[100dvh] bg-[#0a0a0f] flex flex-col items-center py-4 md:py-8 px-4 relative overflow-y-auto">
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_rgba(30,15,0,0.5)_0%,_rgba(5,5,10,1)_70%)]" />
       <div
         className="fixed inset-0 opacity-[0.02] pointer-events-none"
@@ -100,15 +100,15 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
         </div>
       ))}
 
-      <div className="relative z-10 flex flex-col items-center w-full max-w-md mx-auto">
-        <div className="relative flex items-center justify-center mb-4 md:mb-6 flex-shrink-0">
+      <div className="relative z-10 flex flex-col items-center w-full max-w-md mx-auto my-auto">
+        <div className="relative flex items-center justify-center mb-2 md:mb-6 flex-shrink-0">
           <div className="relative -mr-4 mt-8 hidden sm:block">
             <Torch side="left" />
           </div>
           <div className="text-center px-4 md:px-8 relative">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div
-                className="w-40 h-40 md:w-64 md:h-64 rounded-full border border-[#c9a84c]/10"
+                className="w-28 h-28 md:w-64 md:h-64 rounded-full border border-[#c9a84c]/10"
                 style={{ animation: 'runeRotate 30s linear infinite' }}
               >
                 {['🜁', '🜂', '🜃', '🜄', '⛧', '☉', '☽', '♆'].map((r, i) => (
@@ -126,12 +126,12 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
                 ))}
               </div>
             </div>
-            <div className="mb-2 md:mb-3">
-              <div className="inline-block p-2 md:p-3 rounded-full border border-[#c9a84c]/30 bg-black/60 backdrop-blur-sm">
-                <span className="text-4xl md:text-6xl emoji-float inline-block">🃏</span>
+            <div className="mb-1 md:mb-3">
+              <div className="inline-block p-1.5 md:p-3 rounded-full border border-[#c9a84c]/30 bg-black/60 backdrop-blur-sm">
+                <span className="text-3xl md:text-6xl emoji-float inline-block">🃏</span>
               </div>
             </div>
-            <h1 className="font-title text-5xl md:text-7xl lg:text-9xl tracking-wider text-gold-light title-glow select-none">
+            <h1 className="font-title text-4xl md:text-7xl lg:text-9xl tracking-wider text-gold-light title-glow select-none">
               OMSK
             </h1>
             <div className="flex items-center gap-2 md:gap-4 justify-center my-2">
@@ -153,7 +153,7 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
         </div>
 
         {/* Adaptive button container */}
-        <div className="flex flex-col gap-2 md:gap-3 w-full px-2 md:px-0 flex-shrink-0">
+        <div className="flex flex-col gap-1.5 md:gap-3 w-full px-2 md:px-0 flex-shrink-0">
           <Button
             variant="mythic"
             size="xl"
@@ -224,7 +224,7 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
           </Button>
         </div>
 
-        <div className="mt-4 md:mt-6 text-center relative z-10 flex-shrink-0 px-4">
+        <div className="mt-2 md:mt-6 text-center relative z-10 flex-shrink-0 px-4">
           <p className="font-body text-[#5a4a30] text-[10px] md:text-xs italic">
             «Ты не можешь покинуть Омск. Никто не может.»
           </p>
