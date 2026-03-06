@@ -2,6 +2,32 @@
 
 ## Session Log
 
+### 2026-03-06 — Исправление изображений + CI
+
+**Изображения в StoryIntro и LoreScreen:**
+- StoryIntro загружал картинки с `pollinations.ai` в реальном времени — заменено на локальные файлы `public/cards/lore-*.jpg` с `import.meta.env.BASE_URL`
+- LoreScreen ссылался на `lore-0.jpg`, а файлы назывались `lore-0-prolog.jpg` — исправлено маппингом имён
+- LoreScreen не использовал `BASE_URL` — пути ломались на GitHub Pages — исправлено
+
+**CI (GitHub Actions):**
+- `test:regression` использовал `powershell` (Windows-only) — CI на Ubuntu падал
+- Заменено на кроссплатформенный `node -e "require('fs').writeFileSync(...)"`
+
+**Quality Gates:**
+- `npm run lint` -> 0 errors, 7 warnings
+- `npm run test` -> 31/31 PASS
+- `npm run test:regression` -> 51/51 PASS
+- `npm run build` -> PASS (461 KB JS, 116 KB CSS)
+
+**Files Modified:**
+- `src/components/StoryIntro.tsx`: local lore images + BASE_URL
+- `src/components/MainMenu.tsx`: fixed lore filenames + BASE_URL
+- `package.json`: cross-platform test:regression script
+
+**Commit:** `f6a6346` — pushed to main, Actions deploy triggered.
+
+---
+
 ### 2026-03-05 — Исправление верстки игрового поля
 
 *   Исправлена верстка игрового поля в `GameBoard.tsx`, которая была нарушена из-за отсутствия `flex-direction: column` в основном контейнере.
