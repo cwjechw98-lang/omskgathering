@@ -313,7 +313,7 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           <div className="px-5 py-4">
-            <p className="font-body text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+            <p className="font-body text-gray-300 text-sm leading-relaxed whitespace-pre-line max-h-[60vh] overflow-y-auto">
               {WORLD_LORE[ch].text}
             </p>
           </div>
