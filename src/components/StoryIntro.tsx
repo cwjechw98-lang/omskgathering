@@ -389,7 +389,7 @@ export function StoryIntro({ onComplete }: Props) {
 
         {/* Text */}
         <p
-          className={`leading-relaxed tracking-wide ${
+          className={`leading-snug tracking-wide max-h-[70vh] overflow-y-auto ${
             isLast
               ? 'font-title text-5xl md:text-7xl lg:text-8xl text-[#f0d68a] title-glow'
               : 'font-heading text-xl md:text-3xl lg:text-4xl text-gray-100'
@@ -397,7 +397,7 @@ export function StoryIntro({ onComplete }: Props) {
           style={
             !isLast
               ? { textShadow: `0 0 20px ${theme.particleColor}30, 0 2px 4px rgba(0,0,0,0.8)` }
-              : undefined
+              : {}
           }
         >
           {current.text}

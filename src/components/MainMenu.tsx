@@ -234,11 +234,9 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
   const [ch, setCh] = useState(0);
   const [liteFx] = useState(() => detectLiteFx());
   
-  // Generate image URL from prompt
-  const getImageUrl = (prompt?: string): string | undefined => {
-    if (!prompt) return undefined;
-    const encoded = encodeURIComponent(prompt);
-    return `https://image.pollinations.ai/prompt/${encoded}?width=800&height=400&seed=${ch}&nologo=true`;
+  // Use local card images for lore chapters
+  const getLoreImageUrl = (chapterIndex: number): string => {
+    return `/cards/lore-${chapterIndex}.jpg`;
   };
 
   return (
@@ -294,17 +292,19 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
 
         <div className="bg-[#0f0f18]/90 rounded-xl border border-[#c9a84c]/15 overflow-hidden backdrop-blur-sm mb-6">
           {/* Chapter Image */}
-          {WORLD_LORE[ch].imagePrompt && (
-            <div className="relative h-48 md:h-64 overflow-hidden border-b border-[#c9a84c]/15">
-              <img
-                src={getImageUrl(WORLD_LORE[ch].imagePrompt)}
-                alt={WORLD_LORE[ch].title}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0f0f18]/90" />
-            </div>
-          )}
+          <div className="relative h-48 md:h-64 overflow-hidden border-b border-[#c9a84c]/15">
+            <img
+              src={getLoreImageUrl(ch)}
+              alt={WORLD_LORE[ch].title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={(e) => {
+                // Fallback: hide image if not found
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0f0f18]/90" />
+          </div>
           
           <div className="bg-gradient-to-r from-[#2a1a08]/60 to-transparent px-5 py-3 border-b border-[#c9a84c]/15">
             <div className="flex items-center gap-3">
