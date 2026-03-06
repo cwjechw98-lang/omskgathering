@@ -323,9 +323,16 @@ export function StoryIntro({ onComplete }: Props) {
   const isLast = step === INTRO_SEQUENCE.length - 1;
   const theme = SLIDE_THEMES[step] || SLIDE_THEMES[0];
   
-  // Generate image URL from prompt
-  const imageUrl = current.imagePrompt 
-    ? `https://image.pollinations.ai/prompt/${encodeURIComponent(current.imagePrompt)}?width=1920&height=1080&nologo=true`
+  // Local lore images mapped to intro slides (lore-0 through lore-4)
+  const LORE_IMAGE_NAMES = [
+    'lore-0-prolog',
+    'lore-1-istochniki',
+    'lore-2-ptitsa',
+    'lore-3-fraktsii',
+    'lore-4-shkola21',
+  ];
+  const imageUrl = LORE_IMAGE_NAMES[step]
+    ? `${import.meta.env.BASE_URL}cards/${LORE_IMAGE_NAMES[step]}.jpg`
     : null;
 
   return (

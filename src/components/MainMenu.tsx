@@ -235,8 +235,19 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
   const [liteFx] = useState(() => detectLiteFx());
   
   // Use local card images for lore chapters
+  const LORE_IMAGE_NAMES = [
+    'lore-0-prolog',
+    'lore-1-istochniki',
+    'lore-2-ptitsa',
+    'lore-3-fraktsii',
+    'lore-4-shkola21',
+    'lore-5-zima',
+    'lore-6-metro',
+    'lore-7-epilog',
+  ];
   const getLoreImageUrl = (chapterIndex: number): string => {
-    return `/cards/lore-${chapterIndex}.jpg`;
+    const name = LORE_IMAGE_NAMES[chapterIndex] || `lore-${chapterIndex}`;
+    return `${import.meta.env.BASE_URL}cards/${name}.jpg`;
   };
 
   return (
