@@ -44,12 +44,13 @@ function detectLiteFx(): boolean {
 }
 
 export function MainMenu({ onStartGame }: MainMenuProps) {
-  const [screen, setScreen] = useState<'menu' | 'cards' | 'rules' | 'lore'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'cards' | 'rules' | 'lore' | 'experiments'>('menu');
   const [liteFx] = useState(() => detectLiteFx());
 
   if (screen === 'cards') return <CardCollection onBack={() => setScreen('menu')} />;
   if (screen === 'rules') return <Rules onBack={() => setScreen('menu')} />;
   if (screen === 'lore') return <LoreScreen onBack={() => setScreen('menu')} />;
+  if (screen === 'experiments') return <Experiments onBack={() => setScreen('menu')} />;
 
   return (
     <div className="min-h-[100dvh] bg-[#0a0a0f] flex flex-col items-center justify-center py-8 px-4 relative overflow-y-auto">
@@ -211,6 +212,15 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
           >
             <span className="flex-shrink-0">📋</span>
             <span className="truncate">Правила Игры</span>
+          </Button>
+          <Button
+            variant="nav"
+            size="default"
+            onClick={() => setScreen('experiments')}
+            className="w-full rounded-xl bg-[#12121e] hover:bg-[#1e1e30] text-sm gap-2 py-2 md:py-2.5"
+          >
+            <span className="flex-shrink-0">🧪</span>
+            <span className="truncate">Эксперименты</span>
           </Button>
         </div>
 
@@ -711,6 +721,160 @@ function CardCollection({ onBack }: { onBack: () => void }) {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
+// EXPERIMENTS — сравнение моделей генерации
+// ═══════════════════════════════════════
+const EXPERIMENT_MODELS = [
+  { id: 'flux', name: 'Flux', tier: 'free' },
+  { id: 'flux-2-dev', name: 'Flux 2 Dev', tier: 'free' },
+  { id: 'gptimage', name: 'GPT Image', tier: 'free' },
+  { id: 'grok-imagine', name: 'Grok Imagine', tier: 'free' },
+  { id: 'klein', name: 'Klein', tier: 'free' },
+  { id: 'klein-large', name: 'Klein Large', tier: 'free' },
+  { id: 'zimage', name: 'ZImage', tier: 'free' },
+] as const;
+
+const EXPERIMENT_PROMPTS = [
+  { id: 'simple', label: 'Простой промпт', desc: 'Card art, Omsk city guardian spirit, dark fantasy' },
+  { id: 'detailed', label: 'Детальный промпт', desc: 'Detailed card illustration of an ancient Omsk guardian spirit emerging from frozen Irtysh river, dark slavic fantasy, glowing runes, winter atmosphere, 400x300' },
+] as const;
+
+function Experiments({ onBack }: { onBack: () => void }) {
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [promptType, setPromptType] = useState<'simple' | 'detailed'>('simple');
+
+  const getImageUrl = (modelId: string, prompt: string) =>
+    `${import.meta.env.BASE_URL}experiments/${modelId}-${prompt}.jpg`;
+
+  return (
+    <div className="min-h-[100dvh] bg-[#0a0a0f] flex flex-col">
+      {/* Header */}
+      <div className="shrink-0 px-4 pt-4 pb-2 bg-black/80 border-b border-[#c9a84c]/15 relative z-10">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={onBack}
+              className="text-[#8a7a5a] hover:text-[#f0d68a] font-heading text-sm transition"
+            >
+              ← Назад
+            </button>
+            <h2 className="font-title text-2xl text-gold-light title-glow">🧪 Эксперименты</h2>
+            <div className="w-16" />
+          </div>
+          <p className="text-gray-400 text-xs font-body text-center mb-3">
+            Сравнение моделей генерации изображений Pollinations API для карточного арта
+          </p>
+
+          {/* Prompt toggle */}
+          <div className="flex gap-2 justify-center mb-2">
+            {EXPERIMENT_PROMPTS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setPromptType(p.id)}
+                className={`px-3 py-1.5 rounded-lg font-heading text-xs transition-all border ${
+                  promptType === p.id
+                    ? 'bg-[#5a4010] text-[#f0d68a] border-[#c9a84c]/50'
+                    : 'bg-[#1a1a2a] text-gray-400 border-gray-800 hover:border-gray-600'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 relative z-10">
+        <div className="max-w-5xl mx-auto">
+          {/* Prompt description */}
+          <div className="bg-[#0f0f18]/90 rounded-lg border border-[#c9a84c]/10 px-4 py-2 mb-4">
+            <p className="text-[10px] text-gray-500 font-body">
+              <span className="text-[#c9a84c]/60">Промпт:</span>{' '}
+              {EXPERIMENT_PROMPTS.find((p) => p.id === promptType)?.desc}
+            </p>
+          </div>
+
+          <div
+            className="grid gap-4"
+            style={{
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 90vw), 1fr))',
+            }}
+          >
+            {EXPERIMENT_MODELS.map((model) => {
+              const isSelected = selectedModel === model.id;
+              return (
+                <div
+                  key={model.id}
+                  onClick={() => setSelectedModel(isSelected ? null : model.id)}
+                  className={`cursor-pointer transition-all duration-300 rounded-xl border overflow-hidden ${
+                    isSelected
+                      ? 'border-[#c9a84c]/60 ring-2 ring-[#c9a84c]/30 scale-[1.02]'
+                      : 'border-gray-700/50 hover:border-gray-600/60 hover:scale-[1.01]'
+                  }`}
+                >
+                  {/* Image */}
+                  <div className="relative aspect-[4/3] bg-[#1a1a2a] overflow-hidden">
+                    <img
+                      src={getImageUrl(model.id, promptType)}
+                      alt={`${model.name} — ${promptType}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        if (target.nextElementSibling) {
+                          (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                    />
+                    <div
+                      className="absolute inset-0 items-center justify-center text-gray-600 text-sm font-body"
+                      style={{ display: 'none' }}
+                    >
+                      Изображение не найдено
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent h-12" />
+                  </div>
+
+                  {/* Info */}
+                  <div className="bg-[#0f0f18] px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-heading text-white text-sm">{model.name}</span>
+                      <span className="text-[10px] font-body text-green-400/70 bg-green-900/20 px-2 py-0.5 rounded">
+                        {model.tier}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Expanded detail */}
+                  {isSelected && (
+                    <div className="bg-[#0a0a14] px-4 py-3 border-t border-gray-800/50">
+                      <div className="grid grid-cols-2 gap-2">
+                        {EXPERIMENT_PROMPTS.map((p) => (
+                          <div key={p.id} className="text-center">
+                            <img
+                              src={getImageUrl(model.id, p.id)}
+                              alt={`${model.name} — ${p.label}`}
+                              className="w-full rounded-lg border border-gray-700/30 mb-1"
+                              loading="lazy"
+                            />
+                            <span className="text-[10px] text-gray-500 font-body">{p.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
