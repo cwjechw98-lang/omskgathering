@@ -26,6 +26,15 @@
 
 **Commit:** `f6a6346` — pushed to main, Actions deploy triggered.
 
+**Скачивание реальных изображений:**
+- Обнаружено что 8 lore-файлов и 5 карточных файлов были пустышками (0 байт) — квен создал файлы но не скачал картинки
+- Скачано 8 lore-изображений через `gen.pollinations.ai` API (38-77KB каждое): prolog, istochniki, ptitsa, fraktsii, shkola21, zima, metro, epilog
+- Скачано 5 карточных изображений: biblioteka_omgtu, rosgvardiya, posledniy_argument, uskorennyy_rost, nalogovaya_inspektsiya
+- Уменьшен шрифт последнего слайда StoryIntro (5xl-8xl → 3xl-6xl) для устранения лишних отступов
+- Ноль пустых файлов после фикса
+
+**Commit:** `8648c31` — pushed to main, deploy triggered.
+
 ---
 
 ### 2026-03-05 — Исправление верстки игрового поля
