@@ -322,12 +322,30 @@ export function StoryIntro({ onComplete }: Props) {
   const current = INTRO_SEQUENCE[step];
   const isLast = step === INTRO_SEQUENCE.length - 1;
   const theme = SLIDE_THEMES[step] || SLIDE_THEMES[0];
+  
+  // Generate image URL from prompt
+  const imageUrl = current.imagePrompt 
+    ? `https://image.pollinations.ai/prompt/${encodeURIComponent(current.imagePrompt)}?width=1920&height=1080&nologo=true`
+    : null;
 
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
       style={{ background: theme.bg }}
     >
+      {/* Background Image */}
+      {imageUrl && (
+        <div className="absolute inset-0 z-0">
+          <img
+            src={imageUrl}
+            alt={current.text}
+            className="w-full h-full object-cover opacity-40"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+        </div>
+      )}
+      
       {/* Canvas effects layer */}
       <canvas
         ref={canvasRef}

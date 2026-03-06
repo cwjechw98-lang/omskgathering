@@ -279,9 +279,29 @@ export function getAILoreComment(cardId: string): string {
 
 // ─── INTRO SEQUENCE ───
 export const INTRO_SEQUENCE = [
-  { emoji: '🌑', text: 'Омск. 2026 год.' },
-  { emoji: '🏛️', text: 'Пять Источников Маны пробуждаются...' },
-  { emoji: '🐦', text: 'Птица-Омич кружит над городом...' },
-  { emoji: '⚔️', text: 'Маги собираются на битву...' },
-  { emoji: '🚫', text: 'Ты не можешь покинуть Омск.' },
+  { 
+    emoji: '🌑', 
+    text: 'Омск. 2026 год.',
+    imagePrompt: 'dark omsk city skyline 2026, night, ominous atmosphere, cinematic'
+  },
+  { 
+    emoji: '🏛️', 
+    text: 'Пять Источников Маны пробуждаются...',
+    imagePrompt: 'five magical crystal sources glowing underground, mystical energy, fantasy art'
+  },
+  { 
+    emoji: '🐦', 
+    text: 'Птица-Омич кружит над городом...',
+    imagePrompt: 'glowing magical crow bird circling over dark city, prophetic vision'
+  },
+  { 
+    emoji: '⚔️', 
+    text: 'Маги собираются на битву...',
+    imagePrompt: 'mages gathering for battle, magical energy, dark fantasy'
+  },
+  { 
+    emoji: '🚫', 
+    text: 'Ты не можешь покинуть Омск.',
+    imagePrompt: 'giant magical bird blocking city exit, no escape, ominous warning'
+  },
 ];
