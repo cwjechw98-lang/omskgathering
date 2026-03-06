@@ -251,15 +251,16 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#0a0a0f] relative overflow-y-auto">
+    <div className="h-[100dvh] bg-[#0a0a0f] relative flex flex-col overflow-hidden">
       <ParticleCanvas
         type="magic"
         density={liteFx ? 12 : 22}
         className="fixed inset-0"
         interactive={false}
       />
-      <div className="max-w-3xl mx-auto p-4 pb-12 relative z-10">
-        <div className="flex items-center justify-between mb-6">
+      {/* Fixed header */}
+      <div className="shrink-0 max-w-3xl w-full mx-auto px-4 pt-4 relative z-10">
+        <div className="flex items-center justify-between mb-3">
           <button
             onClick={onBack}
             className="text-[#8a7a5a] hover:text-[#f0d68a] font-heading text-sm transition"
@@ -270,27 +271,12 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
           <div className="w-16" />
         </div>
 
-        <div className="bg-gradient-to-r from-[#1a1508]/80 to-[#0f0f18]/80 rounded-xl border border-[#c9a84c]/20 p-5 mb-6 backdrop-blur-sm">
-          <div className="flex items-start gap-4">
-            <div className="text-5xl shrink-0 emoji-float inline-block">
-              {AI_CHARACTER.avatarEmoji}
-            </div>
-            <div>
-              <h3 className="font-heading text-lg text-[#f0d68a]">{AI_CHARACTER.name}</h3>
-              <p className="text-xs text-[#8a7a5a] mb-2 font-body">{AI_CHARACTER.title}</p>
-              <p className="text-sm text-gray-300 leading-relaxed font-body">
-                {AI_CHARACTER.backstory}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {WORLD_LORE.map((c, i) => (
             <button
               key={i}
               onClick={() => setCh(i)}
-              className={`px-3 py-1.5 rounded-lg font-heading text-xs transition-all ${
+              className={`px-2.5 py-1 rounded-lg font-heading text-xs transition-all ${
                 ch === i
                   ? 'bg-[#5a4010] text-[#f0d68a] border border-[#c9a84c]/50'
                   : 'bg-[#1a1a2a] text-gray-500 hover:text-gray-300 border border-gray-800'
@@ -300,52 +286,56 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
             </button>
           ))}
         </div>
+      </div>
 
-        <div className="bg-[#0f0f18]/90 rounded-xl border border-[#c9a84c]/15 overflow-hidden backdrop-blur-sm mb-6">
-          {/* Chapter Image */}
-          <div className="relative h-48 md:h-64 overflow-hidden border-b border-[#c9a84c]/15">
-            <img
-              src={getLoreImageUrl(ch)}
-              alt={WORLD_LORE[ch].title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              onError={(e) => {
-                // Fallback: hide image if not found
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0f0f18]/90" />
-          </div>
-          
-          <div className="bg-gradient-to-r from-[#2a1a08]/60 to-transparent px-5 py-3 border-b border-[#c9a84c]/15">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">{WORLD_LORE[ch].emoji}</span>
-              <h3 className="font-heading text-lg text-[#f0d68a]">{WORLD_LORE[ch].title}</h3>
+      {/* Scrollable content */}
+      <div className="flex-1 min-h-0 overflow-y-auto relative z-10">
+        <div className="max-w-3xl mx-auto px-4 pb-6">
+          <div className="bg-[#0f0f18]/90 rounded-xl border border-[#c9a84c]/15 overflow-hidden backdrop-blur-sm">
+            {/* Chapter Image */}
+            <div className="relative h-40 md:h-56 overflow-hidden border-b border-[#c9a84c]/15">
+              <img
+                src={getLoreImageUrl(ch)}
+                alt={WORLD_LORE[ch].title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0f0f18]/90" />
             </div>
-          </div>
-          <div className="px-5 py-4">
-            <p className="font-body text-gray-300 text-sm leading-relaxed whitespace-pre-line max-h-[60vh] overflow-y-auto">
-              {WORLD_LORE[ch].text}
-            </p>
-          </div>
-          <div className="flex justify-between px-5 py-3 border-t border-[#c9a84c]/10">
-            <button
-              onClick={() => setCh(Math.max(0, ch - 1))}
-              disabled={ch === 0}
-              className={`font-heading text-xs px-3 py-1 rounded transition ${ch === 0 ? 'text-gray-700' : 'text-[#c9a84c] hover:bg-[#1a1508]'}`}
-            >
-              ← Назад
-            </button>
-            <span className="text-gray-600 text-xs font-heading">
-              {ch + 1} / {WORLD_LORE.length}
-            </span>
-            <button
-              onClick={() => setCh(Math.min(WORLD_LORE.length - 1, ch + 1))}
-              disabled={ch === WORLD_LORE.length - 1}
-              className={`font-heading text-xs px-3 py-1 rounded transition ${ch === WORLD_LORE.length - 1 ? 'text-gray-700' : 'text-[#c9a84c] hover:bg-[#1a1508]'}`}
-            >
-              Далее →
-            </button>
+
+            <div className="bg-gradient-to-r from-[#2a1a08]/60 to-transparent px-5 py-2.5 border-b border-[#c9a84c]/15">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{WORLD_LORE[ch].emoji}</span>
+                <h3 className="font-heading text-lg text-[#f0d68a]">{WORLD_LORE[ch].title}</h3>
+              </div>
+            </div>
+            <div className="px-5 py-4">
+              <p className="font-body text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                {WORLD_LORE[ch].text}
+              </p>
+            </div>
+            <div className="flex justify-between px-5 py-3 border-t border-[#c9a84c]/10">
+              <button
+                onClick={() => setCh(Math.max(0, ch - 1))}
+                disabled={ch === 0}
+                className={`font-heading text-xs px-3 py-1 rounded transition ${ch === 0 ? 'text-gray-700' : 'text-[#c9a84c] hover:bg-[#1a1508]'}`}
+              >
+                ← Назад
+              </button>
+              <span className="text-gray-600 text-xs font-heading">
+                {ch + 1} / {WORLD_LORE.length}
+              </span>
+              <button
+                onClick={() => setCh(Math.min(WORLD_LORE.length - 1, ch + 1))}
+                disabled={ch === WORLD_LORE.length - 1}
+                className={`font-heading text-xs px-3 py-1 rounded transition ${ch === WORLD_LORE.length - 1 ? 'text-gray-700' : 'text-[#c9a84c] hover:bg-[#1a1508]'}`}
+              >
+                Далее →
+              </button>
+            </div>
           </div>
         </div>
       </div>
