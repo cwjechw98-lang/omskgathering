@@ -1153,6 +1153,11 @@
 - Fire: 5 spark частиц при смерти
 - Poison: 5 bubble частиц при смерти
 
+#### ecf19e5 — Stat change floating numbers
+- Показывает урон в виде цифр, летящих к иконке здоровья
+- Класс `health-loss` для красного цвета и анимации
+- Автоматически триггерится при атаке на существо
+
 ### Quality Gates
 - ✅ `npm run lint`: 0 errors, 7 warnings (pre-existing)
 - ✅ `npm run build`: Success
