@@ -12,6 +12,7 @@ export type GameMessage = {
 
 let msgIdCounter = 0;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useMessageFeed() {
   const [messages, setMessages] = useState<GameMessage[]>([]);
   const mountedRef = useRef(true);

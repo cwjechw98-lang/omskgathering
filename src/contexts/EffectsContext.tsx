@@ -67,6 +67,7 @@ export function EffectsProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useEffects() {
   const context = useContext(EffectsContext);
   if (context === undefined) {

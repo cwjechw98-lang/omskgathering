@@ -92,6 +92,7 @@
   display: grid;
   height: 100dvh;
   width: 100%;
+  max-width: 100vw;
   overflow: hidden;
   position: relative;
 
@@ -188,6 +189,8 @@
 /* Prevent grid items from expanding */
 .game-grid > * {
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Subtle zone backgrounds */
@@ -1101,6 +1104,75 @@ body {
   :root {
     --field-card-w: clamp(62px, 16vw, 92px);
     --hand-card-w: clamp(58px, 14vw, 88px);
+  }
+}
+
+/* ═══ MOBILE RESPONSIVE FIXES (≤480px) ═══ */
+@media (max-width: 480px) {
+  :root {
+    --field-card-w: clamp(44px, 11vw, 62px);
+    --hand-card-w: clamp(42px, 10vw, 58px);
+  }
+
+  .board-zone {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 2px;
+    padding: 2px 4px;
+    overflow-x: hidden;
+  }
+
+  .creature-slot {
+    width: 100%;
+  }
+
+  .hero-zone-row {
+    gap: 4px;
+    padding: 0 4px;
+    flex-wrap: wrap;
+    overflow: hidden;
+  }
+
+  .divider-hint {
+    display: none;
+  }
+
+  .center-divider {
+    gap: 4px;
+    padding: 0 4px;
+  }
+
+  /* Touch targets — minimum 44px */
+  .zone-topbar button,
+  .zone-topbar a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .zone-actionbar button {
+    min-height: 44px;
+  }
+
+  .hero-zone-row button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* End turn button touch target */
+  .end-turn-btn {
+    min-height: 44px;
+  }
+
+  /* Modal close button touch target */
+  [aria-label="Close"],
+  button[class*="close"],
+  .modal-close-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .zone-hand {
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 }
 
