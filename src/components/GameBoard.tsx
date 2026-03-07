@@ -75,6 +75,17 @@ const COLOR_ART: Record<string, string> = {
   colorless: 'card-art-colorless',
 };
 
+type ElementType = 'fire' | 'ice' | 'poison' | 'explosion' | 'neutral';
+function getCardElement(card: CardInstance): ElementType {
+  const id = card.data.id;
+  if (id.includes('vzryv') || id.includes('bomb') || id.includes('posledniy_argument'))
+    return 'explosion';
+  if (card.data.color === 'red') return 'fire';
+  if (card.data.color === 'blue' || card.data.keywords?.includes('hexproof')) return 'ice';
+  if (card.data.color === 'black' || card.data.keywords?.includes('deathtouch')) return 'poison';
+  return 'neutral';
+}
+
 /* ═══════════════════════════════════════════
    UNIFIED MESSAGE SYSTEM
    ═══════════════════════════════════════════ */
@@ -837,6 +848,8 @@ export function GameBoard({ mode, onBack }: Props) {
   const [damageNumbers, setDamageNumbers] = useState<
     Array<{ id: number; value: number; x: number; y: number; type: 'damage' | 'heal' | 'buff' }>
   >([]);
+  const [screenShake, setScreenShake] = useState(false);
+  const [explosionFlash, setExplosionFlash] = useState(false);
   const targetingLineState = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
   const setTargetingLine = targetingLineState[1];
   const attackAnimTimerRef = useRef<number | null>(null);
@@ -1213,6 +1226,16 @@ export function GameBoard({ mode, onBack }: Props) {
           const rect = defenderRef.getBoundingClientRect();
           showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage');
         }
+        // Trigger elemental effects
+        const attackerElement = getCardElement(attackerCard);
+        if (attackerElement === 'explosion') {
+          setScreenShake(true);
+          setExplosionFlash(true);
+          setTimeout(() => {
+            setScreenShake(false);
+            setExplosionFlash(false);
+          }, 400);
+        }
         setGs(next);
         addMessage(
           'action',
@@ -1243,6 +1266,16 @@ export function GameBoard({ mode, onBack }: Props) {
       if (enemyHeroElement) {
         const rect = enemyHeroElement.getBoundingClientRect();
         showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage');
+      }
+      // Trigger elemental effects
+      const attackerElement = getCardElement(attackerCard);
+      if (attackerElement === 'explosion') {
+        setScreenShake(true);
+        setExplosionFlash(true);
+        setTimeout(() => {
+          setScreenShake(false);
+          setExplosionFlash(false);
+        }, 400);
       }
       setGs(next);
       addMessage(
@@ -1310,7 +1343,8 @@ export function GameBoard({ mode, onBack }: Props) {
   ];
 
   return (
-    <div className="game-grid" onClick={clickBF}>
+    <div className={`game-grid ${screenShake ? 'effect-screen-shake' : ''}`} onClick={clickBF}>
+      {explosionFlash && <div className="explosion-flash" />}
       {/* TOP BAR */}
       <div className="zone-topbar">
         <div className="flex items-center gap-3">

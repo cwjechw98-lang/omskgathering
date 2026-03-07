@@ -92,7 +92,7 @@ export function FieldCard({
     <div
       ref={cardRef}
       onClick={onClick}
-      className={`card-frame card-in-field relative overflow-hidden transition-all duration-200 ${borderCls} ${attackAnim ? 'card-attack-animation' : ''} ${damageAnim ? 'card-damage-animation' : ''}`}
+      className={`card-frame card-in-field relative overflow-hidden transition-all duration-200 ${borderCls} ${attackAnim ? 'card-attack-animation' : ''} ${damageAnim ? 'card-damage-animation' : ''} ${frozen ? 'effect-frozen' : ''}`}
       style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)' }}
       title={`${card.data.name}\n${card.data.description}\n⚔${atk} ❤${hp}`}
     >

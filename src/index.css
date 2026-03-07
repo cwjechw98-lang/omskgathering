@@ -2105,6 +2105,134 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
+   ELEMENTAL EFFECTS — freeze/fire/poison/explosion/buff
+   ═══════════════════════════════════════════════════════ */
+
+/* --- Freeze: icy mist particles rising from card --- */
+@keyframes iceMistRise {
+  0% { transform: translateY(0) scale(1); opacity: 0.7; }
+  100% { transform: translateY(-30px) scale(1.5); opacity: 0; }
+}
+@keyframes iceShimmer {
+  0%, 100% { box-shadow: inset 0 0 8px rgba(100, 200, 255, 0.2), 0 0 12px rgba(100, 200, 255, 0.15); }
+  50% { box-shadow: inset 0 0 16px rgba(100, 200, 255, 0.4), 0 0 24px rgba(100, 200, 255, 0.3); }
+}
+.effect-frozen {
+  animation: iceShimmer 2s ease-in-out infinite;
+  position: relative;
+}
+.effect-frozen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(100, 200, 255, 0.08) 0%, rgba(100, 200, 255, 0.15) 100%);
+  pointer-events: none;
+  border-radius: inherit;
+}
+.ice-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(circle, rgba(180, 220, 255, 0.9) 0%, rgba(100, 180, 255, 0.4) 60%, transparent 100%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: iceMistRise 1.5s ease-out forwards;
+}
+
+/* --- Fire: burn on kill with sparks --- */
+@keyframes fireBurn {
+  0% { filter: brightness(1) saturate(1); box-shadow: 0 0 0 transparent; }
+  20% { filter: brightness(1.8) saturate(1.5); box-shadow: 0 0 30px rgba(255, 100, 0, 0.8), inset 0 0 20px rgba(255, 50, 0, 0.5); }
+  60% { filter: brightness(0.5) saturate(0.3); box-shadow: 0 0 40px rgba(255, 60, 0, 0.6); }
+  100% { filter: brightness(0) saturate(0); box-shadow: 0 0 0 transparent; opacity: 0; transform: scale(0.8); }
+}
+@keyframes fireSpark {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--spark-x, 20px), var(--spark-y, -40px)) scale(0); opacity: 0; }
+}
+.effect-fire-death {
+  animation: fireBurn 0.7s ease-in forwards;
+}
+.fire-spark {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: radial-gradient(circle, #ffee00 0%, #ff6600 60%, transparent 100%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: fireSpark 0.5s ease-out forwards;
+}
+
+/* --- Poison: green dissolve on kill --- */
+@keyframes poisonDissolve {
+  0% { filter: hue-rotate(0deg) brightness(1); opacity: 1; }
+  30% { filter: hue-rotate(80deg) brightness(1.2); opacity: 0.9; }
+  100% { filter: hue-rotate(120deg) brightness(0.3); opacity: 0; transform: scale(0.7) rotate(5deg); }
+}
+.effect-poison-death {
+  animation: poisonDissolve 0.6s ease-in forwards;
+}
+.poison-bubble {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, rgba(80, 255, 80, 0.8) 0%, rgba(0, 180, 0, 0.3) 70%, transparent 100%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: iceMistRise 1.2s ease-out forwards;
+}
+
+/* --- Explosion: screen shake --- */
+@keyframes explosionShake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-8px, 4px); }
+  20% { transform: translate(8px, -6px); }
+  30% { transform: translate(-6px, -4px); }
+  40% { transform: translate(6px, 6px); }
+  50% { transform: translate(-4px, 2px); }
+  60% { transform: translate(4px, -2px); }
+  70% { transform: translate(-2px, 4px); }
+  80% { transform: translate(2px, -2px); }
+}
+.effect-screen-shake {
+  animation: explosionShake 0.4s ease-out;
+}
+@keyframes explosionFlash {
+  0% { opacity: 0; }
+  15% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+.explosion-flash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255, 200, 50, 0.5) 0%, rgba(255, 100, 0, 0.3) 40%, transparent 70%);
+  pointer-events: none;
+  z-index: var(--z-overlay);
+  animation: explosionFlash 0.4s ease-out forwards;
+}
+
+/* --- Stat change: floating number toward stat icon --- */
+@keyframes statFloatToIcon {
+  0% { transform: translate(0, 0) scale(1.3); opacity: 1; }
+  70% { transform: translate(var(--float-x, 0px), var(--float-y, -20px)) scale(0.8); opacity: 0.8; }
+  100% { transform: translate(var(--float-x, 0px), var(--float-y, -20px)) scale(0.5); opacity: 0; }
+}
+.stat-change-float {
+  position: absolute;
+  font-family: var(--font-heading);
+  font-weight: bold;
+  pointer-events: none;
+  z-index: var(--z-combat-effects);
+  text-shadow: 0 0 8px currentColor, 0 2px 4px rgba(0,0,0,0.8);
+  animation: statFloatToIcon 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.stat-change-float.attack-buff { color: #ff4444; --float-x: -15px; --float-y: 10px; }
+.stat-change-float.attack-debuff { color: #ff6666; --float-x: -15px; --float-y: 10px; }
+.stat-change-float.health-buff { color: #44ff44; --float-x: 15px; --float-y: 10px; }
+.stat-change-float.health-debuff { color: #ff4444; --float-x: 15px; --float-y: 10px; }
+.stat-change-float.health-loss { color: #ff2222; font-size: clamp(14px, 2vw, 24px); --float-y: -25px; }
+
+/* ═══════════════════════════════════════════════════════
    MODAL OVERLAY — for choose/discover/look modes (Stage 7)
    ═══════════════════════════════════════════════════════ */
 .modal-overlay {
