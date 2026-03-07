@@ -16,7 +16,8 @@ Thumbs.db
 .env.*.local
 !.env.example
 .claude/
-".test-results"  
-".agent/"  
-".agent/"  
-"agent-mcp/"  
+.test-results
+
+# Agent tools (local only)
+.agent/
+agent-mcp/
