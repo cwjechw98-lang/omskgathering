@@ -12,6 +12,7 @@
  */
 
 const fs = require('fs');
+const fsSync = require('fs');
 const path = require('path');
 const https = require('https');
 
@@ -268,8 +269,18 @@ async function generateAllImages() {
   
   for (let i = 0; i < cards.length; i++) {
     const card = cards[i];
-    const prompt = generateGrokPrompt(card);
     const outputFile = path.join(outputDir, `${card.id}.jpg`);
+    
+    // Skip if already generated
+    if (fsSync.existsSync(outputFile)) {
+      const stats = fsSync.statSync(outputFile);
+      if (stats.size > 10000) { // Skip if file is substantial (>10KB)
+        console.log(`[${i + 1}/${cards.length}] ${card.name} (${card.id}) - ✅ Already generated, skipping\n`);
+        continue;
+      }
+    }
+    
+    const prompt = generateGrokPrompt(card);
     const imageUrl = buildPollinationsUrl(prompt);
     
     console.log(`[${i + 1}/${cards.length}] ${card.name} (${card.id})`);
