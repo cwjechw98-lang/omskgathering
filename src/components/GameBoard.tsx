@@ -848,6 +848,9 @@ export function GameBoard({ mode, onBack }: Props) {
   const [damageNumbers, setDamageNumbers] = useState<
     Array<{ id: number; value: number; x: number; y: number; type: 'damage' | 'heal' | 'buff' }>
   >([]);
+  const [statFloats, setStatFloats] = useState<
+    Array<{ id: number; value: string; x: number; y: number; className: string }>
+  >([]);
   const [screenShake, setScreenShake] = useState(false);
   const [explosionFlash, setExplosionFlash] = useState(false);
   const [dyingCards, setDyingCards] = useState<Set<string>>(new Set());
@@ -1022,6 +1025,15 @@ export function GameBoard({ mode, onBack }: Props) {
       const id = Date.now() + Math.random();
       setDamageNumbers((prev) => [...prev, { id, value, x, y, type }]);
       setTimeout(() => setDamageNumbers((prev) => prev.filter((dn) => dn.id !== id)), 800);
+    },
+    []
+  );
+
+  const showStatChange = useCallback(
+    (value: string, x: number, y: number, className: string) => {
+      const id = Date.now() + Math.random();
+      setStatFloats((prev) => [...prev, { id, value, x, y, className }]);
+      setTimeout(() => setStatFloats((prev) => prev.filter((sf) => sf.id !== id)), 800);
     },
     []
   );
@@ -1238,6 +1250,13 @@ export function GameBoard({ mode, onBack }: Props) {
         if (defenderRef) {
           const rect = defenderRef.getBoundingClientRect();
           showDamageNumber(atk, rect.left + rect.width / 2, rect.top + rect.height / 2, 'damage');
+          // Show health loss floating to health icon
+          showStatChange(
+            `-${atk}`,
+            rect.left + rect.width / 2 + 20,
+            rect.top + rect.height / 2,
+            'health-loss'
+          );
         }
         // Trigger elemental effects
         const attackerElement = getCardElement(attackerCard);
@@ -1619,6 +1638,17 @@ export function GameBoard({ mode, onBack }: Props) {
       {damageNumbers.map((dn) => (
         <div key={dn.id} className={`damage-number ${dn.type}`} style={{ left: dn.x, top: dn.y }}>
           {dn.value}
+        </div>
+      ))}
+
+      {/* STAT CHANGE FLOATS */}
+      {statFloats.map((sf) => (
+        <div
+          key={sf.id}
+          className={`stat-change-float ${sf.className}`}
+          style={{ left: sf.x, top: sf.y }}
+        >
+          {sf.value}
         </div>
       ))}
 

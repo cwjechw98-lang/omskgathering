@@ -1068,41 +1068,41 @@
 
 &nbsp;    
 
-❯ ..                                                                                   
+❯ ..
 
-● 🌱 @bonsai: routing to stealth (free premium model).                             
+● 🌱 @bonsai: routing to stealth (free premium model).
 
-&nbsp;                                                                                  
+&nbsp;
 
-● Продолжаю. Добавлю state для эффектов и подключу к боевой логике.                                                                                                   
+● Продолжаю. Добавлю state для эффектов и подключу к боевой логике.
 
-● Update(src\\components\\GameBoard.tsx)                                             
+● Update(src\\components\\GameBoard.tsx)
 
-&nbsp; ⎿  Added 9 lines                                                                       848    const \[damageNumbers, setDamageNumbers] = useState<                   
+&nbsp; ⎿  Added 9 lines                                                                       848    const \[damageNumbers, setDamageNumbers] = useState<
 
-&nbsp;     849      Array<{ id: number; value: number; x: number; y: number;                       type: 'damage' | 'heal' | 'buff' }>                                     
+&nbsp;     849      Array<{ id: number; value: number; x: number; y: number;                       type: 'damage' | 'heal' | 'buff' }>
 
-&nbsp;     850    >(\[]);                                                                      851 +  const \[screenShake, setScreenShake] = useState(false);                
+&nbsp;     850    >(\[]);                                                                      851 +  const \[screenShake, setScreenShake] = useState(false);
 
-&nbsp;     852 +  const \[explosionFlash, setExplosionFlash] = useState(false);                853 +  const \[iceParticles, setIceParticles] = useState<Array<{ id:          
+&nbsp;     852 +  const \[explosionFlash, setExplosionFlash] = useState(false);                853 +  const \[iceParticles, setIceParticles] = useState<Array<{ id:
 
-&nbsp;         +number; x: number; y: number }>>(                                       
+&nbsp;         +number; x: number; y: number }>>(
 
-&nbsp;     854 +    \[]                                                                  
+&nbsp;     854 +    \[]
 
 &nbsp;     855 +  );
 
-&nbsp;     856 +  const \[deathElement, setDeathElement] =                               
+&nbsp;     856 +  const \[deathElement, setDeathElement] =
 
-&nbsp;         +useState<ElementType>('neutral');                                       
+&nbsp;         +useState<ElementType>('neutral');
 
-&nbsp;     857 +  const \[statChanges, setStatChanges] = useState<                       
+&nbsp;     857 +  const \[statChanges, setStatChanges] = useState<
 
-&nbsp;     858 +    Array<{ id: number; x: number; y: number; value: string;            
+&nbsp;     858 +    Array<{ id: number; x: number; y: number; value: string;
 
-&nbsp;         +className: string }>                                                    
+&nbsp;         +className: string }>
 
-&nbsp;     859 +  >(\[]);                                                                
+&nbsp;     859 +  >(\[]);
 
 &nbsp;     860    const targetingLineState = useState<{ startX: number; startY:
 
@@ -1112,12 +1112,61 @@
 
 &nbsp;     862    const attackAnimTimerRef = useRef<number | null>(null);
 
-&nbsp; ⎿  API Error: 400 You have exceeded your daily token limit. You can resume at 
+&nbsp; ⎿  API Error: 400 You have exceeded your daily token limit. You can resume at
 
 &nbsp;    2026-03-08 00:00 UTC.
 
-&nbsp;   
+&nbsp;
 
+## ✅ Выполнено (сессия 2026-03-07)
+
+### MCP Server Setup
+- ✅ Agent-MCP server installed and running on `http://localhost:8080/sse`
+- ✅ Python dependencies installed
+- ✅ Server configured for project directory
+
+### UI фиксы (коммит d963899)
+1. **CardPreview центрирование** — превью карты теперь по центру экрана
+2. **Hint visibility** — текст подсказки под center-divider
+3. **Hand cards z-index** — карты в руке над action-bar
+4. **Turn banner центрирование** — баннер "Ход Хранителя" по центру
+
+### Эффекты боя (коммиты ef8941e..863a0db)
+
+#### ef8941e — Базовая система эффектов
+- CSS анимации: freeze/fire/poison/explosion/stat change
+- Screen shake + flash для взрывов
+- Ice shimmer для замороженных карт
+
+#### c7816d3 — Эффекты смерти по элементам
+- Определение элемента атакующего (fire/ice/poison/explosion)
+- Применение death effect к умирающей карте
+- Fire death: сгорание с искрами
+- Poison death: зелёное растворение с пузырями
+- Ice death: заморозка
+
+#### 11d5eb7 — Ice particles на замороженных картах
+- 5 ice particles с анимацией подъёма
+- Каскадная анимация с задержками
+
+#### 863a0db — Fire sparks и poison bubbles
+- Fire: 5 spark частиц при смерти
+- Poison: 5 bubble частиц при смерти
+
+### Quality Gates
+- ✅ `npm run lint`: 0 errors, 7 warnings (pre-existing)
+- ✅ `npm run build`: Success
+- ✅ `npm run test`: 31/31 tests passing
+
+### Запушено в GitHub
+- https://github.com/cwjechw98-lang/omskgathering/commits/main
+
+## 🔄 Следующие задачи
+
+1. **Генерация изображений Grok Imagine** — замена всех карт на новые изображения
+2. **Stat change floating numbers** — цифры урона/лечения летят к иконкам
+3. **Ice particles от frozen карт каждый turn** — автоматическая генерация
+4. **Улучшение AI анимаций** — timing и последовательности
 ❯ /exit                                                                            
 
 &nbsp; ⎿  Goodbye!                                    
