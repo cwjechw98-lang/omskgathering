@@ -14,7 +14,6 @@ import {
   attackCreature,
   endTurn,
   getEffectiveAttack,
-  getEffectiveHealth,
 } from '../game/engine';
 import { aiTurn } from '../game/ai';
 import {
@@ -35,45 +34,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
 import { CardPreview } from './game/CardPreview';
+import { FieldCard, COLOR_ART } from './game/FieldCard';
 import { ModalOverlay } from './ui/modal-overlay';
+import { Tutorial } from './game/Tutorial';
+import { PhaseIndicator } from './game/PhaseIndicator';
 
 interface Props {
   mode: 'ai' | 'local' | 'online';
   onBack: () => void;
 }
-
-const KW: Record<string, string> = {
-  haste: '⚡ Ускорение',
-  defender: '🛡️ Защитник',
-  flying: '🕊️ Полёт',
-  trample: '🦶 Растоптать',
-  lifelink: '💖 Привязка к жизни',
-  deathtouch: '☠️ Смерт. касание',
-  vigilance: '👁️ Бдительность',
-  first_strike: '⚡ Первый удар',
-  hexproof: '🔒 Порчеустойчивость',
-  unblockable: '👻 Неблокируемый',
-};
-const KWS: Record<string, string> = {
-  haste: '⚡',
-  defender: '🛡️',
-  flying: '🕊️',
-  trample: '🦶',
-  lifelink: '💖',
-  deathtouch: '☠️',
-  vigilance: '👁️',
-  first_strike: '⚡',
-  hexproof: '🔒',
-  unblockable: '👻',
-};
-const COLOR_ART: Record<string, string> = {
-  white: 'card-art-white',
-  blue: 'card-art-blue',
-  black: 'card-art-black',
-  red: 'card-art-red',
-  green: 'card-art-green',
-  colorless: 'card-art-colorless',
-};
 
 type ElementType = 'fire' | 'ice' | 'poison' | 'explosion' | 'neutral';
 function getCardElement(card: CardInstance): ElementType {
@@ -404,25 +373,6 @@ function PlayerArea({
 }
 
 /* ═══ CARD CONTAINERS ═══ */
-function CardSlot({
-  className,
-  children,
-  style,
-}: {
-  className?: string;
-  children: ReactNode;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div
-      className={cn('relative shrink-0', className)}
-      style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)', ...style }}
-    >
-      {children}
-    </div>
-  );
-}
-
 function CardContainer({
   className,
   children,
@@ -446,202 +396,6 @@ function CardContainer({
 function CardVisual({ className, children }: { className?: string; children: ReactNode }) {
   return (
     <UICard className={cn('relative w-full h-full overflow-hidden', className)}>{children}</UICard>
-  );
-}
-
-/* ═══ FIELD CARD ═══ */
-function FieldCard({
-  card,
-  player,
-  opponent,
-  selected,
-  isTarget,
-  canAct,
-  attackAnim,
-  damageAnim,
-  onClick,
-  cardRef,
-}: {
-  card: CardInstance;
-  player: GameState['player1'];
-  opponent?: GameState['player1'];
-  selected?: boolean;
-  isTarget?: boolean;
-  canAct?: boolean;
-  attackAnim?: boolean;
-  damageAnim?: boolean;
-  onClick?: () => void;
-  cardRef?: (el: HTMLDivElement | null) => void;
-}) {
-  const atk = getEffectiveAttack(card, player, opponent);
-  const hp = getEffectiveHealth(card, player);
-  const frozen = card.frozen > 0;
-  const sick = card.summoningSickness;
-  const attacked = card.hasAttacked;
-  const art = getCardCoverSources(card.data);
-
-  return (
-    <CardSlot>
-      <CardContainer
-        ref={cardRef}
-        onClick={onClick}
-        className={cn(
-          'card-container card-field-container cursor-pointer',
-          selected && 'ring-2 ring-yellow-400 shadow-yellow-400/50 shadow-lg scale-105',
-          isTarget &&
-            'ring-2 ring-red-500 shadow-red-500/40 shadow-lg animate-pulse cursor-crosshair',
-          canAct && 'ring-2 ring-green-400/70 shadow-green-400/30 shadow-md hover:scale-105',
-          frozen && 'ring-1 ring-cyan-400/50 opacity-70',
-          !selected &&
-            !isTarget &&
-            !canAct &&
-            !frozen &&
-            'ring-1 ring-gray-600/40 hover:ring-gray-400/60',
-          attackAnim && 'card-attack-animation',
-          damageAnim && 'card-damage-animation'
-        )}
-        role="button"
-        tabIndex={0}
-        aria-label={`${card.data.name}: ${atk} атака, ${hp} здоровье${card.keywords.length > 0 ? ', ' + card.keywords.map(k => KW[k]).join(', ') : ''}`}
-        onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
-        title={`${card.data.name}
-${card.data.description}
-⚔${atk} ❤${hp}${frozen ? '\n❄️ Заморожен' : ''}${sick ? '\n💤 Болезнь призыва' : ''}${card.keywords.length > 0 ? '\n' + card.keywords.map(k => KW[k]).join(', ') : ''}`}
-      >
-        <CardVisual
-          className={cn(
-            'card-frame card-in-field card-visual',
-            card.data.rarity === 'mythic' && 'card-frame-mythic',
-            card.data.rarity === 'rare' && 'card-frame-rare'
-          )}
-        >
-          {(card.data.rarity === 'mythic' || card.data.rarity === 'rare') && (
-            <div
-              className={`card-foil-overlay pointer-events-none z-layer-card-effects ${card.data.rarity === 'mythic' ? 'opacity-50' : 'opacity-30'}`}
-            />
-          )}
-          <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} />
-          {art.src && (
-            <img
-              src={art.src}
-              data-fallback={art.fallback}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover opacity-40"
-              loading="lazy"
-              onError={(e) => handleImageErrorWithFallback(e.currentTarget)}
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" />
-          <CardContent className="relative z-layer-cards flex flex-col h-full p-[clamp(2px,0.4vw,6px)] text-white">
-            <div className="flex justify-between items-start">
-              <Tooltip>
-                <TooltipTrigger>
-                  <span style={{ fontSize: 'clamp(16px, 2.2vw, 32px)' }}>{card.data.emoji}</span>
-                </TooltipTrigger>
-                <TooltipContent side="top">{card.data.name}</TooltipContent>
-              </Tooltip>
-              <Badge
-                variant="secondary"
-                className="bg-blue-600/90 text-white font-bold font-heading shadow min-w-[24px] h-6 px-1.5 flex items-center justify-center"
-              >
-                {card.data.cost}
-              </Badge>
-            </div>
-            <h3
-              className="font-heading text-white font-bold truncate mt-auto"
-              style={{ fontSize: 'clamp(6px, 0.85vw, 11px)' }}
-            >
-              {card.data.name}
-            </h3>
-            {card.keywords.length > 0 && (
-              <div className="flex flex-wrap gap-0.5" style={{ marginTop: '2px' }}>
-                {card.keywords.slice(0, 5).map((k) => (
-                  <Tooltip key={k}>
-                    <TooltipTrigger>
-                      <Badge 
-                        variant="keyword" 
-                        className="shadow-sm"
-                        style={{ 
-                          fontSize: 'clamp(8px, 0.9vw, 13px)',
-                          padding: '1px 3px',
-                          minWidth: '18px'
-                        }}
-                      >
-                        {KWS[k]}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">{KW[k]}</TooltipContent>
-                  </Tooltip>
-                ))}
-              </div>
-            )}
-            <div
-              className="flex items-center gap-1"
-              style={{ fontSize: 'clamp(8px, 0.9vw, 12px)' }}
-            >
-              {frozen && (
-                <Tooltip>
-                  <TooltipTrigger>
-                    <span className="text-cyan-400 animate-pulse" title="Заморожен">❄️</span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">Заморожен</TooltipContent>
-                </Tooltip>
-              )}
-              {sick && (
-                <Tooltip>
-                  <TooltipTrigger>
-                    <span className="text-gray-400" title="Болезнь призыва">💤</span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">Болезнь призыва</TooltipContent>
-                </Tooltip>
-              )}
-              {attacked && !sick && (
-                <Tooltip>
-                  <TooltipTrigger>
-                    <span className="text-green-600" title="Атаковал">✅</span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">Атаковал</TooltipContent>
-                </Tooltip>
-              )}
-              {/* Defender is shown in keywords, don't duplicate */}
-              {canAct && (
-                <Tooltip>
-                  <TooltipTrigger>
-                    <span className="text-green-400 animate-pulse" title="Может атаковать">
-                      ⚔️
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">Может атаковать</TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-            {card.data.type === 'creature' && (
-              <div className="absolute bottom-0 left-0 right-0 flex justify-between items-end px-0.5 pb-0.5 pointer-events-none">
-                <Badge
-                  variant="destructive"
-                  className="bg-red-700/95 text-white rounded px-1 py-0 font-bold font-heading shadow-md leading-tight"
-                  style={{ fontSize: 'clamp(10px, 1.2vw, 14px)' }}
-                >
-                  {atk}⚔
-                </Badge>
-                <Badge
-                  className={cn(
-                    'rounded px-1 py-0 font-bold font-heading text-white shadow-md leading-tight',
-                    hp <= card.maxHealth / 2 ? 'bg-red-600/95' : 'bg-green-700/95'
-                  )}
-                  style={{ fontSize: 'clamp(10px, 1.2vw, 14px)' }}
-                >
-                  {hp}❤
-                </Badge>
-              </div>
-            )}
-          </CardContent>
-          {frozen && (
-            <div className="absolute inset-0 bg-cyan-300/15 pointer-events-none z-layer-card-effects" />
-          )}
-        </CardVisual>
-      </CardContainer>
-    </CardSlot>
   );
 }
 
@@ -904,6 +658,9 @@ export function GameBoard({ mode, onBack }: Props) {
       }
     }
     prevFieldRef.current = { p1: currentP1, p2: currentP2 };
+  // Intentionally omitting addMessage, deathAnim, me.graveyard, enemy.graveyard, gs.log
+  // to avoid re-running on every state change; using refs for graveyard lookup is intentional
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me.field, enemy.field]);
 
   // Clear death effects after animation completes
@@ -1269,7 +1026,7 @@ export function GameBoard({ mode, onBack }: Props) {
           }, 400);
         }
         // Check if defender will die and set death effect
-        const defenderHealth = card.health;
+        const defenderHealth = card.currentHealth;
         const attackerAttack = getEffectiveAttack(attackerCard, me, enemy);
         if (attackerAttack >= defenderHealth) {
           setDyingCards((prev) => new Set(prev).add(card.uid));
@@ -1507,6 +1264,7 @@ export function GameBoard({ mode, onBack }: Props) {
               </button>
             )}
           </div>
+          <PhaseIndicator gameState={gs} isMyTurn={myTurn} playerKey="player1" />
           <div className="divider-hint">{getHint()}</div>
         </div>
       </div>
@@ -1629,6 +1387,11 @@ export function GameBoard({ mode, onBack }: Props) {
             setSelectedHand(null);
           }}
         />
+      )}
+
+      {/* TUTORIAL */}
+      {gs.turnNumber <= 3 && !gs.gameOver && (
+        <Tutorial gameState={gs} playerKey="player1" onSkip={() => {}} />
       )}
 
       {/* MESSAGE FEED */}

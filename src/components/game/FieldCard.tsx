@@ -2,6 +2,7 @@ import { CardInstance, GameState } from '../../game/types';
 import { getEffectiveAttack, getEffectiveHealth } from '../../game/engine';
 import { getCardCoverSources, handleImageErrorWithFallback } from '../../utils/cardImages';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const KW: Record<string, string> = {
   haste: '⚡ Ускорение',
@@ -28,6 +29,7 @@ const KWS: Record<string, string> = {
   unblockable: '👻',
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const COLOR_ART: Record<string, string> = {
   white: 'card-art-white',
   blue: 'card-art-blue',
@@ -91,12 +93,13 @@ export function FieldCard({
           : 'ring-1 ring-gray-600/40 hover:ring-gray-400/60 cursor-pointer';
 
   return (
+    <Tooltip>
+      <TooltipTrigger asChild>
     <div
       ref={cardRef}
       onClick={onClick}
       className={`card-frame card-in-field relative overflow-hidden transition-all duration-200 ${borderCls} ${attackAnim ? 'card-attack-animation' : ''} ${damageAnim ? 'card-damage-animation' : ''} ${deathEffect === 'fire' ? 'effect-fire-death' : ''} ${deathEffect === 'poison' ? 'effect-poison-death' : ''} ${deathEffect === 'ice' ? 'effect-frozen' : ''} ${frozen ? 'effect-frozen' : ''}`}
       style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)' }}
-      title={`${card.data.name}\n${card.data.description}\n⚔${atk} ❤${hp}`}
     >
       {/* Base color layer */}
       <div className={`absolute inset-0 ${COLOR_ART[card.data.color]}`} />
@@ -278,5 +281,40 @@ export function FieldCard({
         </div>
       )}
     </div>
+      </TooltipTrigger>
+      <TooltipContent
+        side="right"
+        className="max-w-[220px] p-3 bg-[#1a1a24] border border-[#c9a84c]/40 text-left"
+        style={{ zIndex: 999 }}
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xl">{card.data.emoji}</span>
+          <div>
+            <p className="font-bold text-[#c9a84c] text-sm">{card.data.name}</p>
+            <p className="text-gray-400 text-xs">Стоимость: {card.data.cost} ☁️</p>
+          </div>
+        </div>
+        {card.data.description && (
+          <p className="text-gray-300 text-xs mb-2 leading-relaxed border-t border-gray-700 pt-2">
+            {card.data.description}
+          </p>
+        )}
+        {card.keywords.length > 0 && (
+          <div className="flex flex-col gap-0.5 border-t border-gray-700 pt-2">
+            {card.keywords.map((k) => (
+              <span key={k} className="text-xs text-cyan-300">{KW[k] ?? k}</span>
+            ))}
+          </div>
+        )}
+        {card.data.type === 'creature' && (
+          <div className="flex gap-2 mt-2 border-t border-gray-700 pt-2">
+            <span className="text-xs text-orange-400">⚔️ {atk}</span>
+            <span className={`text-xs ${hp <= card.maxHealth / 2 ? 'text-red-400' : 'text-green-400'}`}>❤️ {hp}/{card.maxHealth}</span>
+          </div>
+        )}
+        {frozen && <p className="text-xs text-cyan-300 mt-1">❄️ Заморожен</p>}
+        {sick && <p className="text-xs text-amber-300 mt-1">💤 Болезнь призыва</p>}
+      </TooltipContent>
+    </Tooltip>
   );
 }

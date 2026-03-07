@@ -5,6 +5,7 @@ import { EffectsLayer } from './components/EffectsLayer';
 import { MainMenu } from './components/MainMenu';
 import { GameBoard } from './components/GameBoard';
 import { StoryIntro } from './components/StoryIntro';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 type Screen = 'menu' | 'intro' | 'game';
 
@@ -37,22 +38,26 @@ function App() {
 
   if (screen === 'game') {
     return (
-      <TooltipProvider>
-        <EffectsProvider>
-          <GameBoard mode={gameMode} onBack={() => setScreen('menu')} />
-          <EffectsLayer />
-        </EffectsProvider>
-      </TooltipProvider>
+      <ErrorBoundary>
+        <TooltipProvider>
+          <EffectsProvider>
+            <GameBoard mode={gameMode} onBack={() => setScreen('menu')} />
+            <EffectsLayer />
+          </EffectsProvider>
+        </TooltipProvider>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <TooltipProvider>
-      <EffectsProvider>
-        <MainMenu onStartGame={startGame} />
-        <EffectsLayer />
-      </EffectsProvider>
-    </TooltipProvider>
+    <ErrorBoundary>
+      <TooltipProvider>
+        <EffectsProvider>
+          <MainMenu onStartGame={startGame} />
+          <EffectsLayer />
+        </EffectsProvider>
+      </TooltipProvider>
+    </ErrorBoundary>
   );
 }
 
