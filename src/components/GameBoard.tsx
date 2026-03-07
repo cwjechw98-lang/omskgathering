@@ -850,6 +850,8 @@ export function GameBoard({ mode, onBack }: Props) {
   >([]);
   const [screenShake, setScreenShake] = useState(false);
   const [explosionFlash, setExplosionFlash] = useState(false);
+  const [dyingCards, setDyingCards] = useState<Set<string>>(new Set());
+  const [cardDeathEffects, setCardDeathEffects] = useState<Map<string, 'fire' | 'poison' | 'ice'>>(new Map());
   const targetingLineState = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
   const setTargetingLine = targetingLineState[1];
   const attackAnimTimerRef = useRef<number | null>(null);
@@ -900,6 +902,17 @@ export function GameBoard({ mode, onBack }: Props) {
     }
     prevFieldRef.current = { p1: currentP1, p2: currentP2 };
   }, [me.field, enemy.field]);
+
+  // Clear death effects after animation completes
+  useEffect(() => {
+    if (dyingCards.size > 0) {
+      const timer = setTimeout(() => {
+        setDyingCards(new Set());
+        setCardDeathEffects(new Map());
+      }, 700); // Match fire/poison animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [dyingCards]);
 
   /* ── Draw animation: detect new cards in hand ── */
   useEffect(() => {
@@ -1236,6 +1249,19 @@ export function GameBoard({ mode, onBack }: Props) {
             setExplosionFlash(false);
           }, 400);
         }
+        // Check if defender will die and set death effect
+        const defenderHealth = card.health;
+        const attackerAttack = getEffectiveAttack(attackerCard, me, enemy);
+        if (attackerAttack >= defenderHealth) {
+          setDyingCards((prev) => new Set(prev).add(card.uid));
+          if (attackerElement === 'fire' || attackerElement === 'explosion') {
+            setCardDeathEffects((prev) => new Map(prev).set(card.uid, 'fire'));
+          } else if (attackerElement === 'poison') {
+            setCardDeathEffects((prev) => new Map(prev).set(card.uid, 'poison'));
+          } else if (attackerElement === 'ice') {
+            setCardDeathEffects((prev) => new Map(prev).set(card.uid, 'ice'));
+          }
+        }
         setGs(next);
         addMessage(
           'action',
@@ -1316,6 +1342,8 @@ export function GameBoard({ mode, onBack }: Props) {
     setInspected(null);
     setPlayAnim(null);
     setDeathAnim(null);
+    setDyingCards(new Set());
+    setCardDeathEffects(new Map());
     seenStoryEventsRef.current = new Set();
     prevFieldRef.current = { p1: [], p2: [] };
     cardRefsMap.current.clear();
@@ -1421,6 +1449,7 @@ export function GameBoard({ mode, onBack }: Props) {
                     canAct={false}
                     attackAnim={attackAnimUid === card.uid}
                     damageAnim={damageAnimUid === card.uid}
+                    deathEffect={cardDeathEffects.get(card.uid)}
                     onClick={() => clickEnemyCreature(card.uid)}
                     cardRef={(el) => {
                       if (el) cardRefsMap.current.set(card.uid, el);
@@ -1493,6 +1522,7 @@ export function GameBoard({ mode, onBack }: Props) {
                       canAct={canAct && myTurn}
                       attackAnim={attackAnimUid === card.uid}
                       damageAnim={damageAnimUid === card.uid}
+                      deathEffect={cardDeathEffects.get(card.uid)}
                       onClick={() => clickMyCreature(card.uid)}
                       cardRef={(el) => {
                         if (el) cardRefsMap.current.set(card.uid, el);

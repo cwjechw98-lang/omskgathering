@@ -57,6 +57,7 @@ export function FieldCard({
   damageAnim,
   onClick,
   cardRef,
+  deathEffect,
 }: {
   card: CardInstance;
   player: GameState['player1'];
@@ -68,6 +69,7 @@ export function FieldCard({
   damageAnim?: boolean;
   onClick?: () => void;
   cardRef?: (el: HTMLDivElement | null) => void;
+  deathEffect?: 'fire' | 'poison' | 'ice';
 }) {
   const atk = getEffectiveAttack(card, player, opponent);
   const hp = getEffectiveHealth(card, player);
@@ -92,7 +94,7 @@ export function FieldCard({
     <div
       ref={cardRef}
       onClick={onClick}
-      className={`card-frame card-in-field relative overflow-hidden transition-all duration-200 ${borderCls} ${attackAnim ? 'card-attack-animation' : ''} ${damageAnim ? 'card-damage-animation' : ''} ${frozen ? 'effect-frozen' : ''}`}
+      className={`card-frame card-in-field relative overflow-hidden transition-all duration-200 ${borderCls} ${attackAnim ? 'card-attack-animation' : ''} ${damageAnim ? 'card-damage-animation' : ''} ${deathEffect === 'fire' ? 'effect-fire-death' : ''} ${deathEffect === 'poison' ? 'effect-poison-death' : ''} ${deathEffect === 'ice' ? 'effect-frozen' : ''} ${frozen ? 'effect-frozen' : ''}`}
       style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)' }}
       title={`${card.data.name}\n${card.data.description}\n⚔${atk} ❤${hp}`}
     >
