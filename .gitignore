@@ -18,3 +18,5 @@ Thumbs.db
 .claude/
 ".test-results"  
 ".agent/"  
+".agent/"  
+"agent-mcp/"  
