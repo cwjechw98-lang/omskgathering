@@ -255,6 +255,28 @@ export function FieldCard({
           </div>
         </>
       )}
+
+      {/* Fire death sparks */}
+      {deathEffect === 'fire' && (
+        <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
+          <div className="fire-spark" style={{ left: '30%', top: '40%' }} />
+          <div className="fire-spark" style={{ left: '50%', top: '50%' }} />
+          <div className="fire-spark" style={{ left: '70%', top: '35%' }} />
+          <div className="fire-spark" style={{ left: '40%', top: '60%' }} />
+          <div className="fire-spark" style={{ left: '60%', top: '45%' }} />
+        </div>
+      )}
+
+      {/* Poison death bubbles */}
+      {deathEffect === 'poison' && (
+        <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
+          <div className="poison-bubble" style={{ left: '25%', top: '30%', animationDelay: '0ms' }} />
+          <div className="poison-bubble" style={{ left: '55%', top: '45%', animationDelay: '150ms' }} />
+          <div className="poison-bubble" style={{ left: '75%', top: '35%', animationDelay: '300ms' }} />
+          <div className="poison-bubble" style={{ left: '40%', top: '55%', animationDelay: '450ms' }} />
+          <div className="poison-bubble" style={{ left: '65%', top: '50%', animationDelay: '600ms' }} />
+        </div>
+      )}
     </div>
   );
 }
