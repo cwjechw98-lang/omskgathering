@@ -81,7 +81,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'dvornik',
     name: 'Дворник-Берсерк',
-    cost: 1,
+    cost: 2,
     color: 'green',
     type: 'creature',
     attack: 1,
@@ -100,7 +100,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'student_omgtu',
     name: 'Студент ОмГТУ',
-    cost: 1,
+    cost: 2,
     color: 'blue',
     type: 'creature',
     attack: 1,
@@ -138,7 +138,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'babka_semechki',
     name: 'Бабка с Семечками',
-    cost: 1,
+    cost: 2,
     color: 'green',
     type: 'creature',
     attack: 0,
@@ -798,7 +798,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'yama_na_doroge',
     name: 'Яма на Дороге',
-    cost: 2,
+    cost: 1,
     color: 'black',
     type: 'spell',
     description: 'Уничтожьте случайное вражеское существо с атакой ≤ 3. Или 2 урона вражескому герою.',
@@ -885,7 +885,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'svodka_112',
     name: 'Сводка 112',
-    cost: 1,
+    cost: 2,
     color: 'red',
     type: 'spell',
     description: 'Нанесите 2 урона существу. Если выжило — нанесите 1 урон герою.',
@@ -988,7 +988,7 @@ export const ALL_CARDS: CardData[] = [
   {
     id: 'vzryv_gaza',
     name: 'Взрыв Бытового Газа',
-    cost: 5,
+    cost: 4,
     color: 'red',
     type: 'spell',
     description: 'Нанесите 2 урона ВСЕМ существам.',

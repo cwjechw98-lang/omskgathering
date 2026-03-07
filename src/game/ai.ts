@@ -333,6 +333,41 @@ export function aiTurn(state: GameState): {
 
     // === No defenders: evaluate trade vs face ===
     const enemyCreatures = gs.player1.field.filter((c) => c.currentHealth > 0);
+
+    // === PRIORITY: If no enemy creatures → attack hero directly ===
+    if (enemyCreatures.length === 0) {
+      const next = attackPlayer(gs, 'player2', att.uid);
+      if (next !== gs) {
+        gs = next;
+        actions.push({ type: 'attack-hero', attackerUid: att.uid });
+        if (!lastComment)
+          lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
+      }
+      if (gs.gameOver) break;
+      continue;
+    }
+
+    // === PRIORITY: Attack small enemies (HP <= 2) first - easy trades ===
+    const smallEnemies = enemyCreatures.filter((e) => getEffectiveHealth(e, gs.player1) <= 2);
+    if (smallEnemies.length > 0) {
+      const smallTrade = findBestTrade(att, atkPow, atkHp, smallEnemies, gs.player2, gs.player1);
+      if (smallTrade && smallTrade.score > 0) {
+        const target = smallEnemies.find((e) => e.uid === smallTrade.uid);
+        if (target) {
+          const next = attackCreature(gs, 'player2', att.uid, target.uid);
+          if (next !== gs) {
+            gs = next;
+            actions.push({ type: 'attack-creature', attackerUid: att.uid, defenderUid: target.uid });
+            if (!lastComment)
+              lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
+          }
+          if (gs.gameOver) break;
+          continue;
+        }
+      }
+    }
+
+    // Otherwise evaluate trade vs face
     const trade = findBestTrade(att, atkPow, atkHp, enemyCreatures, gs.player2, gs.player1);
 
     if (trade && trade.score > 25) {
@@ -375,11 +410,14 @@ function scoreCardToPlay(card: CardInstance, ai: PlayerState, enemy: PlayerState
   );
   const aiHealthRatio = ai.health / ai.maxHealth;
 
+  // Early game detection: low mana (≤3) or few cards played
+  const isEarlyGame = ai.mana <= 3 || ai.field.length + ai.hand.length <= 4;
+
   if (card.data.type === 'creature') {
     let s = 10 + (card.data.attack || 0) * 3 + (card.data.health || 0) * 1.5;
 
     // Keyword bonuses
-    if (card.keywords.includes('haste')) s += 12; // Can attack immediately!
+    if (card.keywords.includes('haste')) s += isEarlyGame ? 20 : 12; // High priority early: can attack immediately!
     if (
       (card.keywords.includes('defender') || card.keywords.includes('vigilance')) &&
       enemyThreat > 4
@@ -390,9 +428,23 @@ function scoreCardToPlay(card: CardInstance, ai: PlayerState, enemy: PlayerState
       aiHealthRatio < 0.5
     )
       s += 20;
+    // ====== DEFENSIVE PRIORITY: Low HP logic ======
+    // If AI health <= 10, prioritize Defender cards
+    if (card.keywords.includes('defender') && ai.health <= 10) {
+      s += 30;
+    }
+    // If AI health < 5, increase priority even more
+    if (card.keywords.includes('defender') && ai.health < 5) {
+      s += 25; // Extra bonus on top of the above
+    }
+    // ====== End defensive priority ======
     if (card.keywords.includes('flying')) s += 5;
     if (card.keywords.includes('deathtouch')) s += 8;
-    if (card.keywords.includes('lifelink') && aiHealthRatio < 0.7) s += 10;
+    // Lifelink: high priority in early game for sustain
+    if (card.keywords.includes('lifelink')) {
+      s += isEarlyGame ? 18 : 10;
+      if (aiHealthRatio < 0.7) s += 5;
+    }
     if (card.keywords.includes('trample')) s += 4;
 
     // Mana efficiency: prefer cards that use most of our mana
