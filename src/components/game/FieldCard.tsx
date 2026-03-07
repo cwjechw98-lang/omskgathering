@@ -240,10 +240,20 @@ export function FieldCard({
 
       {/* Frozen overlay - ice effect */}
       {frozen && (
-        <div
-          className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-blue-500/10 pointer-events-none z-20"
-          style={{ backdropFilter: 'blur(2px)' }}
-        />
+        <>
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-blue-500/10 pointer-events-none z-20"
+            style={{ backdropFilter: 'blur(2px)' }}
+          />
+          {/* Ice particles rising from card */}
+          <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
+            <div className="ice-particle" style={{ left: '20%', bottom: '10%', animationDelay: '0ms' }} />
+            <div className="ice-particle" style={{ left: '50%', bottom: '20%', animationDelay: '200ms' }} />
+            <div className="ice-particle" style={{ left: '80%', bottom: '15%', animationDelay: '400ms' }} />
+            <div className="ice-particle" style={{ left: '35%', bottom: '30%', animationDelay: '600ms' }} />
+            <div className="ice-particle" style={{ left: '65%', bottom: '25%', animationDelay: '800ms' }} />
+          </div>
+        </>
       )}
     </div>
   );
