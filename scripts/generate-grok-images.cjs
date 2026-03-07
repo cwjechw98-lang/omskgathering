@@ -29,9 +29,9 @@ if (fs.existsSync(dotenvPath)) {
 
 const API_KEY = process.env.POLLINATIONS_API_KEY || '';
 const IMAGE_MODEL = process.env.POLLINATIONS_IMAGE_MODEL || 'grok-imagine';
-const IMAGE_WIDTH = 400;
-const IMAGE_HEIGHT = 300;
-const TIMEOUT_MS = 60000;
+const IMAGE_WIDTH = 1024;  // Square format to match original 960x960 cards
+const IMAGE_HEIGHT = 1024; // 1:1 aspect ratio - CSS will scale to 1.35
+const TIMEOUT_MS = 90000;
 
 // Read cards data
 const cardsContent = fs.readFileSync(path.join(__dirname, '../src/data/cards.ts'), 'utf8');
