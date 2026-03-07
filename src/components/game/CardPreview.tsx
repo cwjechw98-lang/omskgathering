@@ -38,7 +38,11 @@ export function CardPreview({
     >
       <div
         className="pointer-events-auto"
-        style={{ width: compact ? 'min(90vw, 320px)' : 'clamp(220px, 20vw, 300px)' }}
+        style={{ 
+          width: compact ? 'min(90vw, 320px)' : 'clamp(220px, 20vw, 300px)',
+          aspectRatio: '1 / 1.35',
+          minHeight: 'clamp(280px, 35vh, 420px)'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
       <div className="bg-[#0f0f18]/98 backdrop-blur-sm rounded-xl shadow-2xl border border-[#c9a84c]/30 overflow-hidden">

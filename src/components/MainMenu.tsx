@@ -385,7 +385,7 @@ function CardCollection({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div className="h-[100dvh] bg-[#0a0a0f] flex flex-col relative overflow-hidden">
+    <div className="h-[100dvh] bg-[#0a0a0f] flex flex-col relative overflow-y-hidden">
       <ParticleCanvas
         type="magic"
         density={liteFx ? 8 : 12}
@@ -429,18 +429,18 @@ function CardCollection({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex overflow-hidden relative z-10">
+      <div className="flex-1 flex-col overflow-hidden relative z-10">
         {/* Card grid — vertical scroll */}
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-4 py-4"
+          className="flex-1 overflow-y-auto px-4 py-4 min-h-0"
           style={{ scrollbarWidth: 'thin' }}
         >
           <div
-            className="grid gap-4"
+            className="grid gap-4 max-w-[2400px] mx-auto"
             style={{
-              gridTemplateColumns: 'repeat(auto-fill, minmax(min(180px, 45vw), 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(180px, 22vw), 1fr))',
             }}
           >
             {filtered.slice(0, visibleCount).map((cardData, idx) => {
@@ -481,10 +481,10 @@ function CardCollection({ onBack }: { onBack: () => void }) {
                   }}
                 >
                   <div className={`border-2 rounded-xl overflow-hidden ${rarityBorder} shadow-lg`}>
-                    {/* Art section — 60% height */}
+                    {/* Art section — using classic card aspect ratio 1:1.35 */}
                     <div
                       className={`relative ${COLOR_BG[cardData.color]} overflow-hidden`}
-                      style={{ paddingTop: '75%' /* aspect ratio */ }}
+                      style={{ paddingTop: '74%' /* ~1:1.35 ratio, matching game cards */ }}
                     >
                       {art.src && (
                         <img

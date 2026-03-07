@@ -252,6 +252,11 @@ function PlayerArea({
   };
   const healthVariant = getHealthVariant();
 
+  // Count active defender cards on field (exclude frozen and dead)
+  const defenderCount = player.field.filter(
+    (c) => c.keywords.includes('defender') && c.frozen <= 0 && c.currentHealth > 0
+  ).length;
+
   return (
     <UICard
       data-enemy-hero={dataEnemyHero ? 'true' : undefined}
@@ -324,25 +329,26 @@ function PlayerArea({
         </div>
       </div>
 
-      {/* Row 2: HP bar + Mana */}
-      <div className="flex items-center gap-2 w-full">
-        <div className="relative flex-1 min-w-0">
-          <Progress
-            value={healthPercent}
-            className={cn(
-              'h-3 transition-all duration-500',
-              healthVariant === 'success' && 'progress-success',
-              healthVariant === 'warning' && 'progress-warning',
-              healthVariant === 'danger' && 'progress-danger'
-            )}
-          />
-          <span
-            className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white drop-shadow"
-            style={{ fontSize: 'clamp(8px, 0.8vw, 10px)' }}
-          >
-            ❤️ {player.health}/{player.maxHealth}
-          </span>
-        </div>
+      {/* Row 2: HP bar + Mana + Defenders */}
+      <div className="flex flex-col gap-1 w-full">
+        <div className="flex items-center gap-2 w-full">
+          <div className="relative flex-1 min-w-0">
+            <Progress
+              value={healthPercent}
+              className={cn(
+                'h-3 transition-all duration-500',
+                healthVariant === 'success' && 'progress-success',
+                healthVariant === 'warning' && 'progress-warning',
+                healthVariant === 'danger' && 'progress-danger'
+              )}
+            />
+            <span
+              className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white drop-shadow"
+              style={{ fontSize: 'clamp(8px, 0.8vw, 10px)' }}
+            >
+              ❤️ {player.health}/{player.maxHealth}
+            </span>
+          </div>
         <Tooltip>
           <TooltipTrigger>
             <div className="flex items-center gap-0.5 shrink-0">
@@ -367,6 +373,13 @@ function PlayerArea({
             <p>Мана: {player.mana} / {player.maxMana}</p>
           </TooltipContent>
         </Tooltip>
+        </div>
+
+        {/* Defender count row */}
+        <div className="flex items-center justify-center gap-1 text-[10px] text-gray-400 font-heading">
+          <span>🛡️</span>
+          <span>Защитники: {defenderCount}</span>
+        </div>
       </div>
     </UICard>
   );
