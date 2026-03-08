@@ -623,6 +623,8 @@ export function GameBoard({ mode, onBack }: Props) {
   const [dyingCards, setDyingCards] = useState<Set<string>>(new Set());
   const [cardDeathEffects, setCardDeathEffects] = useState<Map<string, 'fire' | 'poison' | 'ice'>>(new Map());
   const targetingLineState = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
+  // Attack notification state - shows when creatures can attack and player has mana
+  const [showAttackNotification, setShowAttackNotification] = useState(false);
   const setTargetingLine = targetingLineState[1];
   const attackAnimTimerRef = useRef<number | null>(null);
   const damageAnimTimerRef = useRef<number | null>(null);
@@ -734,6 +736,26 @@ export function GameBoard({ mode, onBack }: Props) {
       !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !c.keywords.includes('defender')
   );
   const landPlayed = me.landsPlayed > 0;
+
+  // Show attack notification when attackers available and player has mana
+  const canShowAttackNotification = myTurn && !gs.gameOver && hasAttackers && me.mana > 0;
+  // Show notification when conditions are met and we haven't dismissed it yet
+  useEffect(() => {
+    if (canShowAttackNotification) {
+      // Show notification when attackers become available with mana
+      setShowAttackNotification(true);
+    } else {
+      // Hide when conditions no longer met
+      setShowAttackNotification(false);
+    }
+  }, [canShowAttackNotification]);
+
+  // Hide notification when player makes an attack
+  useEffect(() => {
+    if (selectedAttacker) {
+      setShowAttackNotification(false);
+    }
+  }, [selectedAttacker]);
 
   const phase = (() => {
     if (!myTurn || gs.gameOver) return 'done' as const;
@@ -1122,6 +1144,7 @@ export function GameBoard({ mode, onBack }: Props) {
     setSelectedHand(null);
     setSelectedAttacker(null);
     setInspected(null);
+    setShowAttackNotification(false);
   };
 
   const restart = () => {
@@ -1279,6 +1302,19 @@ export function GameBoard({ mode, onBack }: Props) {
           </div>
           <PhaseIndicator gameState={gs} isMyTurn={myTurn} playerKey="player1" />
           <div className="divider-hint">{getHint()}</div>
+          {/* Attack availability notification */}
+          {showAttackNotification && (
+            <div className="attack-notification animate-bounce">
+              <span className="text-lg">⚔️</span>
+              <span>Доступны атаки! Кликните на существо с зелёной рамкой</span>
+              <button
+                onClick={() => setShowAttackNotification(false)}
+                className="ml-2 text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

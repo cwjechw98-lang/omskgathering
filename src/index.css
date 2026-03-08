@@ -422,6 +422,52 @@
   border-radius: 4px;
 }
 
+/* Attack notification popup */
+.attack-notification {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.3), rgba(34, 197, 94, 0.2));
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin: 4px auto;
+  max-width: 90%;
+  font-size: clamp(11px, 1.2vw, 14px);
+  color: #4ade80;
+  font-weight: 600;
+  text-align: center;
+  z-index: 20;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+  animation: attackNotifyPulse 2s ease-in-out infinite;
+}
+
+.attack-notification button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.attack-notification button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes attackNotifyPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+    transform: scale(1.02);
+  }
+}
+
 .divider-buttons {
   display: flex;
   align-items: center;
