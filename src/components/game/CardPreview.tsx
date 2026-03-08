@@ -33,12 +33,12 @@ export function CardPreview({
   const art = getCardCoverSources(card.data);
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-center justify-center pointer-events-none"
-      onClick={(e) => { e.stopPropagation(); onClose(); }}
+      className="fixed inset-0 z-[85] flex items-start justify-end pt-4 pr-4 pointer-events-auto bg-black/20"
+      onClick={onClose}
     >
       <div
         className="pointer-events-auto"
-        style={{ 
+        style={{
           width: compact ? 'min(90vw, 320px)' : 'clamp(220px, 20vw, 300px)',
           aspectRatio: '1 / 1.35',
           minHeight: 'clamp(280px, 35vh, 420px)'

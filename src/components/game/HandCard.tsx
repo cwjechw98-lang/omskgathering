@@ -21,7 +21,7 @@ export function HandCard({
   onDragEnd?: (e: React.DragEvent) => void;
 }) {
   const borderCls = selected
-    ? 'border-yellow-400 shadow-yellow-400/50 shadow-lg -translate-y-4 scale-110 z-20'
+    ? 'border-yellow-400 shadow-yellow-400/50 shadow-lg -translate-y-4 scale-110'
     : canPlay && isLand
       ? 'border-[#c9a84c] shadow-[#c9a84c]/30 shadow-lg card-glow'
       : canPlay

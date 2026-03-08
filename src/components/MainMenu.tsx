@@ -385,7 +385,7 @@ function CardCollection({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div className="h-[100dvh] bg-[#0a0a0f] flex flex-col relative overflow-y-hidden">
+    <div className="h-[100dvh] bg-[#0a0a0f] flex flex-col relative overflow-hidden">
       <ParticleCanvas
         type="magic"
         density={liteFx ? 8 : 12}

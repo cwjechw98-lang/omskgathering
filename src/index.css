@@ -1224,6 +1224,18 @@ body {
     overflow-x: auto;
     overflow-y: hidden;
   }
+  
+  /* Health bar mobile fix */
+  [data-slot='progress'] {
+    min-height: 16px;
+  }
+  [data-slot='progress-indicator'] {
+    min-height: 16px;
+  }
+  .zone-player-hero .font-heading,
+  .zone-enemy-hero .font-heading {
+    font-size: clamp(10px, 2.5vw, 14px) !important;
+  }
 }
 
 /* ═══ CARD ANIMATION KEYFRAMES ═══ */
@@ -1276,7 +1288,7 @@ body {
   box-shadow: inherit;
 }
 .card-container:hover {
-  z-index: var(--z-hover);
+  z-index: var(--z-hand-hover);
 }
 .card-in-field:not(:hover) {
   transition:
