@@ -1,1 +1,1 @@
-{"mcpServers":{"playwright":{"command":"npx","args":["-y","@playwright/mcp@0.0.38"],"alwaysAllow":["browser_close","browser_resize","browser_console_messages","browser_handle_dialog","browser_wait_for","browser_tabs","browser_select_option","browser_hover","browser_drag","browser_click","browser_snapshot","browser_take_screenshot","browser_network_requests","browser_navigate_back","browser_navigate","browser_type","browser_press_key","browser_install","browser_fill_form","browser_file_upload","browser_evaluate"]}}}
+{"mcpServers":{}}

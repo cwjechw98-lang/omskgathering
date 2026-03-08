@@ -1337,8 +1337,14 @@ export function createDeck(): CardData[] {
     }
   }
 
+  // Calculate target land count to reach ~40% of total deck size (MTG standard)
+  // Formula: Lands = (0.4 * NonLands) / 0.6  => Lands ≈ 0.67 * NonLands
+  const currentCount = deck.length;
+  const targetLandCount = Math.ceil(currentCount * 0.67);
+  const copiesPerLand = Math.ceil(targetLandCount / landCards.length);
+
   for (const land of landCards) {
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < copiesPerLand; i++) {
       deck.push({ ...land });
     }
   }
