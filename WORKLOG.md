@@ -2,6 +2,39 @@
 
 ## Session Log
 
+### 2026-03-07
+
+### Итерация 2: UX и юзабилити (UPGRADES.md)
+
+**2.1 Tutorial система:**
+- Создан `src/components/game/Tutorial.tsx` — пошаговое обучение для новых игроков
+- 4 шага: Земля → Существо/Заклинание → Атака → Конец хода
+- Авто-определение текущего шага из игрового состояния
+- Кнопка «Пропустить обучение», сохранение в localStorage
+- Показывается только первые 3 хода
+- Интегрирован в GameBoard.tsx
+
+**2.2 PhaseIndicator:**
+- Создан `src/components/game/PhaseIndicator.tsx` — индикатор фаз хода
+- 4 фазы: 🏔️ Земля → ⚔️ Основная → 💥 Бой → ⏭️ Конец
+- Активная фаза подсвечена золотом, авто-детект из состояния игры
+- Интегрирован в `.center-divider` зону
+
+**2.3 Touch targets:**
+- `src/index.css`: `.end-turn-btn` → min-height: 44px на мобильных
+- Кнопки закрытия модалок → 44×44px на мобильных
+
+**2.4 Расширенные тултипы FieldCard:**
+- `src/components/game/FieldCard.tsx`: Tooltip при ховере показывает имя, стоимость, описание, keywords с объяснениями, статы с цветовой индикацией, статусы
+
+**Quality Gates после Итерации 2:**
+- `npx tsc --noEmit` → 0 errors
+- `npx eslint src/` → 0 errors, 0 warnings
+- `npx vitest run` → 31/31 PASS
+- `npx vite build` → PASS
+
+---
+
 ### 2026-03-06 — Исправление изображений + CI
 
 **Изображения в StoryIntro и LoreScreen:**
