@@ -1220,12 +1220,13 @@ body {
 
   .zone-player-hero.hero-zone-row {
     align-items: flex-start;
-    padding-top: 1px;
-    padding-bottom: clamp(2px, 0.45vh, 5px);
+    padding-top: 0;
+    padding-bottom: 0;
+    transform: translateY(clamp(-128px, -15vh, -96px));
   }
 
   .zone-player-hero.hero-zone-row > [data-slot='card'] {
-    transform: translateY(clamp(-3px, -0.35vh, -1px));
+    transform: translateY(0);
   }
 
   .divider-hint {
