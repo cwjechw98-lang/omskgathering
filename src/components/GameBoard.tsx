@@ -236,11 +236,13 @@ function PlayerArea({
   player,
   isCurrentPlayer,
   label,
+  heroIcon,
   dataEnemyHero,
 }: {
   player: PlayerState;
   isCurrentPlayer: boolean;
   label: string;
+  heroIcon: string;
   dataEnemyHero?: boolean;
 }) {
   const healthPercent = Math.max(0, (player.health / player.maxHealth) * 100);
@@ -282,7 +284,7 @@ function PlayerArea({
             fontSize: 'clamp(11px, 1.3vw, 18px)',
           }}
         >
-          {label.includes('🗿') ? '🗿' : '👤'}
+          {heroIcon}
         </div>
         <span
           className="font-heading text-white font-bold truncate"
@@ -301,8 +303,13 @@ function PlayerArea({
         <div className="flex items-center gap-1 ml-auto shrink-0">
           <Tooltip>
             <TooltipTrigger>
-              <Badge variant="outline" className="gap-0.5 text-[9px] h-4 px-1 min-w-0">
+              <Badge
+                variant="outline"
+                className="gap-0.5 text-[9px] h-4 px-1 min-w-0"
+                aria-label={`Рука: ${player.hand.length}`}
+              >
                 <span>🤚</span>
+                <span className="text-[8px] text-gray-400">Р</span>
                 <span>{player.hand.length}</span>
               </Badge>
             </TooltipTrigger>
@@ -310,8 +317,13 @@ function PlayerArea({
           </Tooltip>
           <Tooltip>
             <TooltipTrigger>
-              <Badge variant="outline" className="gap-0.5 text-[9px] h-4 px-1 min-w-0">
+              <Badge
+                variant="outline"
+                className="gap-0.5 text-[9px] h-4 px-1 min-w-0"
+                aria-label={`Колода: ${player.deck.length}`}
+              >
                 <span>📚</span>
+                <span className="text-[8px] text-gray-400">К</span>
                 <span>{player.deck.length}</span>
               </Badge>
             </TooltipTrigger>
@@ -319,8 +331,13 @@ function PlayerArea({
           </Tooltip>
           <Tooltip>
             <TooltipTrigger>
-              <Badge variant="outline" className="gap-0.5 text-[9px] h-4 px-1 min-w-0">
+              <Badge
+                variant="outline"
+                className="gap-0.5 text-[9px] h-4 px-1 min-w-0"
+                aria-label={`Кладбище: ${player.graveyard.length}`}
+              >
                 <span>💀</span>
+                <span className="text-[8px] text-gray-400">С</span>
                 <span>{player.graveyard.length}</span>
               </Badge>
             </TooltipTrigger>
@@ -1235,7 +1252,8 @@ export function GameBoard({ mode, onBack }: Props) {
         <PlayerArea
           player={enemy}
           isCurrentPlayer={!isP1Turn}
-          label={mode === 'ai' ? '🗿 Хранитель Омска' : '👤 Игрок 2'}
+          label={mode === 'ai' ? 'Хранитель Омска' : 'Игрок 2'}
+          heroIcon={mode === 'ai' ? '🗿' : '👤'}
           dataEnemyHero={true}
         />
         <DeckStack count={enemy.graveyard.length} type="graveyard" label={mode === 'ai' ? 'Сброс Хранителя' : 'Сброс Игрока 2'} />
@@ -1303,7 +1321,9 @@ export function GameBoard({ mode, onBack }: Props) {
               </button>
             )}
           </div>
-          <PhaseIndicator gameState={gs} isMyTurn={myTurn} playerKey="player1" />
+          <div className="hidden sm:block">
+            <PhaseIndicator gameState={gs} isMyTurn={myTurn} playerKey="player1" />
+          </div>
           <div className="divider-hint">{getHint()}</div>
           {/* Attack availability notification */}
           {showAttackNotification && (
@@ -1369,7 +1389,12 @@ export function GameBoard({ mode, onBack }: Props) {
       {/* PLAYER HERO ZONE */}
       <div className="zone-player-hero hero-zone-row">
         <DeckStack count={me.deck.length} type="deck" cardBackSrc={cardBackSrc} label="Твоя колода" />
-        <PlayerArea player={me} isCurrentPlayer={isP1Turn} label={mode === 'ai' ? '👤 Игрок' : '👤 Игрок 1'} />
+        <PlayerArea
+          player={me}
+          isCurrentPlayer={isP1Turn}
+          label={mode === 'ai' ? 'Игрок' : 'Игрок 1'}
+          heroIcon="👤"
+        />
         <DeckStack count={me.graveyard.length} type="graveyard" label="Твой сброс" />
       </div>
 

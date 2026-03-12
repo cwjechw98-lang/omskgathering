@@ -98,7 +98,7 @@ export function FieldCard({
     <div
       ref={cardRef}
       onClick={onClick}
-      className={`card-frame card-in-field relative overflow-hidden transition-all duration-200 ${borderCls} ${attackAnim ? 'card-attack-animation' : ''} ${damageAnim ? 'card-damage-animation' : ''} ${deathEffect === 'fire' ? 'effect-fire-death' : ''} ${deathEffect === 'poison' ? 'effect-poison-death' : ''} ${deathEffect === 'ice' ? 'effect-frozen' : ''} ${frozen ? 'effect-frozen' : ''}`}
+      className={`card-frame card-in-field field-card-mobile relative overflow-hidden transition-all duration-200 ${borderCls} ${attackAnim ? 'card-attack-animation' : ''} ${damageAnim ? 'card-damage-animation' : ''} ${deathEffect === 'fire' ? 'effect-fire-death' : ''} ${deathEffect === 'poison' ? 'effect-poison-death' : ''} ${deathEffect === 'ice' ? 'effect-frozen' : ''} ${frozen ? 'effect-frozen' : ''}`}
       style={{ width: 'var(--field-card-w)', height: 'var(--field-card-h)' }}
     >
       {/* Base color layer */}
@@ -154,7 +154,7 @@ export function FieldCard({
 
         {/* Card name */}
         <div
-          className="font-heading text-white font-bold truncate mt-auto drop-shadow-md"
+          className="field-card-name font-heading text-white font-bold truncate mt-auto drop-shadow-md"
           style={{ fontSize: 'clamp(6px, 0.85vw, 11px)' }}
         >
           {card.data.name}
@@ -162,12 +162,12 @@ export function FieldCard({
 
         {/* Keywords */}
         {card.keywords.length > 0 && (
-          <div className="flex flex-wrap gap-0.5 mt-0.5">
+          <div className="field-card-keywords flex flex-wrap gap-0.5 mt-0.5">
             {card.keywords.slice(0, 4).map((k) => (
               <Badge
                 key={k}
                 variant="outline"
-                className="bg-slate-800/60 backdrop-blur-sm border-slate-600/40 text-gray-300"
+                className="field-card-keyword bg-slate-800/60 backdrop-blur-sm border-slate-600/40 text-gray-300"
                 style={{ fontSize: 'clamp(7px, 0.8vw, 12px)', padding: '1px 3px' }}
                 title={KW[k]}
               >
@@ -178,10 +178,10 @@ export function FieldCard({
         )}
 
         {/* Status icons */}
-        <div
-          className="flex items-center gap-0.5 mt-0.5"
-          style={{ fontSize: 'clamp(7px, 0.8vw, 11px)' }}
-        >
+          <div
+            className="field-card-status flex items-center gap-0.5 mt-0.5"
+            style={{ fontSize: 'clamp(7px, 0.8vw, 11px)' }}
+          >
           {frozen && (
             <span
               className="text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.8)]"
@@ -217,10 +217,10 @@ export function FieldCard({
 
         {/* Stats - glassmorphism badges */}
         {card.data.type === 'creature' && (
-          <div className="flex justify-between items-end mt-auto gap-1">
+          <div className="field-card-stats flex justify-between items-end mt-auto gap-1">
             {/* Attack stat - rust/orange accent */}
             <Badge
-              className="bg-gradient-to-br from-red-900/80 to-orange-800/60 backdrop-blur-sm text-white font-bold font-heading border border-red-700/40 shadow-lg"
+              className="field-card-stat-badge bg-gradient-to-br from-red-900/80 to-orange-800/60 backdrop-blur-sm text-white font-bold font-heading border border-red-700/40 shadow-lg"
               style={{ fontSize: 'clamp(10px, 1.2vw, 14px)', padding: '2px 6px' }}
             >
               {atk}⚔
@@ -228,7 +228,7 @@ export function FieldCard({
 
             {/* Health stat - neon green/cyan accent */}
             <Badge
-              className={`backdrop-blur-sm font-bold font-heading border shadow-lg ${
+              className={`field-card-stat-badge backdrop-blur-sm font-bold font-heading border shadow-lg ${
                 hp <= card.maxHealth / 2
                   ? 'bg-gradient-to-br from-red-700/80 to-orange-700/60 border-red-600/40 animate-pulse'
                   : 'bg-gradient-to-br from-green-800/80 to-cyan-700/60 border-green-600/40'

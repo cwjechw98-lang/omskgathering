@@ -33,7 +33,7 @@ export function CardPreview({
   const art = getCardCoverSources(card.data);
   return (
     <div
-      className="fixed inset-0 z-[85] flex items-center justify-center pointer-events-auto bg-black/20"
+      className="card-preview-overlay fixed inset-0 z-[92] flex items-center justify-center pointer-events-auto"
       style={{
         paddingTop: 'calc(var(--topbar-h) + var(--herozone-h) + 8px)',
         paddingBottom: 'calc(var(--actionbar-h) + var(--handzone-h) + 8px)',
@@ -42,7 +42,7 @@ export function CardPreview({
       onClick={onClose}
     >
       <div
-        className="pointer-events-auto"
+        className="card-preview-shell pointer-events-auto"
         style={{
           width: compact ? 'min(90vw, 320px)' : 'clamp(220px, 28vw, 340px)',
           maxHeight: '100%',

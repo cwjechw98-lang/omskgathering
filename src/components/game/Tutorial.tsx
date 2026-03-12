@@ -90,13 +90,13 @@ export function Tutorial({ gameState, playerKey, onSkip }: TutorialProps) {
     <>
       {/* Dark overlay */}
       <div
-        className={`fixed inset-0 bg-black/70 z-[90] pointer-events-none ${spotlightClass}`}
+        className={`tutorial-overlay fixed inset-0 z-[86] pointer-events-none ${spotlightClass}`}
         aria-hidden="true"
       />
 
       {/* Hint card */}
       <div
-        className="fixed bottom-[clamp(120px,18vh,200px)] left-1/2 -translate-x-1/2 z-[95] pointer-events-auto"
+        className="tutorial-hint-panel fixed bottom-[clamp(120px,18vh,200px)] left-1/2 -translate-x-1/2 z-[95] pointer-events-auto"
         style={{ width: 'clamp(280px, 60vw, 420px)' }}
       >
         <div

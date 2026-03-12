@@ -21,3 +21,4 @@ Thumbs.db
 # Agent tools (local only)
 .agent/
 agent-mcp/
+.opencode

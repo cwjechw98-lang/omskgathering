@@ -1166,7 +1166,7 @@ body {
 /* ═══ MOBILE RESPONSIVE FIXES (≤480px) ═══ */
 @media (max-width: 480px) {
   :root {
-    --field-card-w: clamp(44px, 11vw, 62px);
+    --field-card-w: clamp(46px, 11.5vw, 64px);
     --hand-card-w: clamp(42px, 10vw, 58px);
   }
 
@@ -1229,6 +1229,70 @@ body {
   .zone-hand {
     overflow-x: auto;
     overflow-y: hidden;
+  }
+
+  .tutorial-hint-panel {
+    top: calc(var(--topbar-h) + 6px);
+    bottom: auto !important;
+    width: min(94vw, 380px) !important;
+  }
+
+  .card-preview-overlay {
+    align-items: flex-start;
+    overflow-y: auto;
+    padding-top: calc(var(--topbar-h) + var(--herozone-h) + 6px) !important;
+    padding-bottom: calc(var(--actionbar-h) + var(--handzone-h) + 8px) !important;
+  }
+
+  .card-preview-shell {
+    width: min(92vw, 340px) !important;
+    max-height: calc(100dvh - var(--topbar-h) - var(--herozone-h) - var(--actionbar-h) - var(--handzone-h) - 18px) !important;
+  }
+
+  .field-card-mobile {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .field-card-mobile > .relative {
+    padding: 3px !important;
+  }
+
+  .field-card-mobile .field-card-name {
+    font-size: clamp(6px, 2.1vw, 8px) !important;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .field-card-mobile .field-card-keywords {
+    margin-top: 1px;
+    gap: 1px;
+  }
+
+  .field-card-mobile .field-card-keyword {
+    font-size: 6px !important;
+    padding: 0 2px !important;
+    line-height: 1;
+  }
+
+  .field-card-mobile .field-card-keyword:nth-child(n + 3) {
+    display: none;
+  }
+
+  .field-card-mobile .field-card-status {
+    margin-top: 1px;
+    gap: 1px;
+  }
+
+  .field-card-mobile .field-card-stats {
+    margin-top: auto;
+    gap: 2px;
+  }
+
+  .field-card-mobile .field-card-stat-badge {
+    font-size: clamp(7px, 2.2vw, 10px) !important;
+    padding: 1px 4px !important;
+    min-width: 0;
   }
   
   /* Health bar mobile fix */
@@ -1338,6 +1402,57 @@ body {
 }
 .z-layer-overlay {
   z-index: var(--z-overlay);
+}
+
+/* ═══ TUTORIAL OVERLAY + SPOTLIGHTS ═══ */
+.tutorial-overlay {
+  background: rgba(0, 0, 0, 0.72);
+  transition: background 0.2s ease;
+}
+
+.tutorial-overlay.tutorial-spotlight-hand {
+  background:
+    radial-gradient(
+      ellipse clamp(180px, 55vw, 480px) clamp(80px, 24vh, 180px) at 50% 92%,
+      transparent 0 52%,
+      rgba(0, 0, 0, 0.72) 66%
+    ),
+    rgba(0, 0, 0, 0.72);
+  z-index: 84 !important;
+}
+
+.tutorial-overlay.tutorial-spotlight-board {
+  background:
+    radial-gradient(
+      ellipse clamp(180px, 55vw, 520px) clamp(70px, 22vh, 160px) at 50% 66%,
+      transparent 0 50%,
+      rgba(0, 0, 0, 0.72) 66%
+    ),
+    rgba(0, 0, 0, 0.72);
+}
+
+.tutorial-overlay.tutorial-spotlight-endturn {
+  background:
+    radial-gradient(
+      ellipse clamp(140px, 36vw, 280px) clamp(46px, 12vh, 100px) at 50% 50%,
+      transparent 0 50%,
+      rgba(0, 0, 0, 0.72) 66%
+    ),
+    rgba(0, 0, 0, 0.72);
+}
+
+.tutorial-hint-panel {
+  max-width: calc(100vw - 20px);
+}
+
+/* ═══ CARD PREVIEW OVERLAY LAYERING ═══ */
+.card-preview-overlay {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.4));
+}
+
+.card-preview-shell {
+  position: relative;
+  z-index: 1;
 }
 
 /* ═══ EFFECTS OVERLAY LAYER (ui-fix.md) ═══ */
