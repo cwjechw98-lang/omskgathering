@@ -159,6 +159,17 @@
   position: relative;
 }
 
+/* Lift player stats panel upward and keep breathing room above action menu */
+.zone-player-hero.hero-zone-row {
+  align-items: flex-start;
+  padding-top: clamp(2px, 0.45vh, 6px);
+  padding-bottom: clamp(4px, 0.8vh, 10px);
+}
+
+.zone-player-hero.hero-zone-row > [data-slot='card'] {
+  transform: translateY(clamp(-6px, -0.9vh, -3px));
+}
+
 /* Hero zone row layout — hero stats + deck + graveyard */
 .hero-zone-row {
   display: flex;
@@ -184,7 +195,7 @@
 .zone-hand {
   grid-area: hand;
   overflow: visible;
-  z-index: var(--z-hand);
+  z-index: var(--z-hand-selected);
   position: relative;
 }
 
@@ -1200,6 +1211,15 @@ body {
     padding: 0 4px;
     flex-wrap: nowrap;
     overflow: visible;
+  }
+
+  .zone-player-hero.hero-zone-row {
+    padding-top: 2px;
+    padding-bottom: clamp(5px, 1vh, 10px);
+  }
+
+  .zone-player-hero.hero-zone-row > [data-slot='card'] {
+    transform: translateY(-8px);
   }
 
   .divider-hint {
