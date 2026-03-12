@@ -80,6 +80,7 @@
   --z-hand-selected: 106;
   --z-hand-zone: 110;
   --z-hand-card: 111;
+  --z-actionbar: 120;
 
   /* ═══ GAME GRID LAYOUT — Fixed row heights ═══ */
   --topbar-h: clamp(38px, 5vh, 50px);
@@ -161,7 +162,17 @@
   position: relative;
 }
 
-/* Lift player stats panel upward and keep breathing room above action menu */
+/* Keep enemy panel below title area */
+.zone-enemy-hero.hero-zone-row {
+  align-items: flex-start;
+  padding-top: clamp(4px, 0.7vh, 10px);
+}
+
+.zone-enemy-hero.hero-zone-row > [data-slot='card'] {
+  transform: translateY(clamp(2px, 0.45vh, 8px));
+}
+
+/* Keep player panel in native row without upward overlap */
 .zone-player-hero.hero-zone-row {
   align-items: flex-start;
   padding-top: clamp(2px, 0.45vh, 6px);
@@ -169,7 +180,7 @@
 }
 
 .zone-player-hero.hero-zone-row > [data-slot='card'] {
-  transform: translateY(clamp(-6px, -0.9vh, -3px));
+  transform: translateY(0);
 }
 
 /* Hero zone row layout — hero stats + deck + graveyard */
@@ -188,7 +199,7 @@
 .zone-actionbar {
   grid-area: actionbar;
   overflow: visible;
-  z-index: var(--z-ui);
+  z-index: var(--z-actionbar);
   pointer-events: auto;
 }
 .zone-actionbar > * {
@@ -1195,7 +1206,7 @@ body {
   :root {
     --field-card-w: clamp(46px, 11.5vw, 64px);
     --hand-card-w: clamp(42px, 10vw, 58px);
-    --herozone-h: clamp(50px, 6.4vh, 60px);
+    --herozone-h: clamp(74px, 10.5vh, 96px);
     --actionbar-h: clamp(30px, 3.8vh, 40px);
     --handzone-h: calc(var(--hand-card-h) + clamp(12px, 1.8vh, 18px));
   }
@@ -1222,11 +1233,15 @@ body {
     align-items: flex-start;
     padding-top: 0;
     padding-bottom: 0;
-    transform: translateY(clamp(-128px, -15vh, -96px));
+    transform: translateY(0);
   }
 
   .zone-player-hero.hero-zone-row > [data-slot='card'] {
     transform: translateY(0);
+  }
+
+  .zone-enemy-hero.hero-zone-row {
+    padding-top: clamp(6px, 1vh, 12px);
   }
 
   .divider-hint {
@@ -1249,9 +1264,10 @@ body {
     min-height: 44px;
   }
 
-  /* Lift mobile command panel up by ~its own height to avoid covering cards */
+  /* Keep command panel below preview area and above hand */
   .zone-actionbar {
-    transform: translateY(calc(-1 * var(--actionbar-h)));
+    transform: translateY(0);
+    z-index: 165;
   }
 
   .hero-zone-row button {
@@ -1275,7 +1291,7 @@ body {
   .zone-hand {
     overflow-x: auto;
     overflow-y: visible;
-    z-index: var(--z-hand-zone);
+    z-index: 130;
     isolation: isolate;
   }
 
@@ -1294,8 +1310,13 @@ body {
   .card-preview-overlay {
     align-items: flex-start;
     overflow-y: auto;
-    padding-top: calc(env(safe-area-inset-top, 0px) + var(--topbar-h) + var(--herozone-h) + 6px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + var(--topbar-h) + var(--herozone-h) + 14px);
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--actionbar-h) + var(--handzone-h) + 8px);
+  }
+
+  .hand-card-wrapper:hover,
+  .hand-card-wrapper.selected {
+    z-index: 160;
   }
 
   .card-preview-shell {
@@ -1502,6 +1523,7 @@ body {
 /* ═══ CARD PREVIEW OVERLAY LAYERING ═══ */
 .card-preview-overlay {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.4));
+  z-index: 170 !important;
 }
 
 .card-preview-shell {
