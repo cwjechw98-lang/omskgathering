@@ -704,9 +704,13 @@ function CardCollection({ onBack }: { onBack: () => void }) {
 
         {/* Mobile detail modal */}
         {detail && (
-          <div className="md:hidden fixed inset-0 z-30 bg-black/80 backdrop-blur-sm p-3" onClick={() => setSelectedCard(null)}>
+          <div
+            className="md:hidden fixed inset-x-0 bottom-0 z-30 bg-black/80 backdrop-blur-sm px-3 pb-3 pt-2"
+            style={{ top: 'calc(env(safe-area-inset-top, 0px) + 104px)' }}
+            onClick={() => setSelectedCard(null)}
+          >
             <div
-              className="h-full max-h-[calc(100dvh-1.5rem)] bg-[#0f0f18]/98 border border-[#c9a84c]/20 rounded-xl overflow-y-auto"
+              className="h-full max-h-[calc(100dvh-1.25rem)] bg-[#0f0f18]/98 border border-[#c9a84c]/20 rounded-xl overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className={`relative h-56 ${COLOR_BG[detail.color]} overflow-hidden`}>

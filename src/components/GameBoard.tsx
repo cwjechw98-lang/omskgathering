@@ -1181,7 +1181,32 @@ export function GameBoard({ mode, onBack }: Props) {
     clearMessages();
   };
 
-  const clickBF = () => {
+  const clickBF = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement | null;
+    if (!target) return;
+
+    if (
+      target.closest(
+        [
+          '[data-interactive-ui="true"]',
+          'button',
+          '[role="button"]',
+          'a',
+          'input',
+          'select',
+          'textarea',
+          '.hand-card-wrapper',
+          '.creature-slot',
+          '.card-preview-overlay',
+          '.tutorial-hint-panel',
+          '.modal-overlay',
+          '.modal-overlay-content',
+        ].join(',')
+      )
+    ) {
+      return;
+    }
+
     if (inspected && !selectedAttacker) {
       setInspected(null);
       setSelectedHand(null);
@@ -1210,6 +1235,7 @@ export function GameBoard({ mode, onBack }: Props) {
           <button
             onClick={onBack}
             className="text-gray-400 hover:text-white transition text-sm px-2 py-1"
+            data-interactive-ui="true"
           >
             ← Назад
           </button>
@@ -1232,6 +1258,7 @@ export function GameBoard({ mode, onBack }: Props) {
             className="text-gray-400 hover:text-[#f0d68a] transition text-sm px-2 py-1"
             title="Журнал действий"
             style={{ pointerEvents: 'auto', zIndex: 999 }}
+            data-interactive-ui="true"
           >
             📜 Лог
           </button>
@@ -1301,7 +1328,7 @@ export function GameBoard({ mode, onBack }: Props) {
           <div className="divider-buttons">
             {selectedAttacker && !gs.gameOver && myTurn && (
               <>
-                <button onClick={clickAttackHero} className="attack-hero-btn">
+                <button onClick={clickAttackHero} className="attack-hero-btn" data-interactive-ui="true">
                   💥 В героя
                 </button>
                 <button
@@ -1310,13 +1337,14 @@ export function GameBoard({ mode, onBack }: Props) {
                     setSelectedAttackerSlot(null);
                   }}
                   className="cancel-btn"
+                  data-interactive-ui="true"
                 >
                   Отмена
                 </button>
               </>
             )}
             {!gs.gameOver && myTurn && (
-              <button onClick={clickEndTurn} className="end-turn-btn ready">
+              <button onClick={clickEndTurn} className="end-turn-btn ready" data-interactive-ui="true">
                 Конец хода ⏭️
               </button>
             )}
@@ -1473,7 +1501,9 @@ export function GameBoard({ mode, onBack }: Props) {
       )}
 
       {/* MESSAGE FEED */}
-      <MessageFeed messages={messages} onDismiss={dismissMessage} />
+      <div className="z-layer-overlay relative">
+        <MessageFeed messages={messages} onDismiss={dismissMessage} />
+      </div>
 
       {/* DAMAGE NUMBERS */}
       {damageNumbers.map((dn) => (

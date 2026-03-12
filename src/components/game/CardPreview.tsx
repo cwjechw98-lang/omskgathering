@@ -35,19 +35,23 @@ export function CardPreview({
     <div
       className="card-preview-overlay fixed inset-0 z-[92] flex items-center justify-center pointer-events-auto"
       style={{
-        paddingTop: 'calc(var(--topbar-h) + var(--herozone-h) + 8px)',
-        paddingBottom: 'calc(var(--actionbar-h) + var(--handzone-h) + 8px)',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--topbar-h) + var(--herozone-h) + 8px)',
+        paddingBottom:
+          'calc(env(safe-area-inset-bottom, 0px) + var(--actionbar-h) + var(--handzone-h) + 8px)',
         paddingInline: 'clamp(8px, 3vw, 24px)',
       }}
       onClick={onClose}
+      data-interactive-ui="true"
     >
       <div
         className="card-preview-shell pointer-events-auto"
         style={{
           width: compact ? 'min(90vw, 320px)' : 'clamp(220px, 28vw, 340px)',
-          maxHeight: '100%',
+          maxHeight:
+            'calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--topbar-h) - var(--herozone-h) - var(--actionbar-h) - var(--handzone-h) - 16px)',
         }}
         onClick={(e) => e.stopPropagation()}
+        data-interactive-ui="true"
       >
       <div className="bg-[#0f0f18]/98 backdrop-blur-sm rounded-xl shadow-2xl border border-[#c9a84c]/30 overflow-hidden h-full">
         <button

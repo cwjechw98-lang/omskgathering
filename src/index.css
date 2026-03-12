@@ -68,10 +68,10 @@
   --z-card-slots: 20;
   --z-cards: 30;
   --z-card-effects: 40;
-  --z-combat-effects: 50;
+  --z-combat-effects: 72;
   --z-ui: 60;
   --z-hover: 70;
-  --z-overlay: 80;
+  --z-overlay: 90;
   --z-hand: 85;
   --z-divider: 15;
   --z-hero: 65;
@@ -1168,6 +1168,7 @@ body {
   :root {
     --field-card-w: clamp(46px, 11.5vw, 64px);
     --hand-card-w: clamp(42px, 10vw, 58px);
+    --herozone-h: clamp(68px, 10.2vh, 86px);
   }
 
   .board-zone {
@@ -1184,8 +1185,8 @@ body {
   .hero-zone-row {
     gap: 4px;
     padding: 0 4px;
-    flex-wrap: wrap;
-    overflow: hidden;
+    flex-wrap: nowrap;
+    overflow: visible;
   }
 
   .divider-hint {
@@ -1240,13 +1241,13 @@ body {
   .card-preview-overlay {
     align-items: flex-start;
     overflow-y: auto;
-    padding-top: calc(var(--topbar-h) + var(--herozone-h) + 6px) !important;
-    padding-bottom: calc(var(--actionbar-h) + var(--handzone-h) + 8px) !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + var(--topbar-h) + var(--herozone-h) + 6px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--actionbar-h) + var(--handzone-h) + 8px);
   }
 
   .card-preview-shell {
-    width: min(92vw, 340px) !important;
-    max-height: calc(100dvh - var(--topbar-h) - var(--herozone-h) - var(--actionbar-h) - var(--handzone-h) - 18px) !important;
+    width: min(92vw, 340px);
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--topbar-h) - var(--herozone-h) - var(--actionbar-h) - var(--handzone-h) - 18px);
   }
 
   .field-card-mobile {
