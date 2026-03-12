@@ -261,6 +261,7 @@ function PlayerArea({
 
   return (
     <UICard
+      data-slot="card"
       data-enemy-hero={dataEnemyHero ? 'true' : undefined}
       className={cn(
         'flex flex-col gap-0.5 p-1.5 border transition-all shrink-0',
@@ -1201,19 +1202,31 @@ export function GameBoard({ mode, onBack }: Props) {
         inspected?.owner === 'player1' &&
         inspected.card.uid === selectedHand
       ) {
+        const handZoneEl = document.querySelector('.zone-hand') as HTMLDivElement | null;
+        const handZoneRect = handZoneEl?.getBoundingClientRect();
+        const tappedHandZone =
+          !!handZoneRect &&
+          point.x >= handZoneRect.left &&
+          point.x <= handZoneRect.right &&
+          point.y >= handZoneRect.top &&
+          point.y <= handZoneRect.bottom;
+
         const selectedCardEl = handCardRefs.current.get(selectedHand);
         if (selectedCardEl) {
           const rect = selectedCardEl.getBoundingClientRect();
-          const hitSlop = 28;
+          const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+          const hitSlop = coarsePointer ? 56 : 28;
           const tappedSelectedCard =
             point.x >= rect.left - hitSlop &&
             point.x <= rect.right + hitSlop &&
             point.y >= rect.top - hitSlop &&
             point.y <= rect.bottom + hitSlop;
 
-          if (tappedSelectedCard && doPlayCard(selectedHand)) {
+          if ((tappedSelectedCard || tappedHandZone) && doPlayCard(selectedHand)) {
             return;
           }
+        } else if (tappedHandZone && doPlayCard(selectedHand)) {
+            return;
         }
       }
 

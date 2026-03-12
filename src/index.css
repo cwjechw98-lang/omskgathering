@@ -76,15 +76,17 @@
   --z-divider: 15;
   --z-hero: 65;
   --z-card-hover: 75;
-  --z-hand-hover: 100;
-  --z-hand-selected: 101;
+  --z-hand-hover: 105;
+  --z-hand-selected: 106;
+  --z-hand-zone: 110;
+  --z-hand-card: 111;
 
   /* ═══ GAME GRID LAYOUT — Fixed row heights ═══ */
   --topbar-h: clamp(38px, 5vh, 50px);
-  --herozone-h: clamp(56px, 7.5vh, 72px);
+  --herozone-h: clamp(52px, 6.8vh, 66px);
   --divider-h: clamp(40px, 5.5vh, 54px);
   --actionbar-h: clamp(32px, 4vh, 44px);
-  --handzone-h: calc(var(--hand-card-h) + clamp(24px, 3.5vh, 40px));
+  --handzone-h: calc(var(--hand-card-h) + clamp(18px, 2.9vh, 30px));
 }
 
 /* ═══ CSS GRID LAYOUT FOR GAME BOARD ═══ */
@@ -187,7 +189,7 @@
   grid-area: actionbar;
   overflow: visible;
   z-index: var(--z-ui);
-  pointer-events: none;
+  pointer-events: auto;
 }
 .zone-actionbar > * {
   pointer-events: auto;
@@ -195,8 +197,9 @@
 .zone-hand {
   grid-area: hand;
   overflow: visible;
-  z-index: var(--z-hand-selected);
+  z-index: var(--z-hand-zone);
   position: relative;
+  pointer-events: auto;
 }
 
 /* Prevent grid items from expanding */
@@ -643,7 +646,8 @@
   overflow-y: hidden;
   scrollbar-width: thin;
   position: relative;
-  z-index: var(--z-hand);
+  z-index: var(--z-hand-zone);
+  pointer-events: auto;
   gap: clamp(-14px, -2.2vw, -5px);
 }
 
@@ -659,7 +663,8 @@
     z-index 0s,
     filter 0.22s ease;
   cursor: pointer;
-  z-index: calc(var(--z-hand) + var(--card-index, 0));
+  z-index: calc(var(--z-hand-card) + var(--card-index, 0));
+  pointer-events: auto;
 }
 
 .hand-card-wrapper:hover {
@@ -1190,9 +1195,9 @@ body {
   :root {
     --field-card-w: clamp(46px, 11.5vw, 64px);
     --hand-card-w: clamp(42px, 10vw, 58px);
-    --herozone-h: clamp(58px, 8.8vh, 72px);
+    --herozone-h: clamp(50px, 6.4vh, 60px);
     --actionbar-h: clamp(30px, 3.8vh, 40px);
-    --handzone-h: calc(var(--hand-card-h) + clamp(14px, 2.2vh, 24px));
+    --handzone-h: calc(var(--hand-card-h) + clamp(12px, 1.8vh, 18px));
   }
 
   .board-zone {
@@ -1214,12 +1219,13 @@ body {
   }
 
   .zone-player-hero.hero-zone-row {
-    padding-top: 2px;
-    padding-bottom: clamp(5px, 1vh, 10px);
+    align-items: flex-start;
+    padding-top: 1px;
+    padding-bottom: clamp(2px, 0.45vh, 5px);
   }
 
   .zone-player-hero.hero-zone-row > [data-slot='card'] {
-    transform: translateY(-8px);
+    transform: translateY(clamp(-3px, -0.35vh, -1px));
   }
 
   .divider-hint {
@@ -1263,11 +1269,14 @@ body {
   .zone-hand {
     overflow-x: auto;
     overflow-y: visible;
+    z-index: var(--z-hand-zone);
+    isolation: isolate;
   }
 
   .hand-zone {
-    padding-top: clamp(2px, 0.5vh, 6px);
-    padding-bottom: clamp(3px, 0.6vh, 8px);
+    padding-top: clamp(1px, 0.3vh, 4px);
+    padding-bottom: clamp(2px, 0.45vh, 6px);
+    z-index: var(--z-hand-zone);
   }
 
   .tutorial-hint-panel {
