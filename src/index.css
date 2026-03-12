@@ -1249,6 +1249,11 @@ body {
     min-height: 44px;
   }
 
+  /* Lift mobile command panel up by ~its own height to avoid covering cards */
+  .zone-actionbar {
+    transform: translateY(calc(-1 * var(--actionbar-h)));
+  }
+
   .hero-zone-row button {
     min-height: 44px;
     min-width: 44px;
