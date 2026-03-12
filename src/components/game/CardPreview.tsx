@@ -26,21 +26,21 @@ export function CardPreview({
   card: CardInstance;
   owner: 'player1' | 'player2';
   gs: GameState;
-  onClose: () => void;
+  onClose: (source: 'backdrop' | 'button', point?: { x: number; y: number }) => void;
   compact?: boolean;
 }) {
   const opp = owner === 'player1' ? 'player2' : 'player1';
   const art = getCardCoverSources(card.data);
   return (
     <div
-      className="card-preview-overlay fixed inset-0 z-[92] flex items-center justify-center pointer-events-auto"
+      className="card-preview-overlay fixed inset-0 z-[140] flex items-center justify-center pointer-events-auto"
       style={{
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--topbar-h) + var(--herozone-h) + 8px)',
         paddingBottom:
           'calc(env(safe-area-inset-bottom, 0px) + var(--actionbar-h) + var(--handzone-h) + 8px)',
         paddingInline: 'clamp(8px, 3vw, 24px)',
       }}
-      onClick={onClose}
+      onClick={(e) => onClose('backdrop', { x: e.clientX, y: e.clientY })}
       data-interactive-ui="true"
     >
       <div
@@ -55,7 +55,7 @@ export function CardPreview({
       >
       <div className="bg-[#0f0f18]/98 backdrop-blur-sm rounded-xl shadow-2xl border border-[#c9a84c]/30 overflow-hidden h-full">
         <button
-          onClick={onClose}
+          onClick={() => onClose('button')}
           className="absolute top-1 right-1 z-20 text-gray-400 hover:text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-700 text-sm transition"
         >
           &#10005;

@@ -156,6 +156,7 @@
   grid-area: player-hero;
   overflow: visible;
   z-index: var(--z-hero);
+  position: relative;
 }
 
 /* Hero zone row layout — hero stats + deck + graveyard */
@@ -184,6 +185,7 @@
   grid-area: hand;
   overflow: visible;
   z-index: var(--z-hand);
+  position: relative;
 }
 
 /* Prevent grid items from expanding */
@@ -191,6 +193,15 @@
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+}
+
+.zone-player-hero,
+.zone-hand,
+.zone-actionbar,
+.zone-divider,
+.zone-enemy-hero,
+.zone-topbar {
+  overflow: visible;
 }
 
 /* Subtle zone backgrounds */
@@ -1168,7 +1179,9 @@ body {
   :root {
     --field-card-w: clamp(46px, 11.5vw, 64px);
     --hand-card-w: clamp(42px, 10vw, 58px);
-    --herozone-h: clamp(68px, 10.2vh, 86px);
+    --herozone-h: clamp(58px, 8.8vh, 72px);
+    --actionbar-h: clamp(30px, 3.8vh, 40px);
+    --handzone-h: calc(var(--hand-card-h) + clamp(14px, 2.2vh, 24px));
   }
 
   .board-zone {
@@ -1229,7 +1242,12 @@ body {
 
   .zone-hand {
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: visible;
+  }
+
+  .hand-zone {
+    padding-top: clamp(2px, 0.5vh, 6px);
+    padding-bottom: clamp(3px, 0.6vh, 8px);
   }
 
   .tutorial-hint-panel {

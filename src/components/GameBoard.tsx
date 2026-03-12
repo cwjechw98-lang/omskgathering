@@ -652,6 +652,7 @@ export function GameBoard({ mode, onBack }: Props) {
   const [newlyDrawnUids, setNewlyDrawnUids] = useState<Set<string>>(new Set());
   const [newlyPlayedUids, setNewlyPlayedUids] = useState<Set<string>>(new Set());
   const cardRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
+  const handCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const { messages, addMessage, clear: clearMessages, dismiss: dismissMessage } = useMessageFeed();
 
@@ -718,6 +719,15 @@ export function GameBoard({ mode, onBack }: Props) {
       }
     }
     prevHandRef.current = currentUids;
+  }, [me.hand]);
+
+  useEffect(() => {
+    const currentHandUids = new Set(me.hand.map((c) => c.uid));
+    for (const uid of handCardRefs.current.keys()) {
+      if (!currentHandUids.has(uid)) {
+        handCardRefs.current.delete(uid);
+      }
+    }
   }, [me.hand]);
 
   /* ── Play animation: detect new cards on field ── */
@@ -1178,8 +1188,40 @@ export function GameBoard({ mode, onBack }: Props) {
     seenStoryEventsRef.current = new Set();
     prevFieldRef.current = { p1: [], p2: [] };
     cardRefsMap.current.clear();
+    handCardRefs.current.clear();
     clearMessages();
   };
+
+  const closeCardPreview = useCallback(
+    (source: 'backdrop' | 'button', point?: { x: number; y: number }) => {
+      if (
+        source === 'backdrop' &&
+        point &&
+        selectedHand &&
+        inspected?.owner === 'player1' &&
+        inspected.card.uid === selectedHand
+      ) {
+        const selectedCardEl = handCardRefs.current.get(selectedHand);
+        if (selectedCardEl) {
+          const rect = selectedCardEl.getBoundingClientRect();
+          const hitSlop = 28;
+          const tappedSelectedCard =
+            point.x >= rect.left - hitSlop &&
+            point.x <= rect.right + hitSlop &&
+            point.y >= rect.top - hitSlop &&
+            point.y <= rect.bottom + hitSlop;
+
+          if (tappedSelectedCard && doPlayCard(selectedHand)) {
+            return;
+          }
+        }
+      }
+
+      setInspected(null);
+      setSelectedHand(null);
+    },
+    [doPlayCard, inspected, selectedHand]
+  );
 
   const clickBF = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement | null;
@@ -1458,7 +1500,14 @@ export function GameBoard({ mode, onBack }: Props) {
             return (
               <div
                 key={card.uid}
-                className={`hand-card-wrapper ${newlyDrawnUids.has(card.uid) ? 'card-draw-animation' : ''}`}
+                ref={(el) => {
+                  if (el) {
+                    handCardRefs.current.set(card.uid, el);
+                  } else {
+                    handCardRefs.current.delete(card.uid);
+                  }
+                }}
+                className={`hand-card-wrapper ${selectedHand === card.uid ? 'selected' : ''} ${newlyDrawnUids.has(card.uid) ? 'card-draw-animation' : ''}`}
                 style={
                   {
                     '--card-angle': `${(idx - (me.hand.length - 1) / 2) * 3}deg`,
@@ -1488,10 +1537,7 @@ export function GameBoard({ mode, onBack }: Props) {
           card={inspected.card}
           owner={inspected.owner}
           gs={gs}
-          onClose={() => {
-            setInspected(null);
-            setSelectedHand(null);
-          }}
+          onClose={closeCardPreview}
         />
       )}
 
