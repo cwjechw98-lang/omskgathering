@@ -362,6 +362,12 @@
     box-shadow 0.25s;
 }
 
+.creature-slot.attack-lane-source {
+  background: rgba(34, 197, 94, 0.06);
+  border-color: rgba(34, 197, 94, 0.28);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.14) inset;
+}
+
 /* ═══ CENTER DIVIDER ═══ */
 .center-divider {
   display: flex;

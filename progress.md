@@ -260,3 +260,13 @@ TODO update:
 - Replaced remaining hardcoded render zIndex in GameBoard damage popups.
 - Normalized CSS effect z-index usage to layer tokens (hover/card-effects/combat-effects/overlay).
 - Validation: lint 0 errors (warnings only), test pass, regression 51/51 pass, build pass.
+
+- 2026-03-12 UI refinement checkpoint:
+- `src/components/GameBoard.tsx` updated lane UX state flow:
+  - attacker source slot state now directly destructured,
+  - attacker slot reset added on inspect/end-turn/game reset,
+  - enemy lane highlight limited to selected lane only,
+  - active player source slot now receives dedicated visual class (`attack-lane-source`).
+- `src/components/game/CardPreview.tsx` preview overlay now centers in viewport with board-aware safe paddings and constrained responsive width/height to prevent clipping under top/action/hand zones.
+- `src/index.css` adds `.creature-slot.attack-lane-source` style for subtle source-lane emphasis.
+- Scope is UI-only; no engine/mechanics behavior changes introduced.

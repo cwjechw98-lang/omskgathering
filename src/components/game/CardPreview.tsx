@@ -33,19 +33,23 @@ export function CardPreview({
   const art = getCardCoverSources(card.data);
   return (
     <div
-      className="fixed inset-0 z-[85] flex items-start justify-end pt-4 pr-4 pointer-events-auto bg-black/20"
+      className="fixed inset-0 z-[85] flex items-center justify-center pointer-events-auto bg-black/20"
+      style={{
+        paddingTop: 'calc(var(--topbar-h) + var(--herozone-h) + 8px)',
+        paddingBottom: 'calc(var(--actionbar-h) + var(--handzone-h) + 8px)',
+        paddingInline: 'clamp(8px, 3vw, 24px)',
+      }}
       onClick={onClose}
     >
       <div
         className="pointer-events-auto"
         style={{
-          width: compact ? 'min(90vw, 320px)' : 'clamp(220px, 20vw, 300px)',
-          aspectRatio: '1 / 1.35',
-          minHeight: 'clamp(280px, 35vh, 420px)'
+          width: compact ? 'min(90vw, 320px)' : 'clamp(220px, 28vw, 340px)',
+          maxHeight: '100%',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-      <div className="bg-[#0f0f18]/98 backdrop-blur-sm rounded-xl shadow-2xl border border-[#c9a84c]/30 overflow-hidden">
+      <div className="bg-[#0f0f18]/98 backdrop-blur-sm rounded-xl shadow-2xl border border-[#c9a84c]/30 overflow-hidden h-full">
         <button
           onClick={onClose}
           className="absolute top-1 right-1 z-20 text-gray-400 hover:text-white w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-700 text-sm transition"

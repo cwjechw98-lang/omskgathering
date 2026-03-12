@@ -593,8 +593,7 @@ export function GameBoard({ mode, onBack }: Props) {
   const [gs, setGs] = useState<GameState>(createInitialGameState);
   const [selectedHand, setSelectedHand] = useState<string | null>(null);
   const [selectedAttacker, setSelectedAttacker] = useState<string | null>(null);
-  const selectedAttackerSlotState = useState<number | null>(null);
-  const setSelectedAttackerSlot = selectedAttackerSlotState[1];
+  const [selectedAttackerSlot, setSelectedAttackerSlot] = useState<number | null>(null);
   const [inspected, setInspected] = useState<{
     card: CardInstance;
     owner: 'player1' | 'player2';
@@ -974,6 +973,7 @@ export function GameBoard({ mode, onBack }: Props) {
     const card = me.hand.find((c) => c.uid === uid);
     if (!card) return;
     setSelectedAttacker(null);
+    setSelectedAttackerSlot(null);
     if (!myTurn || gs.gameOver) {
       setInspected({ card, owner: 'player1' });
       return;
@@ -1143,6 +1143,7 @@ export function GameBoard({ mode, onBack }: Props) {
     });
     setSelectedHand(null);
     setSelectedAttacker(null);
+    setSelectedAttackerSlot(null);
     setInspected(null);
     setShowAttackNotification(false);
   };
@@ -1151,6 +1152,7 @@ export function GameBoard({ mode, onBack }: Props) {
     setGs(createInitialGameState());
     setSelectedHand(null);
     setSelectedAttacker(null);
+    setSelectedAttackerSlot(null);
     setInspected(null);
     setPlayAnim(null);
     setDeathAnim(null);
@@ -1244,10 +1246,11 @@ export function GameBoard({ mode, onBack }: Props) {
         <div className="board-zone enemy">
           {Array.from({ length: 7 }, (_, i) => {
             const card = enemy.field[i];
+            const laneActive = selectedAttacker !== null && !gs.gameOver && selectedAttackerSlot === i;
             return (
               <div
                 key={i}
-                className={`creature-slot ${card ? 'occupied' : ''} ${selectedAttacker && !gs.gameOver ? 'attack-lane' : ''}`}
+                className={`creature-slot ${card ? 'occupied' : ''} ${laneActive ? 'attack-lane' : ''}`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -1257,7 +1260,7 @@ export function GameBoard({ mode, onBack }: Props) {
                     card={card}
                     player={enemy}
                     opponent={me}
-                    isTarget={selectedAttacker !== null}
+                    isTarget={laneActive}
                     canAct={false}
                     attackAnim={attackAnimUid === card.uid}
                     damageAnim={damageAnimUid === card.uid}
@@ -1329,10 +1332,11 @@ export function GameBoard({ mode, onBack }: Props) {
               !card.hasAttacked &&
               card.frozen <= 0 &&
               !card.keywords.includes('defender');
+            const laneSourceActive = selectedAttacker !== null && !gs.gameOver && selectedAttackerSlot === i;
             return (
               <div
                 key={i}
-                className={`creature-slot ${card ? 'occupied' : ''} ${dropZoneActive ? 'drop-target' : ''}`}
+                className={`creature-slot ${card ? 'occupied' : ''} ${dropZoneActive ? 'drop-target' : ''} ${laneSourceActive ? 'attack-lane-source' : ''}`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}

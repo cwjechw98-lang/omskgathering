@@ -2,6 +2,24 @@
 
 ## Session Log
 
+### 2026-03-12 — UI lane/highlight + preview viewport fit (logging checkpoint)
+
+**Scope completed (UI-only, no mechanics changes):**
+- `src/components/GameBoard.tsx`:
+  - Simplified attacker-slot state declaration to direct tuple destructuring (`selectedAttackerSlot`, `setSelectedAttackerSlot`).
+  - Reset `selectedAttackerSlot` when hand inspection is opened, when turn ends, and on full game reset to prevent stale lane highlights.
+  - Narrowed enemy lane highlight to only the selected target lane (`laneActive`) instead of highlighting all enemy slots.
+  - Added source-lane highlight class for the active attacking player slot (`attack-lane-source`).
+- `src/components/game/CardPreview.tsx`:
+  - Repositioned preview overlay to centered layout with dynamic safe paddings based on top/action/hand zone CSS variables.
+  - Adjusted preview card sizing (`clamp(220px, 28vw, 340px)`) and constrained by viewport height to avoid clipping.
+  - Ensured preview container stretches correctly with `h-full` while preserving close-on-backdrop behavior.
+- `src/index.css`:
+  - Added `.creature-slot.attack-lane-source` styling (subtle green source-lane tint/border/inset glow) for clearer attack origin feedback.
+
+**Notes:**
+- Visual/UX refinement only; gameplay rules and combat engine behavior intentionally unchanged.
+
 ### 2026-03-07
 
 ### Итерация 2: UX и юзабилити (UPGRADES.md)
