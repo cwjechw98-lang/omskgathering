@@ -2,6 +2,20 @@
 
 ## Session Log
 
+### 2026-03-14 — Unified Debug Hub v0 (UI-only, atomic delta)
+
+- Scope: implemented unified debug hub in `src/components/GameBoard.tsx` only; no changes in `src/game/*` and no mechanics/rules modifications.
+- Replaced split debug controls (`telemetry` / `baseline`) with a single hub block in topbar accessible zone:
+  - `📤 snapshot` exports unified JSON snapshot,
+  - `🧹 all` clears local debug/progression data and resets related UI status (`showLog`).
+- Added compact runtime indicators in hub: `counters`, `events`, `level`.
+- Unified export payload now includes required sections:
+  - `meta` (`version`, `exportedAt`),
+  - `telemetry` (`count`, `events`),
+  - `baseline` (`counters`, `averages`, `samples`),
+  - `progression` (`quests`, `achievements`, `xp`).
+- Validation: `npm run lint -- src/components/GameBoard.tsx` -> PASS (exit code 0).
+
 ### 2026-03-13 — Safety refactor delta (DeckBuilder/Tutorial)
 
 - In `src/components/game/DeckBuilder.tsx` introduced unified card count normalization via `clampCardCount` and synchronized deck-limit handling between editor changes and save path.

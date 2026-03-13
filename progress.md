@@ -1,5 +1,19 @@
 Original prompt: давай
 
+- 2026-03-14 Unified Debug Hub v0 delta (UI-only, atomic):
+- In `src/components/GameBoard.tsx` replaced split debug actions with unified topbar hub:
+  - `📤 snapshot` exports single unified JSON snapshot,
+  - `🧹 all` clears local debug/progression states and related UI debug status.
+- Added compact hub indicators: `counters`, `events`, `level`.
+- Unified snapshot structure now contains required sections:
+  - `meta`: `version`, `exportedAt`
+  - `telemetry`: `count`, `events`
+  - `baseline`: `counters`, `averages`, `samples`
+  - `progression`: `quests`, `achievements`, `xp`
+- Compatibility preserved for existing local state models (`omsk.telemetry.v0`, `omsk.baseline.v0`, `omsk.daily-quests.v0`, `omsk.achievements.v0`, `omsk.xp-profile.v0`).
+- No changes under `src/game/*`; rules/mechanics untouched.
+- Validation: `npm run lint -- src/components/GameBoard.tsx` -> PASS.
+
 - 2026-03-13 safety-refactor delta:
 - In `src/components/game/DeckBuilder.tsx` added unified card count normalization (`clampCardCount`) and synchronized deck-limit behavior between editor updates and save operation.
 - In `src/components/game/Tutorial.tsx` added guard for `window/localStorage` access for non-browser/runtime-safe execution.

@@ -9,12 +9,15 @@ import {
 import { GameState, CardInstance, PlayerState } from '../game/types';
 import {
   createInitialGameState,
+  createCardInstance,
   playCard,
   attackPlayer,
   attackCreature,
   endTurn,
   getEffectiveAttack,
 } from '../game/engine';
+import { createDeckFromCardIds } from '../data/cards';
+import { expandDeckCardIds, getActiveDeck, loadDecksState } from '../utils/decksStorage';
 import { aiTurn } from '../game/ai';
 import {
   CARD_NARRATIVES,
@@ -68,6 +71,578 @@ type GameMessage = {
 };
 
 let msgIdCounter = 0;
+
+type DailyQuestId = 'play_land' | 'play_non_land' | 'complete_match';
+
+type AchievementId =
+  | 'first_land'
+  | 'first_spell_or_creature'
+  | 'first_match_complete'
+  | 'first_victory';
+
+type DailyQuestState = {
+  dateKey: string;
+  progress: Record<DailyQuestId, number>;
+};
+
+type AchievementsState = {
+  version: 0;
+  unlocked: Record<AchievementId, boolean>;
+  unlockedAt: Record<AchievementId, number | null>;
+};
+
+type XPProfileState = {
+  version: 0;
+  xpTotal: number;
+  level: number;
+  xpInLevel: number;
+};
+
+type TelemetryEventName =
+  | 'tutorial_hint_shown'
+  | 'tutorial_skipped'
+  | 'card_played_land'
+  | 'card_played_non_land'
+  | 'match_completed'
+  | 'match_victory'
+  | 'daily_quest_completed'
+  | 'achievement_unlocked';
+
+type TelemetryPayload = Record<string, string | number | boolean | null>;
+
+type TelemetryEvent = {
+  name: TelemetryEventName;
+  timestamp: number;
+  payload: TelemetryPayload;
+};
+
+type TelemetryBufferState = {
+  version: 0;
+  events: TelemetryEvent[];
+};
+
+type BaselineMetricsState = {
+  version: 0;
+  counters: {
+    matchesCompleted: number;
+    turnsEnded: number;
+    cardsPlayed: number;
+    aiTurns: number;
+  };
+  recentTurnDurationsMs: number[];
+  recentAiTurnDurationsMs: number[];
+  recentCardActionLatencyMs: number[];
+  updatedAt: number | null;
+};
+
+const DAILY_QUESTS_STORAGE_KEY = 'omsk.daily-quests.v0';
+const ACHIEVEMENTS_STORAGE_KEY = 'omsk.achievements.v0';
+const XP_PROFILE_STORAGE_KEY = 'omsk.xp-profile.v0';
+const TELEMETRY_STORAGE_KEY = 'omsk.telemetry.v0';
+const BASELINE_STORAGE_KEY = 'omsk.baseline.v0';
+const TUTORIAL_STORAGE_KEY = 'tutorialCompleted';
+const DAILY_QUEST_TARGET = 1;
+const XP_PER_LEVEL = 100;
+const TELEMETRY_MAX_EVENTS = 200;
+const BASELINE_MAX_SAMPLES = 120;
+
+const TELEMETRY_EVENT_NAMES: ReadonlySet<TelemetryEventName> = new Set([
+  'tutorial_hint_shown',
+  'tutorial_skipped',
+  'card_played_land',
+  'card_played_non_land',
+  'match_completed',
+  'match_victory',
+  'daily_quest_completed',
+  'achievement_unlocked',
+]);
+
+function createInitialGameStateForActiveDeck(): GameState {
+  const base = createInitialGameState();
+  const decksState = loadDecksState();
+  const activeDeck = getActiveDeck(decksState);
+  if (!activeDeck) return base;
+
+  const selectedCardIds = expandDeckCardIds(activeDeck);
+  const selectedDeckData = createDeckFromCardIds(selectedCardIds);
+  const selectedInstances = selectedDeckData.map((card) => createCardInstance(card));
+  if (selectedInstances.length === 0) return base;
+
+  const player1HandSize = Math.min(6, selectedInstances.length);
+  base.player1.hand = selectedInstances.slice(0, player1HandSize);
+  base.player1.deck = selectedInstances.slice(player1HandSize);
+
+  base.log.push(`🧱 Активная колода: ${activeDeck.name}`);
+
+  return base;
+}
+
+const DAILY_QUEST_META: Array<{ id: DailyQuestId; label: string }> = [
+  { id: 'play_land', label: 'Play 1 land in a match' },
+  { id: 'play_non_land', label: 'Play 1 non-land card in a match' },
+  { id: 'complete_match', label: 'Complete 1 match (win or lose)' },
+];
+
+const ACHIEVEMENTS_META: Array<{ id: AchievementId; label: string; emoji: string }> = [
+  { id: 'first_land', label: 'First land played', emoji: '🏔️' },
+  { id: 'first_spell_or_creature', label: 'First non-land played', emoji: '✨' },
+  { id: 'first_match_complete', label: 'First match complete', emoji: '🏁' },
+  { id: 'first_victory', label: 'First victory', emoji: '🏆' },
+];
+
+function getLocalDateKey(now: Date = new Date()): string {
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function createInitialDailyQuestState(dateKey = getLocalDateKey()): DailyQuestState {
+  return {
+    dateKey,
+    progress: {
+      play_land: 0,
+      play_non_land: 0,
+      complete_match: 0,
+    },
+  };
+}
+
+function normalizeDailyQuestState(value: unknown): DailyQuestState | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Partial<DailyQuestState>;
+  if (typeof candidate.dateKey !== 'string') return null;
+  const progress = candidate.progress;
+  if (!progress || typeof progress !== 'object') return null;
+
+  return {
+    dateKey: candidate.dateKey,
+    progress: {
+      play_land: Number((progress as Record<string, unknown>).play_land) || 0,
+      play_non_land: Number((progress as Record<string, unknown>).play_non_land) || 0,
+      complete_match: Number((progress as Record<string, unknown>).complete_match) || 0,
+    },
+  };
+}
+
+function loadDailyQuestState(): DailyQuestState {
+  if (typeof window === 'undefined') return createInitialDailyQuestState();
+  try {
+    const raw = window.localStorage.getItem(DAILY_QUESTS_STORAGE_KEY);
+    if (!raw) return createInitialDailyQuestState();
+    const parsed = normalizeDailyQuestState(JSON.parse(raw));
+    if (!parsed) return createInitialDailyQuestState();
+    const todayKey = getLocalDateKey();
+    if (parsed.dateKey !== todayKey) return createInitialDailyQuestState(todayKey);
+    return parsed;
+  } catch {
+    return createInitialDailyQuestState();
+  }
+}
+
+function saveDailyQuestState(state: DailyQuestState): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(DAILY_QUESTS_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // no-op: localStorage may be unavailable
+  }
+}
+
+function incrementDailyQuest(state: DailyQuestState, questId: DailyQuestId): DailyQuestState {
+  return {
+    ...state,
+    progress: {
+      ...state.progress,
+      [questId]: Math.min(DAILY_QUEST_TARGET, state.progress[questId] + 1),
+    },
+  };
+}
+
+function createInitialAchievementsState(): AchievementsState {
+  return {
+    version: 0,
+    unlocked: {
+      first_land: false,
+      first_spell_or_creature: false,
+      first_match_complete: false,
+      first_victory: false,
+    },
+    unlockedAt: {
+      first_land: null,
+      first_spell_or_creature: null,
+      first_match_complete: null,
+      first_victory: null,
+    },
+  };
+}
+
+function normalizeAchievementsState(value: unknown): AchievementsState | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Partial<AchievementsState>;
+  if (candidate.version !== 0) return null;
+  const unlocked = candidate.unlocked;
+  const unlockedAt = candidate.unlockedAt;
+  if (!unlocked || typeof unlocked !== 'object') return null;
+  if (!unlockedAt || typeof unlockedAt !== 'object') return null;
+
+  return {
+    version: 0,
+    unlocked: {
+      first_land: Boolean((unlocked as Record<string, unknown>).first_land),
+      first_spell_or_creature: Boolean(
+        (unlocked as Record<string, unknown>).first_spell_or_creature
+      ),
+      first_match_complete: Boolean((unlocked as Record<string, unknown>).first_match_complete),
+      first_victory: Boolean((unlocked as Record<string, unknown>).first_victory),
+    },
+    unlockedAt: {
+      first_land: Number((unlockedAt as Record<string, unknown>).first_land) || null,
+      first_spell_or_creature:
+        Number((unlockedAt as Record<string, unknown>).first_spell_or_creature) || null,
+      first_match_complete:
+        Number((unlockedAt as Record<string, unknown>).first_match_complete) || null,
+      first_victory: Number((unlockedAt as Record<string, unknown>).first_victory) || null,
+    },
+  };
+}
+
+function loadAchievementsState(): AchievementsState {
+  if (typeof window === 'undefined') return createInitialAchievementsState();
+  try {
+    const raw = window.localStorage.getItem(ACHIEVEMENTS_STORAGE_KEY);
+    if (!raw) return createInitialAchievementsState();
+    const parsed = normalizeAchievementsState(JSON.parse(raw));
+    return parsed ?? createInitialAchievementsState();
+  } catch {
+    return createInitialAchievementsState();
+  }
+}
+
+function saveAchievementsState(state: AchievementsState): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(ACHIEVEMENTS_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // no-op: localStorage may be unavailable
+  }
+}
+
+function unlockAchievementState(state: AchievementsState, achievementId: AchievementId): AchievementsState {
+  if (state.unlocked[achievementId]) return state;
+  const now = Date.now();
+  return {
+    ...state,
+    unlocked: {
+      ...state.unlocked,
+      [achievementId]: true,
+    },
+    unlockedAt: {
+      ...state.unlockedAt,
+      [achievementId]: now,
+    },
+  };
+}
+
+function toXPProfileState(xpTotal: number): XPProfileState {
+  const normalizedXpTotal = Math.max(0, Math.floor(xpTotal));
+  return {
+    version: 0,
+    xpTotal: normalizedXpTotal,
+    level: Math.floor(normalizedXpTotal / XP_PER_LEVEL) + 1,
+    xpInLevel: normalizedXpTotal % XP_PER_LEVEL,
+  };
+}
+
+function createInitialXPProfileState(): XPProfileState {
+  return toXPProfileState(0);
+}
+
+function normalizeXPProfileState(value: unknown): XPProfileState | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Partial<XPProfileState>;
+  if (candidate.version !== 0) return null;
+
+  const xpTotalRaw = Number(candidate.xpTotal);
+  if (Number.isFinite(xpTotalRaw) && xpTotalRaw >= 0) {
+    return toXPProfileState(xpTotalRaw);
+  }
+
+  const levelRaw = Number(candidate.level);
+  const xpInLevelRaw = Number(candidate.xpInLevel);
+  if (!Number.isFinite(levelRaw) || !Number.isFinite(xpInLevelRaw)) return null;
+  if (levelRaw < 1 || xpInLevelRaw < 0) return null;
+
+  const normalizedLevel = Math.max(1, Math.floor(levelRaw));
+  const normalizedXpInLevel = Math.floor(xpInLevelRaw);
+  const inferredTotal = (normalizedLevel - 1) * XP_PER_LEVEL + normalizedXpInLevel;
+  return toXPProfileState(inferredTotal);
+}
+
+function loadXPProfileState(): XPProfileState {
+  if (typeof window === 'undefined') return createInitialXPProfileState();
+  try {
+    const raw = window.localStorage.getItem(XP_PROFILE_STORAGE_KEY);
+    if (!raw) return createInitialXPProfileState();
+    const parsed = normalizeXPProfileState(JSON.parse(raw));
+    return parsed ?? createInitialXPProfileState();
+  } catch {
+    return createInitialXPProfileState();
+  }
+}
+
+function saveXPProfileState(state: XPProfileState): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(XP_PROFILE_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // no-op: localStorage may be unavailable
+  }
+}
+
+function awardXP(state: XPProfileState, amount: number): XPProfileState {
+  const normalizedAmount = Math.max(0, Math.floor(amount));
+  if (normalizedAmount === 0) return state;
+  return toXPProfileState(state.xpTotal + normalizedAmount);
+}
+
+function createInitialTelemetryBufferState(): TelemetryBufferState {
+  return {
+    version: 0,
+    events: [],
+  };
+}
+
+function normalizeTelemetryEventName(value: unknown): TelemetryEventName | null {
+  if (typeof value !== 'string') return null;
+  if (!TELEMETRY_EVENT_NAMES.has(value as TelemetryEventName)) return null;
+  return value as TelemetryEventName;
+}
+
+function normalizeTelemetryPayload(value: unknown): TelemetryPayload {
+  if (!value || typeof value !== 'object') return {};
+  const entries = Object.entries(value as Record<string, unknown>).slice(0, 8);
+  const payload: TelemetryPayload = {};
+  for (const [key, raw] of entries) {
+    if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean' || raw === null) {
+      payload[key] = raw;
+    }
+  }
+  return payload;
+}
+
+function normalizeTelemetryBufferState(value: unknown): TelemetryBufferState | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Partial<TelemetryBufferState>;
+  if (candidate.version !== 0) return null;
+  if (!Array.isArray(candidate.events)) return null;
+
+  const events = candidate.events
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') return null;
+      const event = entry as Partial<TelemetryEvent>;
+      const name = normalizeTelemetryEventName(event.name);
+      const timestamp = Number(event.timestamp);
+      if (!name || !Number.isFinite(timestamp) || timestamp <= 0) return null;
+      return {
+        name,
+        timestamp: Math.floor(timestamp),
+        payload: normalizeTelemetryPayload(event.payload),
+      } satisfies TelemetryEvent;
+    })
+    .filter((event): event is TelemetryEvent => event !== null)
+    .slice(-TELEMETRY_MAX_EVENTS);
+
+  return {
+    version: 0,
+    events,
+  };
+}
+
+function loadTelemetryBufferState(): TelemetryBufferState {
+  if (typeof window === 'undefined') return createInitialTelemetryBufferState();
+  try {
+    const raw = window.localStorage.getItem(TELEMETRY_STORAGE_KEY);
+    if (!raw) return createInitialTelemetryBufferState();
+    const parsed = normalizeTelemetryBufferState(JSON.parse(raw));
+    return parsed ?? createInitialTelemetryBufferState();
+  } catch {
+    return createInitialTelemetryBufferState();
+  }
+}
+
+function saveTelemetryBufferState(state: TelemetryBufferState): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(TELEMETRY_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // no-op: localStorage may be unavailable
+  }
+}
+
+function pushTelemetryEvent(
+  state: TelemetryBufferState,
+  name: TelemetryEventName,
+  payload: TelemetryPayload = {}
+): TelemetryBufferState {
+  const nextEvent: TelemetryEvent = {
+    name,
+    timestamp: Date.now(),
+    payload: normalizeTelemetryPayload(payload),
+  };
+  const nextEvents = [...state.events, nextEvent].slice(-TELEMETRY_MAX_EVENTS);
+  return {
+    version: 0,
+    events: nextEvents,
+  };
+}
+
+function createInitialBaselineMetricsState(): BaselineMetricsState {
+  return {
+    version: 0,
+    counters: {
+      matchesCompleted: 0,
+      turnsEnded: 0,
+      cardsPlayed: 0,
+      aiTurns: 0,
+    },
+    recentTurnDurationsMs: [],
+    recentAiTurnDurationsMs: [],
+    recentCardActionLatencyMs: [],
+    updatedAt: null,
+  };
+}
+
+function normalizeMetricSample(value: unknown): number | null {
+  const num = Math.floor(Number(value));
+  if (!Number.isFinite(num) || num < 0) return null;
+  return Math.min(num, 600_000);
+}
+
+function normalizeMetricSamples(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => normalizeMetricSample(item))
+    .filter((item): item is number => item !== null)
+    .slice(-BASELINE_MAX_SAMPLES);
+}
+
+function normalizeBaselineMetricsState(value: unknown): BaselineMetricsState | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Partial<BaselineMetricsState>;
+  if (candidate.version !== 0) return null;
+
+  const countersRaw = candidate.counters;
+  if (!countersRaw || typeof countersRaw !== 'object') return null;
+
+  const matchesCompleted = Math.max(
+    0,
+    Math.floor(Number((countersRaw as Record<string, unknown>).matchesCompleted) || 0)
+  );
+  const turnsEnded = Math.max(0, Math.floor(Number((countersRaw as Record<string, unknown>).turnsEnded) || 0));
+  const cardsPlayed = Math.max(0, Math.floor(Number((countersRaw as Record<string, unknown>).cardsPlayed) || 0));
+  const aiTurns = Math.max(0, Math.floor(Number((countersRaw as Record<string, unknown>).aiTurns) || 0));
+
+  const updatedAtRaw = Number(candidate.updatedAt);
+  const updatedAt = Number.isFinite(updatedAtRaw) && updatedAtRaw > 0 ? Math.floor(updatedAtRaw) : null;
+
+  return {
+    version: 0,
+    counters: {
+      matchesCompleted,
+      turnsEnded,
+      cardsPlayed,
+      aiTurns,
+    },
+    recentTurnDurationsMs: normalizeMetricSamples(candidate.recentTurnDurationsMs),
+    recentAiTurnDurationsMs: normalizeMetricSamples(candidate.recentAiTurnDurationsMs),
+    recentCardActionLatencyMs: normalizeMetricSamples(candidate.recentCardActionLatencyMs),
+    updatedAt,
+  };
+}
+
+function loadBaselineMetricsState(): BaselineMetricsState {
+  if (typeof window === 'undefined') return createInitialBaselineMetricsState();
+  try {
+    const raw = window.localStorage.getItem(BASELINE_STORAGE_KEY);
+    if (!raw) return createInitialBaselineMetricsState();
+    const parsed = normalizeBaselineMetricsState(JSON.parse(raw));
+    return parsed ?? createInitialBaselineMetricsState();
+  } catch {
+    return createInitialBaselineMetricsState();
+  }
+}
+
+function saveBaselineMetricsState(state: BaselineMetricsState): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(BASELINE_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // no-op: localStorage may be unavailable
+  }
+}
+
+function appendMetricSample(samples: number[], valueMs: number): number[] {
+  const normalized = normalizeMetricSample(valueMs);
+  if (normalized === null) return samples;
+  return [...samples, normalized].slice(-BASELINE_MAX_SAMPLES);
+}
+
+function withBaselineUpdatedAt(state: BaselineMetricsState): BaselineMetricsState {
+  return {
+    ...state,
+    updatedAt: Date.now(),
+  };
+}
+
+function recordBaselineTurnEnded(state: BaselineMetricsState, durationMs: number): BaselineMetricsState {
+  return withBaselineUpdatedAt({
+    ...state,
+    counters: {
+      ...state.counters,
+      turnsEnded: state.counters.turnsEnded + 1,
+    },
+    recentTurnDurationsMs: appendMetricSample(state.recentTurnDurationsMs, durationMs),
+  });
+}
+
+function recordBaselineAiTurn(state: BaselineMetricsState, durationMs: number): BaselineMetricsState {
+  return withBaselineUpdatedAt({
+    ...state,
+    counters: {
+      ...state.counters,
+      aiTurns: state.counters.aiTurns + 1,
+    },
+    recentAiTurnDurationsMs: appendMetricSample(state.recentAiTurnDurationsMs, durationMs),
+  });
+}
+
+function recordBaselineCardPlayed(state: BaselineMetricsState, actionLatencyMs: number): BaselineMetricsState {
+  return withBaselineUpdatedAt({
+    ...state,
+    counters: {
+      ...state.counters,
+      cardsPlayed: state.counters.cardsPlayed + 1,
+    },
+    recentCardActionLatencyMs: appendMetricSample(state.recentCardActionLatencyMs, actionLatencyMs),
+  });
+}
+
+function recordBaselineMatchCompleted(state: BaselineMetricsState): BaselineMetricsState {
+  return withBaselineUpdatedAt({
+    ...state,
+    counters: {
+      ...state.counters,
+      matchesCompleted: state.counters.matchesCompleted + 1,
+    },
+  });
+}
+
+function averageMetricMs(samples: number[]): number {
+  if (samples.length === 0) return 0;
+  const total = samples.reduce((sum, item) => sum + item, 0);
+  return Math.round(total / samples.length);
+}
 
 function useMessageFeed() {
   const [messages, setMessages] = useState<GameMessage[]>([]);
@@ -228,6 +803,114 @@ function MessageFeed({
         })}
       </div>
     </div>
+  );
+}
+
+function DailyQuestsPanel({ quests }: { quests: DailyQuestState }) {
+  return (
+    <UICard className="bg-[#12101a]/85 border border-[#c9a84c]/20 p-2 rounded-lg w-[260px]">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="font-heading text-[#f0d68a] text-[11px]">📅 Daily Quests</span>
+        <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-gray-600/60 text-gray-300">
+          v0
+        </Badge>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {DAILY_QUEST_META.map((quest) => {
+          const value = quests.progress[quest.id];
+          const pct = Math.min(100, (value / DAILY_QUEST_TARGET) * 100);
+          const done = value >= DAILY_QUEST_TARGET;
+          return (
+            <div key={quest.id}>
+              <div className="flex items-center justify-between text-[10px] leading-tight mb-0.5">
+                <span className={done ? 'text-[#f0d68a]' : 'text-gray-300'}>{quest.label}</span>
+                <span className={done ? 'text-[#f0d68a]' : 'text-gray-400'}>
+                  {Math.min(value, DAILY_QUEST_TARGET)}/{DAILY_QUEST_TARGET}
+                </span>
+              </div>
+              <Progress value={pct} className="h-1.5" />
+            </div>
+          );
+        })}
+      </div>
+    </UICard>
+  );
+}
+
+function AchievementsPanel({ achievements }: { achievements: AchievementsState }) {
+  return (
+    <UICard className="bg-[#12101a]/85 border border-[#c9a84c]/20 p-2 rounded-lg w-[240px]">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="font-heading text-[#f0d68a] text-[11px]">🏆 Achievements</span>
+        <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-gray-600/60 text-gray-300">
+          v0
+        </Badge>
+      </div>
+      <div className="flex flex-col gap-1">
+        {ACHIEVEMENTS_META.map((achievement) => {
+          const unlocked = achievements.unlocked[achievement.id];
+          return (
+            <div
+              key={achievement.id}
+              className={cn(
+                'flex items-center justify-between text-[10px] px-1 py-0.5 rounded',
+                unlocked ? 'bg-[#f0d68a]/10 text-[#f0d68a]' : 'text-gray-400'
+              )}
+            >
+              <span className="truncate">
+                {achievement.emoji} {achievement.label}
+              </span>
+              <span className={unlocked ? 'text-[#f0d68a]' : 'text-gray-600'}>{unlocked ? '✓' : '•'}</span>
+            </div>
+          );
+        })}
+      </div>
+    </UICard>
+  );
+}
+
+function XPProfilePanel({ profile }: { profile: XPProfileState }) {
+  return (
+    <UICard className="bg-[#12101a]/85 border border-[#c9a84c]/20 p-2 rounded-lg w-[180px]">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="font-heading text-[#f0d68a] text-[11px]">⭐ Profile</span>
+        <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-gray-600/60 text-gray-300">
+          XP v0
+        </Badge>
+      </div>
+      <div className="flex items-center justify-between text-[10px] mb-0.5">
+        <span className="text-gray-300">Level {profile.level}</span>
+        <span className="text-[#f0d68a]">
+          {profile.xpInLevel}/{XP_PER_LEVEL}
+        </span>
+      </div>
+      <Progress value={(profile.xpInLevel / XP_PER_LEVEL) * 100} className="h-1.5" />
+    </UICard>
+  );
+}
+
+function BaselineMetricsPanel({ metrics }: { metrics: BaselineMetricsState }) {
+  const avgTurn = averageMetricMs(metrics.recentTurnDurationsMs);
+  const avgAiTurn = averageMetricMs(metrics.recentAiTurnDurationsMs);
+  const avgAction = averageMetricMs(metrics.recentCardActionLatencyMs);
+
+  return (
+    <UICard className="bg-[#12101a]/85 border border-[#c9a84c]/20 p-2 rounded-lg w-[230px]">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="font-heading text-[#f0d68a] text-[11px]">📈 Baseline</span>
+        <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-gray-600/60 text-gray-300">
+          v0
+        </Badge>
+      </div>
+      <div className="text-[10px] text-gray-300 leading-tight space-y-0.5">
+        <div>avg turn: {avgTurn}ms</div>
+        <div>avg ai: {avgAiTurn}ms</div>
+        <div>avg action: {avgAction}ms</div>
+        <div className="text-gray-400 pt-0.5">
+          m:{metrics.counters.matchesCompleted} t:{metrics.counters.turnsEnded} c:{metrics.counters.cardsPlayed} ai:{metrics.counters.aiTurns}
+        </div>
+      </div>
+    </UICard>
   );
 }
 
@@ -608,7 +1291,7 @@ function DeckStack({
 
 /* ═══ MAIN GAME BOARD ═══ */
 export function GameBoard({ mode, onBack }: Props) {
-  const [gs, setGs] = useState<GameState>(createInitialGameState);
+  const [gs, setGs] = useState<GameState>(createInitialGameStateForActiveDeck);
   const [selectedHand, setSelectedHand] = useState<string | null>(null);
   const [selectedAttacker, setSelectedAttacker] = useState<string | null>(null);
   const [selectedAttackerSlot, setSelectedAttackerSlot] = useState<number | null>(null);
@@ -642,6 +1325,28 @@ export function GameBoard({ mode, onBack }: Props) {
   const targetingLineState = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
   // Attack notification state - shows when creatures can attack and player has mana
   const [showAttackNotification, setShowAttackNotification] = useState(false);
+  const [hasPlayedNonLandCardThisTurn, setHasPlayedNonLandCardThisTurn] = useState(false);
+  const [dailyQuests, setDailyQuests] = useState<DailyQuestState>(() => loadDailyQuestState());
+  const [achievements, setAchievements] = useState<AchievementsState>(() => loadAchievementsState());
+  const [xpProfile, setXpProfile] = useState<XPProfileState>(() => loadXPProfileState());
+  const [telemetry, setTelemetry] = useState<TelemetryBufferState>(() => loadTelemetryBufferState());
+  const [baselineMetrics, setBaselineMetrics] = useState<BaselineMetricsState>(() =>
+    loadBaselineMetricsState()
+  );
+  const [tutorialCompleted, setTutorialCompleted] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(TUTORIAL_STORAGE_KEY) === 'true';
+  });
+  const prevTurnRef = useRef<{ turnNumber: number; currentTurn: GameState['currentTurn'] }>({
+    turnNumber: gs.turnNumber,
+    currentTurn: gs.currentTurn,
+  });
+  const prevGameOverRef = useRef(gs.gameOver);
+  const prevQuestProgressRef = useRef(dailyQuests.progress);
+  const prevAchievementsUnlockedRef = useRef(achievements.unlocked);
+  const prevTutorialHintRef = useRef<string | null>(null);
+  const turnStartedAtRef = useRef<number>(Date.now());
+  const aiTurnStartedAtRef = useRef<number | null>(null);
   const setTargetingLine = targetingLineState[1];
   const attackAnimTimerRef = useRef<number | null>(null);
   const damageAnimTimerRef = useRef<number | null>(null);
@@ -662,6 +1367,103 @@ export function GameBoard({ mode, onBack }: Props) {
   const me = gs.player1;
   const enemy = gs.player2;
   const cardBackSrc = getCardBackSource();
+
+  const recordTelemetry = useCallback(
+    (name: TelemetryEventName, payload: TelemetryPayload = {}) => {
+      setTelemetry((prev) => pushTelemetryEvent(prev, name, payload));
+    },
+    []
+  );
+
+  useEffect(() => {
+    saveDailyQuestState(dailyQuests);
+  }, [dailyQuests]);
+
+  useEffect(() => {
+    saveAchievementsState(achievements);
+  }, [achievements]);
+
+  useEffect(() => {
+    saveXPProfileState(xpProfile);
+  }, [xpProfile]);
+
+  useEffect(() => {
+    saveTelemetryBufferState(telemetry);
+  }, [telemetry]);
+
+  useEffect(() => {
+    saveBaselineMetricsState(baselineMetrics);
+  }, [baselineMetrics]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const todayKey = getLocalDateKey();
+      setDailyQuests((prev) =>
+        prev.dateKey === todayKey ? prev : createInitialDailyQuestState(todayKey)
+      );
+    }, 60_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!prevGameOverRef.current && gs.gameOver) {
+      recordTelemetry('match_completed', {
+        turnNumber: gs.turnNumber,
+        playerHealth: gs.player1.health,
+      });
+      if (gs.player1.health > 0) {
+        recordTelemetry('match_victory', {
+          turnNumber: gs.turnNumber,
+          playerHealth: gs.player1.health,
+        });
+      }
+      setDailyQuests((prev) => incrementDailyQuest(prev, 'complete_match'));
+      setAchievements((prev) => {
+        let next = unlockAchievementState(prev, 'first_match_complete');
+        if (gs.player1.health > 0) {
+          next = unlockAchievementState(next, 'first_victory');
+        }
+        return next;
+      });
+      setBaselineMetrics((prev) => recordBaselineMatchCompleted(prev));
+      setXpProfile((prev) => {
+        const completionXP = 50;
+        const victoryBonusXP = gs.player1.health > 0 ? 25 : 0;
+        return awardXP(prev, completionXP + victoryBonusXP);
+      });
+    }
+    prevGameOverRef.current = gs.gameOver;
+  }, [gs.gameOver, gs.player1.health, gs.turnNumber, recordTelemetry]);
+
+  useEffect(() => {
+    const previous = prevQuestProgressRef.current;
+    for (const quest of DAILY_QUEST_META) {
+      const before = previous[quest.id] ?? 0;
+      const after = dailyQuests.progress[quest.id] ?? 0;
+      if (before < DAILY_QUEST_TARGET && after >= DAILY_QUEST_TARGET) {
+        recordTelemetry('daily_quest_completed', {
+          questId: quest.id,
+          dateKey: dailyQuests.dateKey,
+        });
+      }
+    }
+    prevQuestProgressRef.current = dailyQuests.progress;
+  }, [dailyQuests, recordTelemetry]);
+
+  useEffect(() => {
+    const previous = prevAchievementsUnlockedRef.current;
+    for (const achievement of ACHIEVEMENTS_META) {
+      const wasUnlocked = previous[achievement.id];
+      const isUnlocked = achievements.unlocked[achievement.id];
+      if (!wasUnlocked && isUnlocked) {
+        recordTelemetry('achievement_unlocked', {
+          achievementId: achievement.id,
+        });
+      }
+    }
+    prevAchievementsUnlockedRef.current = achievements.unlocked;
+  }, [achievements, recordTelemetry]);
 
   useEffect(() => {
     const currentP1 = me.field.map((c) => c.uid);
@@ -764,6 +1566,20 @@ export function GameBoard({ mode, onBack }: Props) {
   );
   const landPlayed = me.landsPlayed > 0;
 
+  useEffect(() => {
+    const prev = prevTurnRef.current;
+    if (prev.turnNumber !== gs.turnNumber || prev.currentTurn !== gs.currentTurn) {
+      const now = Date.now();
+      const previousTurnDuration = now - turnStartedAtRef.current;
+      if (prev.currentTurn === 'player1' && previousTurnDuration > 0) {
+        setBaselineMetrics((prevMetrics) => recordBaselineTurnEnded(prevMetrics, previousTurnDuration));
+      }
+      turnStartedAtRef.current = now;
+      setHasPlayedNonLandCardThisTurn(false);
+      prevTurnRef.current = { turnNumber: gs.turnNumber, currentTurn: gs.currentTurn };
+    }
+  }, [gs.turnNumber, gs.currentTurn]);
+
   // Show attack notification when attackers available and player has mana
   const canShowAttackNotification = myTurn && !gs.gameOver && hasAttackers && me.mana > 0;
   // Show notification when conditions are met and we haven't dismissed it yet
@@ -791,6 +1607,29 @@ export function GameBoard({ mode, onBack }: Props) {
     if (hasAttackers) return 'attack' as const;
     return 'done' as const;
   })();
+
+  const tutorialVisible = gs.turnNumber <= 3 && !gs.gameOver && !tutorialCompleted;
+  const tutorialHintKey = (() => {
+    if (!tutorialVisible) return null;
+    if (hasPlayableLand && !landPlayed) return 'play_land';
+    if (hasPlayableCard && !hasPlayedNonLandCardThisTurn) return 'play_non_land';
+    if (hasAttackers && myTurn && phase === 'attack') return 'attack';
+    return 'end_turn';
+  })();
+
+  useEffect(() => {
+    if (!tutorialVisible || !tutorialHintKey) {
+      prevTutorialHintRef.current = null;
+      return;
+    }
+    if (prevTutorialHintRef.current !== tutorialHintKey) {
+      recordTelemetry('tutorial_hint_shown', {
+        hint: tutorialHintKey,
+        turnNumber: gs.turnNumber,
+      });
+      prevTutorialHintRef.current = tutorialHintKey;
+    }
+  }, [tutorialVisible, tutorialHintKey, gs.turnNumber, recordTelemetry]);
 
   const showCardNarrative = useCallback(
     (cardId: string) => {
@@ -865,6 +1704,7 @@ export function GameBoard({ mode, onBack }: Props) {
       if (damageAnimTimerRef.current) window.clearTimeout(damageAnimTimerRef.current);
       if (aiAnimTimerRef.current) window.clearTimeout(aiAnimTimerRef.current);
       if (aiTurnTimerRef.current) window.clearTimeout(aiTurnTimerRef.current);
+      aiTurnStartedAtRef.current = null;
     };
   }, []);
 
@@ -905,6 +1745,7 @@ export function GameBoard({ mode, onBack }: Props) {
       window.clearTimeout(aiTurnTimerRef.current);
       aiTurnTimerRef.current = null;
     }
+    aiTurnStartedAtRef.current = Date.now();
     setAiThinking(true);
     setAiActionStatus(null);
     aiTurnTimerRef.current = window.setTimeout(() => {
@@ -934,6 +1775,11 @@ export function GameBoard({ mode, onBack }: Props) {
       if (lastCard) showCardNarrative(lastCard.data.id);
       const lore = getAILoreComment(lastCard?.data.id || '');
       addMessage('ai', lore, AI_CHARACTER.avatarEmoji);
+      const aiStartedAt = aiTurnStartedAtRef.current;
+      if (aiStartedAt) {
+        setBaselineMetrics((prev) => recordBaselineAiTurn(prev, Date.now() - aiStartedAt));
+        aiTurnStartedAtRef.current = null;
+      }
       setAiThinking(false);
       setTimeout(() => {
         if (mountedRef.current) setAiActionStatus(null);
@@ -950,10 +1796,30 @@ export function GameBoard({ mode, onBack }: Props) {
 
   const doPlayCard = useCallback(
     (uid: string) => {
+      const actionStartedAt = Date.now();
       const card = me.hand.find((c) => c.uid === uid);
       if (!card || !myTurn || gs.gameOver) return false;
       const next = playCard(gs, 'player1', uid);
       if (next !== gs) {
+        recordTelemetry(card.data.type === 'land' ? 'card_played_land' : 'card_played_non_land', {
+          cardId: card.data.id,
+          turnNumber: gs.turnNumber,
+          mana: me.mana,
+        });
+        setXpProfile((prev) => awardXP(prev, 10));
+        if (card.data.type !== 'land') {
+          setHasPlayedNonLandCardThisTurn(true);
+        }
+        setDailyQuests((prev) =>
+          incrementDailyQuest(prev, card.data.type === 'land' ? 'play_land' : 'play_non_land')
+        );
+        setAchievements((prev) =>
+          unlockAchievementState(
+            prev,
+            card.data.type === 'land' ? 'first_land' : 'first_spell_or_creature'
+          )
+        );
+        setBaselineMetrics((prev) => recordBaselineCardPlayed(prev, Date.now() - actionStartedAt));
         setPlayAnim({ name: card.data.name, emoji: card.data.emoji, color: card.data.color });
         setGs(next);
         setSelectedHand(null);
@@ -964,7 +1830,7 @@ export function GameBoard({ mode, onBack }: Props) {
       }
       return false;
     },
-    [gs, me.hand, myTurn, showCardNarrative, addMessage, setPlayAnim]
+    [gs, me.hand, myTurn, showCardNarrative, addMessage, setPlayAnim, me.mana, recordTelemetry]
   );
 
   const handleDragStart = (e: React.DragEvent, uid: string) => {
@@ -1177,7 +2043,13 @@ export function GameBoard({ mode, onBack }: Props) {
   };
 
   const restart = () => {
-    setGs(createInitialGameState());
+    const initialState = createInitialGameStateForActiveDeck();
+    setGs(initialState);
+    setHasPlayedNonLandCardThisTurn(false);
+    prevTurnRef.current = {
+      turnNumber: initialState.turnNumber,
+      currentTurn: initialState.currentTurn,
+    };
     setSelectedHand(null);
     setSelectedAttacker(null);
     setSelectedAttackerSlot(null);
@@ -1191,7 +2063,72 @@ export function GameBoard({ mode, onBack }: Props) {
     cardRefsMap.current.clear();
     handCardRefs.current.clear();
     clearMessages();
+    prevTutorialHintRef.current = null;
+    turnStartedAtRef.current = Date.now();
+    aiTurnStartedAtRef.current = null;
   };
+
+  const exportUnifiedDebugSnapshot = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const payload = {
+        meta: {
+          version: 'unified-debug-hub.v0',
+          exportedAt: Date.now(),
+        },
+        telemetry: {
+          count: telemetry.events.length,
+          events: telemetry.events,
+        },
+        baseline: {
+          counters: baselineMetrics.counters,
+          averages: {
+            turnMs: averageMetricMs(baselineMetrics.recentTurnDurationsMs),
+            aiTurnMs: averageMetricMs(baselineMetrics.recentAiTurnDurationsMs),
+            actionMs: averageMetricMs(baselineMetrics.recentCardActionLatencyMs),
+          },
+          samples: {
+            turnDurationsMs: baselineMetrics.recentTurnDurationsMs,
+            aiTurnDurationsMs: baselineMetrics.recentAiTurnDurationsMs,
+            actionLatencyMs: baselineMetrics.recentCardActionLatencyMs,
+          },
+        },
+        progression: {
+          quests: dailyQuests,
+          achievements,
+          xp: xpProfile,
+        },
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      anchor.href = url;
+      anchor.download = `omsk-unified-debug-snapshot-v0-${timestamp}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // no-op: export is debug-only
+    }
+  }, [achievements, baselineMetrics, dailyQuests, telemetry.events, xpProfile]);
+
+  const clearUnifiedDebugLocalData = useCallback(() => {
+    setTelemetry(createInitialTelemetryBufferState());
+    setBaselineMetrics(createInitialBaselineMetricsState());
+    setDailyQuests(createInitialDailyQuestState());
+    setAchievements(createInitialAchievementsState());
+    setXpProfile(createInitialXPProfileState());
+    setShowLog(false);
+  }, []);
+
+  const handleTutorialSkip = useCallback(() => {
+    setTutorialCompleted(true);
+    recordTelemetry('tutorial_skipped', {
+      turnNumber: gs.turnNumber,
+    });
+  }, [gs.turnNumber, recordTelemetry]);
 
   const closeCardPreview = useCallback(
     (source: 'backdrop' | 'button', point?: { x: number; y: number }) => {
@@ -1302,6 +2239,61 @@ export function GameBoard({ mode, onBack }: Props) {
           </span>
         </div>
         <div className="flex items-center gap-4">
+          <div className="flex items-start gap-2">
+            <BaselineMetricsPanel metrics={baselineMetrics} />
+            <XPProfilePanel profile={xpProfile} />
+            <DailyQuestsPanel quests={dailyQuests} />
+            <AchievementsPanel achievements={achievements} />
+          </div>
+          <div
+            className="flex items-center gap-1.5 rounded border border-[#3a3f5a] bg-[#121628]/80 px-1.5 py-1"
+            data-interactive-ui="true"
+          >
+            <span
+              className="text-[10px] text-gray-400"
+              title="Unified Debug Hub v0"
+              data-interactive-ui="true"
+            >
+              🧪 hub
+            </span>
+            <span className="text-[10px] text-gray-400" title="Baseline counters" data-interactive-ui="true">
+              counters:{' '}
+              <span className="text-[#f0d68a]">
+                {baselineMetrics.counters.matchesCompleted}/
+                {baselineMetrics.counters.turnsEnded}/
+                {baselineMetrics.counters.cardsPlayed}/
+                {baselineMetrics.counters.aiTurns}
+              </span>
+            </span>
+            <span className="text-[10px] text-gray-400" title="Telemetry events" data-interactive-ui="true">
+              events: <span className="text-[#f0d68a]">{telemetry.events.length}</span>
+            </span>
+            <span className="text-[10px] text-gray-400" title="Progression level" data-interactive-ui="true">
+              level: <span className="text-[#f0d68a]">{xpProfile.level}</span>
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                exportUnifiedDebugSnapshot();
+              }}
+              className="text-gray-400 hover:text-[#f0d68a] transition text-xs px-1.5 py-1"
+              title="Экспорт unified debug snapshot (JSON)"
+              data-interactive-ui="true"
+            >
+              📤 snapshot
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                clearUnifiedDebugLocalData();
+              }}
+              className="text-gray-500 hover:text-red-300 transition text-xs px-1.5 py-1"
+              title="Очистить unified debug/progression local data"
+              data-interactive-ui="true"
+            >
+              🧹 all
+            </button>
+          </div>
           <span className="text-gray-400" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>
             Ход {gs.turnNumber}
           </span>
@@ -1555,8 +2547,20 @@ export function GameBoard({ mode, onBack }: Props) {
       )}
 
       {/* TUTORIAL */}
-      {gs.turnNumber <= 3 && !gs.gameOver && (
-        <Tutorial gameState={gs} playerKey="player1" onSkip={() => {}} />
+      {tutorialVisible && (
+        <Tutorial
+          gameState={gs}
+          playerKey="player1"
+          hintContext={{
+            hasPlayableLand,
+            hasPlayedLandThisTurn: landPlayed,
+            hasPlayableNonLandCard: hasPlayableCard,
+            hasPlayedNonLandCardThisTurn,
+            hasAttackReadyCreature: hasAttackers,
+            isAttackOpportunity: myTurn && phase === 'attack',
+          }}
+          onSkip={handleTutorialSkip}
+        />
       )}
 
       {/* MESSAGE FEED */}
