@@ -1311,6 +1311,8 @@ export const ALL_CARDS: CardData[] = [
   },
 ];
 
+const CARD_BY_ID = new Map(ALL_CARDS.map((card) => [card.id, card]));
+
 export function createDeck(): CardData[] {
   const deck: CardData[] = [];
   const nonLandCards = ALL_CARDS.filter((c) => c.type !== 'land' && c.id !== 'chinovnik');
@@ -1376,6 +1378,25 @@ export function createDeck(): CardData[] {
     }
   }
   return shuffled;
+}
+
+export function createDeckFromCardIds(cardIds: string[]): CardData[] {
+  if (!Array.isArray(cardIds) || cardIds.length === 0) {
+    return createDeck();
+  }
+
+  const deck: CardData[] = [];
+  for (const cardId of cardIds) {
+    const card = CARD_BY_ID.get(cardId);
+    if (!card || card.id === 'chinovnik') continue;
+    deck.push({ ...card });
+  }
+
+  if (deck.length === 0) {
+    return createDeck();
+  }
+
+  return shuffle(deck);
 }
 
 export function shuffle<T>(array: T[]): T[] {

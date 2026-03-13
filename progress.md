@@ -1,5 +1,10 @@
 Original prompt: давай
 
+- 2026-03-14 Iteration 1 closure delta:
+- 1.1 Flow verification completed for deck builder + active deck startup integration; no code fixes required.
+- 1.2 Added regression test file `tests/regression/decks-storage-and-cardids.regression.test.ts` for deck storage and card-id realization behavior.
+- 1.3 Quality gates passed for iteration scope: lint, focused tests, build.
+
 - 2026-03-14 Unified Debug Hub v0 delta (UI-only, atomic):
 - In `src/components/GameBoard.tsx` replaced split debug actions with unified topbar hub:
   - `📤 snapshot` exports single unified JSON snapshot,

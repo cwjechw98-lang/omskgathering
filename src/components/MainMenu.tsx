@@ -8,6 +8,7 @@ import { Torch } from './effects/Torch';
 import { getCardCoverSources, handleImageErrorWithFallback } from '../utils/cardImages';
 import { Button } from './ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './ui/accordion';
+import { DeckBuilder } from './game/DeckBuilder';
 
 interface MainMenuProps {
   onStartGame: (mode: 'ai' | 'local') => void;
@@ -44,12 +45,13 @@ function detectLiteFx(): boolean {
 }
 
 export function MainMenu({ onStartGame }: MainMenuProps) {
-  const [screen, setScreen] = useState<'menu' | 'cards' | 'rules' | 'lore'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'cards' | 'rules' | 'lore' | 'deck-builder'>('menu');
   const [liteFx] = useState(() => detectLiteFx());
 
   if (screen === 'cards') return <CardCollection onBack={() => setScreen('menu')} />;
   if (screen === 'rules') return <Rules onBack={() => setScreen('menu')} />;
   if (screen === 'lore') return <LoreScreen onBack={() => setScreen('menu')} />;
+  if (screen === 'deck-builder') return <DeckBuilder onBack={() => setScreen('menu')} />;
 
   return (
     <div className="h-[100dvh] bg-[#0a0a0f] flex flex-col items-center py-4 md:py-8 px-4 relative overflow-y-auto">
@@ -192,6 +194,15 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
             <span className="font-body text-xs text-purple-400/60 ml-1 hidden sm:inline">
               ({ALL_CARDS.filter((c) => c.id !== 'chinovnik').length} карт)
             </span>
+          </Button>
+          <Button
+            variant="gold"
+            size="lg"
+            onClick={() => setScreen('deck-builder')}
+            className="w-full rounded-xl gap-2 md:gap-3 py-2.5 md:py-3"
+          >
+            <span className="flex-shrink-0">🧱</span>
+            <span className="truncate">Конструктор колод</span>
           </Button>
           <Button
             variant="nav"

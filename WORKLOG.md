@@ -2,6 +2,12 @@
 
 ## Session Log
 
+### 2026-03-14 — Iteration 1 closure (delta-only)
+
+- 1.1 Flow verification completed for deck builder + active deck startup path; no code fixes required.
+- 1.2 Added regression coverage in `tests/regression/decks-storage-and-cardids.regression.test.ts` for local deck storage + card-id deck realization behavior.
+- 1.3 Quality gates for iteration scope are green: lint, focused regression tests, build.
+
 ### 2026-03-14 — Unified Debug Hub v0 (UI-only, atomic delta)
 
 - Scope: implemented unified debug hub in `src/components/GameBoard.tsx` only; no changes in `src/game/*` and no mechanics/rules modifications.

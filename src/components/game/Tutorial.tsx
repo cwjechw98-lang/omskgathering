@@ -45,10 +45,29 @@ const STEPS: TutorialStep[] = [
 interface TutorialProps {
   gameState: GameState;
   playerKey: 'player1' | 'player2';
+  hintContext?: {
+    hasPlayableLand: boolean;
+    hasPlayedLandThisTurn: boolean;
+    hasPlayableNonLandCard: boolean;
+    hasPlayedNonLandCardThisTurn: boolean;
+    hasAttackReadyCreature: boolean;
+    isAttackOpportunity: boolean;
+  };
   onSkip: () => void;
 }
 
-function getActiveStep(gameState: GameState, playerKey: 'player1' | 'player2'): number {
+function getActiveStep(
+  gameState: GameState,
+  playerKey: 'player1' | 'player2',
+  hintContext?: TutorialProps['hintContext']
+): number {
+  if (hintContext) {
+    if (hintContext.hasPlayableLand && !hintContext.hasPlayedLandThisTurn) return 1;
+    if (hintContext.hasPlayableNonLandCard && !hintContext.hasPlayedNonLandCardThisTurn) return 2;
+    if (hintContext.hasAttackReadyCreature && hintContext.isAttackOpportunity) return 3;
+    return 4;
+  }
+
   const me = gameState[playerKey];
   const hasLands = me.hand.some((c) => c.data.type === 'land') && me.landsPlayed < me.maxLandsPerTurn;
   const hasPlayable = me.hand.some((c) => c.data.type !== 'land' && c.data.cost <= me.mana);
@@ -62,17 +81,22 @@ function getActiveStep(gameState: GameState, playerKey: 'player1' | 'player2'): 
   return 4;
 }
 
-export function Tutorial({ gameState, playerKey, onSkip }: TutorialProps) {
-  const [completed] = useState(() => localStorage.getItem(TUTORIAL_STORAGE_KEY) === 'true');
+export function Tutorial({ gameState, playerKey, hintContext, onSkip }: TutorialProps) {
+  const [completed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(TUTORIAL_STORAGE_KEY) === 'true';
+  });
   const [dismissed, setDismissed] = useState(false);
 
   if (completed || dismissed) return null;
 
-  const stepIndex = getActiveStep(gameState, playerKey) - 1;
+  const stepIndex = getActiveStep(gameState, playerKey, hintContext) - 1;
   const currentStep = STEPS[Math.min(stepIndex, STEPS.length - 1)];
 
   const handleSkip = () => {
-    localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true');
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true');
+    }
     setDismissed(true);
     onSkip();
   };
