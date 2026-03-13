@@ -2,6 +2,141 @@
 
 ## Session Log
 
+### 2026-03-13 — Safety refactor delta (DeckBuilder/Tutorial)
+
+- In `src/components/game/DeckBuilder.tsx` introduced unified card count normalization via `clampCardCount` and synchronized deck-limit handling between editor changes and save path.
+- In `src/components/game/Tutorial.tsx` added runtime guard for `window/localStorage` access to avoid non-browser/runtime edge failures.
+- Validation: `npx eslint src/components/game/DeckBuilder.tsx src/components/game/Tutorial.tsx` -> PASS.
+
+### 2026-03-13 — UX Deck Builder iteration complete (delta)
+
+- Added card-name search in `src/components/game/DeckBuilder.tsx`.
+- Added filters: card type and mana cost.
+- Added sorting: name / mana cost.
+- Added dynamic validation: deck size + lands recommendation.
+- Validation: `npx eslint src/components/game/DeckBuilder.tsx` -> PASS.
+
+### 2026-03-13 — MVP item 6: Performance/Reliability baseline v0 (local-only)
+
+- Scope: implemented local-only baseline performance/reliability metrics in `src/components/GameBoard.tsx` only; no engine/mechanics changes under `src/game/`.
+- Added versioned baseline storage model under key `omsk.baseline.v0`:
+  - counters: `matchesCompleted`, `turnsEnded`, `cardsPlayed`, `aiTurns`;
+  - bounded sample arrays: `recentTurnDurationsMs`, `recentAiTurnDurationsMs`, `recentCardActionLatencyMs` (cap `120`);
+  - strict normalize/load/save with safe fallback and max sample clamp.
+- Wired metrics from existing board-layer flow points:
+  - player turn duration measured on turn transition;
+  - AI turn duration measured around `runAI` execution window;
+  - card action latency measured inside `doPlayCard`;
+  - match completion counter incremented on game-over edge transition.
+- Added compact topbar baseline panel and debug controls:
+  - panel: avg turn/AI/action latency + counters;
+  - export: `📤 baseline` JSON download;
+  - clear: `🧽` reset baseline buffer.
+- Validation: `npx eslint src/components/GameBoard.tsx` -> PASS.
+
+### 2026-03-13 — v1 item 1: Deck builder + local deck sets (minimal, local-only)
+
+- Scope: implemented minimal local-only deck builder and active-deck startup wiring in UI/data layer; no gameplay mechanics/rules changes in `src/game/*` logic.
+- Added versioned deck storage module `src/utils/decksStorage.ts`:
+  - key: `omsk.decks.v1`,
+  - normalized load/save with safe fallback,
+  - state model: `{ version, decks[], activeDeckId }`,
+  - deck model: `{ id, name, cards[{cardId,count}], createdAt, updatedAt }`.
+- Added minimal deck builder screen `src/components/game/DeckBuilder.tsx`:
+  - list of available cards,
+  - editable current deck with per-card counters,
+  - save deck (create/update by name),
+  - saved decks list + active deck selection.
+- Integrated entry point in main menu (`src/components/MainMenu.tsx`): new button `🧱 Конструктор колод`.
+- Wired active deck into match start without engine rules changes:
+  - `src/components/GameBoard.tsx` now initializes/restarts state via active deck from local storage,
+  - selected deck applied to player1 deck/hand composition at board init,
+  - battle engine mechanics unchanged.
+- Added data helper in `src/data/cards.ts`: `createDeckFromCardIds(cardIds)` for UI-layer deck realization with safe fallback to default generated deck.
+
+### 2026-03-13 — MVP item 5: Telemetry Baseline v0 (local-only)
+
+- Scope: implemented local-only telemetry baseline in `src/components/GameBoard.tsx` only; no engine/mechanics changes under `src/game/`.
+- Added versioned telemetry buffer model under `omsk.telemetry.v0`:
+  - fixed v0 event set: `tutorial_hint_shown`, `tutorial_skipped`, `card_played_land`, `card_played_non_land`, `match_completed`, `match_victory`, `daily_quest_completed`, `achievement_unlocked`;
+  - event envelope: `{ name, timestamp, payload }` with lightweight payload normalization.
+- Persistence/retention:
+  - localStorage load/save with normalize + fallback,
+  - hard cap `200` events via append-and-trim (oldest dropped).
+- Wired from existing board-layer action points:
+  - tutorial hint visibility transitions and tutorial skip,
+  - `doPlayCard` land/non-land paths,
+  - game-over edge transition (match completed / victory),
+  - quest completion edge and achievement unlock edge.
+- Added minimal topbar debug controls: JSON export (`📤 telemetry`) and clear buffer (`🧹`).
+
+### 2026-03-13 — MVP item 4: XP Progression v0 (local-only)
+
+- Scope: implemented XP Progression v0 in `src/components/GameBoard.tsx` only; no `src/game/` mechanics or engine changes.
+- Added local profile model under versioned key `omsk.xp-profile.v0` with robust normalize/load/save:
+  - `xpTotal: number`
+  - `level: number`
+  - `xpInLevel: number`
+  - deterministic curve: fixed `100 XP` per level.
+- Added deterministic XP awards wired from board-layer events:
+  - `doPlayCard` -> `+10 XP` for land play,
+  - `doPlayCard` -> `+10 XP` for non-land play,
+  - game-over edge transition -> `+50 XP` match completion,
+  - game-over edge transition -> extra `+25 XP` on player1 victory.
+- Added compact top-bar Profile panel near Daily Quests/Achievements showing `Level`, `xpInLevel/100`, and progress bar using existing `UICard`/`Badge`/`Progress` primitives.
+
+### 2026-03-13 — MVP item 3: Achievements v0 (local-only)
+
+- Scope: implemented Achievements v0 in `src/components/GameBoard.tsx` only; no engine/mechanics file changes.
+- Added localStorage-backed versioned achievement state (`omsk.achievements.v0`) with strict normalization/fallback.
+- Added exactly 4 idempotent unlock flags (once unlocked, never relocked):
+  - `first_land` — first land card played,
+  - `first_spell_or_creature` — first non-land card played,
+  - `first_match_complete` — first completed match,
+  - `first_victory` — first win.
+- Wired unlock events from existing board-layer points only:
+  - `doPlayCard` -> land/non-land achievements,
+  - game-over transition effect -> match complete + victory (if player1 HP > 0).
+- Added compact top-bar Achievements panel beside Daily Quests using existing `UICard`/`Badge` conventions.
+
+### 2026-03-13 — MVP item 2: Daily Quests v0 (local-only)
+
+- Scope: implemented minimal Daily Quests v0 in `src/components/GameBoard.tsx` only; no engine/mechanics file changes.
+- Added local quest model with fixed 3 quests and localStorage key `omsk.daily-quests.v0`:
+  - `play_land`: Play 1 land in a match
+  - `play_non_land`: Play 1 non-land card in a match
+  - `complete_match`: Complete 1 match (win or lose)
+- Added once-per-day reset based on local date key (`YYYY-MM-DD`):
+  - state is validated/loaded on mount,
+  - stale date auto-resets to zero progress,
+  - lightweight minute interval re-check keeps reset correct across midnight while tab is open.
+- Wired progress updates from existing `GameBoard` UI action points only:
+  - card play path (`doPlayCard`) increments land/non-land quest,
+  - game-over transition effect increments complete-match quest once per match.
+- Added compact non-intrusive quest panel in top bar using existing `UICard`/`Badge`/`Progress` style primitives.
+
+### 2026-03-13 — MVP item 1: adaptive onboarding hints (first-session)
+
+- Scope: localized onboarding UX increment in `src/components/game/Tutorial.tsx` + `src/components/GameBoard.tsx` only; no engine/mechanics changes.
+- Added adaptive tutorial context for early turns (first 3 turns already gated by board):
+  - land hint when playable land exists and land not yet played this turn,
+  - play-card hint when playable non-land exists and no non-land played this turn,
+  - attack hint when attack-ready creature exists during attack opportunity.
+- Preserved dismiss/skip behavior and existing localStorage completion key (`tutorialCompleted`).
+- Added lightweight per-turn tracking of "non-land card played this turn" in board UI state; resets on turn/turn-number change.
+- Targeted validation: `npx eslint src/components/GameBoard.tsx src/components/game/Tutorial.tsx` -> PASS (exit 0).
+
+### 2026-03-13 — Continuation protocol + engagement roadmap delta
+
+- Scope: created `PROJECT_CONTINUATION_PROTOCOL.md` with mandatory session cycle, strict context read order, delta-only logging format, roadmap delta format, and strict GitHub commit/push/deploy process.
+- Scope: recorded factual remote URL from `git remote -v`: `https://github.com/cwjechw98-lang/omskgathering.git`.
+- Scope: updated `README.md` roadmap to free-project engagement phases (`MVP`, `v1`, `v2`).
+- Deploy trigger readiness policy fixed in protocol:
+  - check branch `main`,
+  - check `.github/workflows/deploy-pages.yml` and `.github/workflows/quality-gate.yml`,
+  - check push trigger on `main` and deploy artifact `dist` before push.
+- Notes: logging policy now explicitly requires short delta entries only without repeating unchanged context.
+
 ### 2026-03-12 — UI lane/highlight + preview viewport fit (logging checkpoint)
 
 **Scope completed (UI-only, no mechanics changes):**
@@ -622,3 +757,6 @@ Quality gates:
   - `npm run test` -> PASS,
   - `npm run test:regression` -> 51/51 PASS,
   - `npm run build` -> PASS (local Node warning unchanged).
+
+### 2026-03-13
+- Зафиксировано обязательное языковое правило: ассистент всегда отвечает пользователю на русском языке.
