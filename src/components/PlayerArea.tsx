@@ -30,7 +30,7 @@ export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: Pl
     <Card
       data-enemy-hero={dataEnemyHero ? 'true' : undefined}
       className={cn(
-        'flex items-center gap-3 p-3 border transition-all shrink-0',
+        'game-player-area flex flex-row items-center gap-3 p-3 border transition-all shrink-0 w-full max-w-full min-w-0 overflow-hidden',
         isCurrentPlayer
           ? 'bg-[#1a1508]/50 border-[#c9a84c]/30 shadow-lg shadow-[#c9a84c]/10'
           : 'bg-[#0f0f18]/50 border-gray-800/30'
@@ -52,7 +52,7 @@ export function PlayerArea({ player, isCurrentPlayer, label, dataEnemyHero }: Pl
           }}
           aria-hidden="true"
         >
-          {label.includes('🤖') || label.includes('🗿') ? '🗿' : '👤'}
+          {label.includes('Хранитель') ? '🗿' : '👤'}
         </div>
         {/* Player label under avatar */}
         <span

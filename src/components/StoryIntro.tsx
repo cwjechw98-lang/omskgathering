@@ -322,7 +322,7 @@ export function StoryIntro({ onComplete }: Props) {
   const current = INTRO_SEQUENCE[step];
   const isLast = step === INTRO_SEQUENCE.length - 1;
   const theme = SLIDE_THEMES[step] || SLIDE_THEMES[0];
-  
+
   // Local lore images mapped to intro slides (lore-0 through lore-4)
   const LORE_IMAGE_NAMES = [
     'lore-0-prolog',
@@ -352,7 +352,7 @@ export function StoryIntro({ onComplete }: Props) {
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
         </div>
       )}
-      
+
       {/* Canvas effects layer */}
       <canvas
         ref={canvasRef}

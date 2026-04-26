@@ -786,7 +786,8 @@ export const ALL_CARDS: CardData[] = [
     cost: 2,
     color: 'green',
     type: 'spell',
-    description: 'Дайте случайному вашему существу +2/+2 навсегда. Восстановите 2 здоровья. Потяните карту.',
+    description:
+      'Дайте случайному вашему существу +2/+2 навсегда. Восстановите 2 здоровья. Потяните карту.',
     flavor: '«Шаверма с двойным мясом — и ты непобедим!»',
     emoji: '🥙',
     rarity: 'common',
@@ -801,7 +802,8 @@ export const ALL_CARDS: CardData[] = [
     cost: 1,
     color: 'black',
     type: 'spell',
-    description: 'Уничтожьте случайное вражеское существо с атакой ≤ 3. Или 2 урона вражескому герою.',
+    description:
+      'Уничтожьте случайное вражеское существо с атакой ≤ 3. Или 2 урона вражескому герою.',
     flavor: '«Ямочный ремонт? Не, не слышали.»',
     emoji: '🕳️',
     rarity: 'common',
@@ -831,7 +833,8 @@ export const ALL_CARDS: CardData[] = [
     cost: 3,
     color: 'red',
     type: 'spell',
-    description: 'Заморозьте все вражеские существа на 1 ход. Они не могут атаковать в следующий ход.',
+    description:
+      'Заморозьте все вражеские существа на 1 ход. Они не могут атаковать в следующий ход.',
     flavor: '«8 утра. Проспект Маркса. Ад.»',
     emoji: '🚗',
     rarity: 'uncommon',
@@ -1376,6 +1379,15 @@ export function createDeck(): CardData[] {
     }
   }
   return shuffled;
+}
+
+export function createDeckFromCardIds(cardIds: string[]): CardData[] {
+  const byId = new Map(ALL_CARDS.map((card) => [card.id, card]));
+  const deck = cardIds.flatMap((id) => {
+    const card = byId.get(id);
+    return card ? [{ ...card }] : [];
+  });
+  return shuffle(deck);
 }
 
 export function shuffle<T>(array: T[]): T[] {

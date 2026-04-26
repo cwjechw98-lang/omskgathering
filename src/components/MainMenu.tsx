@@ -10,7 +10,7 @@ import { Button } from './ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './ui/accordion';
 
 interface MainMenuProps {
-  onStartGame: (mode: 'ai' | 'local') => void;
+  onStartGame: () => void;
 }
 
 const KW_NAMES: Record<string, string> = {
@@ -156,7 +156,7 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
           <Button
             variant="mythic"
             size="xl"
-            onClick={() => onStartGame('ai')}
+            onClick={onStartGame}
             className="w-full rounded-xl gap-2 md:gap-4 py-3 md:py-4"
           >
             <span
@@ -223,7 +223,7 @@ export function MainMenu({ onStartGame }: MainMenuProps) {
 function LoreScreen({ onBack }: { onBack: () => void }) {
   const [ch, setCh] = useState(0);
   const [liteFx] = useState(() => detectLiteFx());
-  
+
   // Use local card images for lore chapters
   const LORE_IMAGE_NAMES = [
     'lore-0-prolog',
@@ -725,7 +725,9 @@ function CardCollection({ onBack }: { onBack: () => void }) {
                   />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#0f0f18]" />
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-7xl drop-shadow-lg">{detail.emoji}</div>
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-7xl drop-shadow-lg">
+                  {detail.emoji}
+                </div>
                 <button
                   onClick={() => setSelectedCard(null)}
                   className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/80 transition text-sm"
@@ -779,7 +781,9 @@ function CardCollection({ onBack }: { onBack: () => void }) {
                   </div>
                 )}
 
-                <p className="text-sm text-gray-300 mb-3 font-body leading-relaxed">{detail.description}</p>
+                <p className="text-sm text-gray-300 mb-3 font-body leading-relaxed">
+                  {detail.description}
+                </p>
 
                 {detail.type === 'creature' && (
                   <div className="flex gap-4 text-base mb-3 font-heading">
@@ -789,7 +793,9 @@ function CardCollection({ onBack }: { onBack: () => void }) {
                 )}
 
                 <div className="border-t border-[#c9a84c]/15 pt-3 mt-3">
-                  <p className="text-xs text-[#c9a84c]/70 italic leading-relaxed font-body">{detail.flavor}</p>
+                  <p className="text-xs text-[#c9a84c]/70 italic leading-relaxed font-body">
+                    {detail.flavor}
+                  </p>
                 </div>
               </div>
             </div>

@@ -14,7 +14,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Пролог: Город, который не отпускает',
     emoji: '🌑',
-    imagePrompt: 'dark mystical city omsk under northern lights, snow covered buildings, ominous atmosphere, fantasy art',
+    imagePrompt:
+      'dark mystical city omsk under northern lights, snow covered buildings, ominous atmosphere, fantasy art',
     text: `Говорят, что Омск — обычный город в Западной Сибири. Два миллиона жителей, Иртыш, нефтезаводы, вечная зима. Но те, кто видел НАСТОЯЩИЙ Омск, знают правду.
 
 Под слоем асфальта, под недостроенным метро, под замёрзшей коркой Иртыша пульсирует древняя сила. Она пришла сюда задолго до казаков, задолго до татар — когда сибирские шаманы впервые произнесли Слово Силы на берегу великой реки.
@@ -24,7 +25,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Глава I: Пять Источников Маны',
     emoji: '💎',
-    imagePrompt: 'five magical crystal sources floating over city, white blue black red green mana symbols, fantasy artwork',
+    imagePrompt:
+      'five magical crystal sources floating over city, white blue black red green mana symbols, fantasy artwork',
     text: `Магическая сила Омска проявляется через пять Источников — места силы, разбросанные по городу:
 
 🏛️ ПРОСПЕКТ МИРА — Белая мана порядка и закона. Здесь стоят храмы, суды, администрация. Белая мана исцеляет и защищает, но требует подчинения.
@@ -40,7 +42,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Глава II: Птица-Омич и Пророчество',
     emoji: '🐦',
-    imagePrompt: 'magical glowing crow bird flying over dark city, mystical prophecy, northern lights, fantasy art',
+    imagePrompt:
+      'magical glowing crow bird flying over dark city, mystical prophecy, northern lights, fantasy art',
     text: `В 2012 году над Омском появилась Птица. Не обычная ворона — существо из чистой магии, принявшее форму птицы. Она кружила над городом семь дней и семь ночей, а потом произнесла пророчество:
 
 «Придёт день, когда Омск станет ареной великой битвы. Маги со всех концов соберутся здесь, чтобы сразиться за право контролировать Источники Маны. И только один останется стоять.»
@@ -52,7 +55,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Глава III: Фракции Омска',
     emoji: '⚔️',
-    imagePrompt: 'five factions battling in city square, officials grandmas river spirits underground dwellers industrial workers bears, epic fantasy battle',
+    imagePrompt:
+      'five factions battling in city square, officials grandmas river spirits underground dwellers industrial workers bears, epic fantasy battle',
     text: `Пять великих фракций борются за контроль над Омском:
 
 🏛️ ОРДЕН ПРОСПЕКТА — чиновники, бабушки, троллейбусники. Они верят в порядок и традиции. Их лидер — Мэр Омска, обещающий метро уже 50 лет.
@@ -70,7 +74,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Глава IV: Школа 21 — Цифровые Маги',
     emoji: '💻',
-    imagePrompt: 'magical computer cluster room with glowing code, programmers casting spells, digital magic, matrix style',
+    imagePrompt:
+      'magical computer cluster room with glowing code, programmers casting spells, digital magic, matrix style',
     text: `Школа 21 появилась в Омске недавно, но быстро стала самой загадочной силой в городе. Их кластеры — это не просто компьютерные классы. Это порталы в цифровое измерение, где код становится заклинанием.
 
 Писинеры — так называют учеников Школы. Они проходят через Бассейн (не тот, что с водой), сдают пир-ревью (не тот, что с пирогами) и покоряют Святой Граф — магическую карту прогресса, которая определяет их силу.
@@ -84,7 +89,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Глава V: Омская Зима',
     emoji: '❄️',
-    imagePrompt: 'frozen city omsk in eternal winter, snowstorm, ice covered buildings, -50 celsius, magical frost',
+    imagePrompt:
+      'frozen city omsk in eternal winter, snowstorm, ice covered buildings, -50 celsius, magical frost',
     text: `Девять месяцев в году Омск скован морозом. Но это не обычный холод — это магия.
 
 Омская Зима — древнее наложение, наложенное на город тысячи лет назад шаманом, чьё имя забыто. Он хотел защитить Источники Маны от чужаков, заключив город в вечный лёд.
@@ -98,7 +104,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Глава VI: Легенда о Метро',
     emoji: '🚇',
-    imagePrompt: 'abandoned underground metro station, dark tunnel, ghostly train arriving, mysterious atmosphere',
+    imagePrompt:
+      'abandoned underground metro station, dark tunnel, ghostly train arriving, mysterious atmosphere',
     text: `Самая трагическая история Омска — история о Метро, которое так и не было построено.
 
 В 1979 году начали копать. Вырыли одну станцию. Потом деньги кончились. Потом начались странности: рабочие слышали голоса под землёй, техника ломалась, стены тряслись.
@@ -113,7 +120,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Эпилог: Ты не можешь покинуть Омск',
     emoji: '🚫',
-    imagePrompt: 'giant magical bird circling over frozen city, no escape, ominous warning, fantasy artwork',
+    imagePrompt:
+      'giant magical bird circling over frozen city, no escape, ominous warning, fantasy artwork',
     text: `Теперь ты знаешь правду. Омск — не просто город. Это арена, тюрьма и сокровищница одновременно. Пять Источников Маны дают силу тому, кто сумеет их обуздать. Но каждый, кто приходит в Омск за силой, обнаруживает, что уйти невозможно. Птица-Омич следит. Дух Омска не отпускает. Заклинание «Не Покидай Омск» активно всегда. Твой единственный выход — стать сильнейшим магом города. Победи всех соперников, подчини все фракции, овладей всеми Источниками. Или останься навечно. Добро пожаловать в Омск. Ты не можешь покинуть Омск. 🐦`,
   },
 ];
@@ -273,29 +281,29 @@ export function getAILoreComment(cardId: string): string {
 
 // ─── INTRO SEQUENCE ───
 export const INTRO_SEQUENCE = [
-  { 
-    emoji: '🌑', 
+  {
+    emoji: '🌑',
     text: 'Омск. 2026 год.',
-    imagePrompt: 'dark omsk city skyline 2026, night, ominous atmosphere, cinematic'
+    imagePrompt: 'dark omsk city skyline 2026, night, ominous atmosphere, cinematic',
   },
-  { 
-    emoji: '🏛️', 
+  {
+    emoji: '🏛️',
     text: 'Пять Источников Маны пробуждаются...',
-    imagePrompt: 'five magical crystal sources glowing underground, mystical energy, fantasy art'
+    imagePrompt: 'five magical crystal sources glowing underground, mystical energy, fantasy art',
   },
-  { 
-    emoji: '🐦', 
+  {
+    emoji: '🐦',
     text: 'Птица-Омич кружит над городом...',
-    imagePrompt: 'glowing magical crow bird circling over dark city, prophetic vision'
+    imagePrompt: 'glowing magical crow bird circling over dark city, prophetic vision',
   },
-  { 
-    emoji: '⚔️', 
+  {
+    emoji: '⚔️',
     text: 'Маги собираются на битву...',
-    imagePrompt: 'mages gathering for battle, magical energy, dark fantasy'
+    imagePrompt: 'mages gathering for battle, magical energy, dark fantasy',
   },
-  { 
-    emoji: '🚫', 
+  {
+    emoji: '🚫',
     text: 'Ты не можешь покинуть Омск.',
-    imagePrompt: 'giant magical bird blocking city exit, no escape, ominous warning'
+    imagePrompt: 'giant magical bird blocking city exit, no escape, ominous warning',
   },
 ];

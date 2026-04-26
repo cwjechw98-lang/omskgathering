@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:ui": "node scripts/ui-smoke.mjs",
     "test:replay": "vitest run tests/regression/replay-regression.test.ts",
     "test:regression": "tsc -p tsconfig.regression.json && node -e \"require('fs').writeFileSync('.tmp-regression/package.json','{\\\"type\\\":\\\"commonjs\\\"}')\" && node .tmp-regression/tests/regression/combat-regression.js",
     "audit:new-cards": "node scripts/audit-new-cards-matrix.mjs",

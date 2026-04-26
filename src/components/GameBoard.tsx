@@ -43,7 +43,7 @@ import { Tutorial } from './game/Tutorial';
 import { PhaseIndicator } from './game/PhaseIndicator';
 
 interface Props {
-  mode: 'ai' | 'local' | 'online';
+  mode: 'ai' | 'local';
   onBack: () => void;
 }
 
@@ -328,7 +328,10 @@ function saveAchievementsState(state: AchievementsState): void {
   }
 }
 
-function unlockAchievementState(state: AchievementsState, achievementId: AchievementId): AchievementsState {
+function unlockAchievementState(
+  state: AchievementsState,
+  achievementId: AchievementId
+): AchievementsState {
   if (state.unlocked[achievementId]) return state;
   const now = Date.now();
   return {
@@ -424,7 +427,12 @@ function normalizeTelemetryPayload(value: unknown): TelemetryPayload {
   const entries = Object.entries(value as Record<string, unknown>).slice(0, 8);
   const payload: TelemetryPayload = {};
   for (const [key, raw] of entries) {
-    if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean' || raw === null) {
+    if (
+      typeof raw === 'string' ||
+      typeof raw === 'number' ||
+      typeof raw === 'boolean' ||
+      raw === null
+    ) {
       payload[key] = raw;
     }
   }
@@ -539,12 +547,22 @@ function normalizeBaselineMetricsState(value: unknown): BaselineMetricsState | n
     0,
     Math.floor(Number((countersRaw as Record<string, unknown>).matchesCompleted) || 0)
   );
-  const turnsEnded = Math.max(0, Math.floor(Number((countersRaw as Record<string, unknown>).turnsEnded) || 0));
-  const cardsPlayed = Math.max(0, Math.floor(Number((countersRaw as Record<string, unknown>).cardsPlayed) || 0));
-  const aiTurns = Math.max(0, Math.floor(Number((countersRaw as Record<string, unknown>).aiTurns) || 0));
+  const turnsEnded = Math.max(
+    0,
+    Math.floor(Number((countersRaw as Record<string, unknown>).turnsEnded) || 0)
+  );
+  const cardsPlayed = Math.max(
+    0,
+    Math.floor(Number((countersRaw as Record<string, unknown>).cardsPlayed) || 0)
+  );
+  const aiTurns = Math.max(
+    0,
+    Math.floor(Number((countersRaw as Record<string, unknown>).aiTurns) || 0)
+  );
 
   const updatedAtRaw = Number(candidate.updatedAt);
-  const updatedAt = Number.isFinite(updatedAtRaw) && updatedAtRaw > 0 ? Math.floor(updatedAtRaw) : null;
+  const updatedAt =
+    Number.isFinite(updatedAtRaw) && updatedAtRaw > 0 ? Math.floor(updatedAtRaw) : null;
 
   return {
     version: 0,
@@ -595,7 +613,10 @@ function withBaselineUpdatedAt(state: BaselineMetricsState): BaselineMetricsStat
   };
 }
 
-function recordBaselineTurnEnded(state: BaselineMetricsState, durationMs: number): BaselineMetricsState {
+function recordBaselineTurnEnded(
+  state: BaselineMetricsState,
+  durationMs: number
+): BaselineMetricsState {
   return withBaselineUpdatedAt({
     ...state,
     counters: {
@@ -606,7 +627,10 @@ function recordBaselineTurnEnded(state: BaselineMetricsState, durationMs: number
   });
 }
 
-function recordBaselineAiTurn(state: BaselineMetricsState, durationMs: number): BaselineMetricsState {
+function recordBaselineAiTurn(
+  state: BaselineMetricsState,
+  durationMs: number
+): BaselineMetricsState {
   return withBaselineUpdatedAt({
     ...state,
     counters: {
@@ -617,7 +641,10 @@ function recordBaselineAiTurn(state: BaselineMetricsState, durationMs: number): 
   });
 }
 
-function recordBaselineCardPlayed(state: BaselineMetricsState, actionLatencyMs: number): BaselineMetricsState {
+function recordBaselineCardPlayed(
+  state: BaselineMetricsState,
+  actionLatencyMs: number
+): BaselineMetricsState {
   return withBaselineUpdatedAt({
     ...state,
     counters: {
@@ -860,7 +887,9 @@ function AchievementsPanel({ achievements }: { achievements: AchievementsState }
               <span className="truncate">
                 {achievement.emoji} {achievement.label}
               </span>
-              <span className={unlocked ? 'text-[#f0d68a]' : 'text-gray-600'}>{unlocked ? '✓' : '•'}</span>
+              <span className={unlocked ? 'text-[#f0d68a]' : 'text-gray-600'}>
+                {unlocked ? '✓' : '•'}
+              </span>
             </div>
           );
         })}
@@ -907,7 +936,8 @@ function BaselineMetricsPanel({ metrics }: { metrics: BaselineMetricsState }) {
         <div>avg ai: {avgAiTurn}ms</div>
         <div>avg action: {avgAction}ms</div>
         <div className="text-gray-400 pt-0.5">
-          m:{metrics.counters.matchesCompleted} t:{metrics.counters.turnsEnded} c:{metrics.counters.cardsPlayed} ai:{metrics.counters.aiTurns}
+          m:{metrics.counters.matchesCompleted} t:{metrics.counters.turnsEnded} c:
+          {metrics.counters.cardsPlayed} ai:{metrics.counters.aiTurns}
         </div>
       </div>
     </UICard>
@@ -1050,30 +1080,32 @@ function PlayerArea({
               ❤️ {player.health}/{player.maxHealth}
             </span>
           </div>
-        <Tooltip>
-          <TooltipTrigger>
-            <div className="flex items-center gap-0.5 shrink-0">
-              <div className="flex gap-px">
-                {Array.from({ length: Math.min(player.maxMana, 12) }, (_, i) => (
-                  <Badge
-                    key={i}
-                    variant={i < player.mana ? 'mana-available' : 'mana-spent'}
-                    className="w-2 h-2 rounded-full p-0 min-w-0"
-                  />
-                ))}
+          <Tooltip>
+            <TooltipTrigger>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <div className="flex gap-px">
+                  {Array.from({ length: Math.min(player.maxMana, 12) }, (_, i) => (
+                    <Badge
+                      key={i}
+                      variant={i < player.mana ? 'mana-available' : 'mana-spent'}
+                      className="w-2 h-2 rounded-full p-0 min-w-0"
+                    />
+                  ))}
+                </div>
+                <span
+                  className="text-blue-300 font-heading font-bold"
+                  style={{ fontSize: 'clamp(8px, 0.8vw, 11px)' }}
+                >
+                  💎{player.mana}/{player.maxMana}
+                </span>
               </div>
-              <span
-                className="text-blue-300 font-heading font-bold"
-                style={{ fontSize: 'clamp(8px, 0.8vw, 11px)' }}
-              >
-                💎{player.mana}/{player.maxMana}
-              </span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <p>Мана: {player.mana} / {player.maxMana}</p>
-          </TooltipContent>
-        </Tooltip>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>
+                Мана: {player.mana} / {player.maxMana}
+              </p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         {/* Defender count row */}
@@ -1092,7 +1124,10 @@ function CardContainer({
   children,
   ref,
   ...props
-}: HTMLAttributes<HTMLDivElement> & { children: ReactNode; ref?: (el: HTMLDivElement | null) => void }) {
+}: HTMLAttributes<HTMLDivElement> & {
+  children: ReactNode;
+  ref?: (el: HTMLDivElement | null) => void;
+}) {
   return (
     <div
       {...props}
@@ -1137,6 +1172,8 @@ function HandCardComponent({
     <CardContainer
       onClick={onClick}
       draggable={canPlay}
+      data-card-type={card.data.type}
+      data-card-name={card.data.name}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={cn(
@@ -1275,9 +1312,7 @@ function DeckStack({
               draggable={false}
             />
           ) : (
-            <span style={{ fontSize: 'clamp(14px, 1.8vw, 22px)' }}>
-              {isDeck ? '🂠' : '💀'}
-            </span>
+            <span style={{ fontSize: 'clamp(14px, 1.8vw, 22px)' }}>{isDeck ? '🂠' : '💀'}</span>
           )}
           <span className={isDeck ? 'deck-count' : 'graveyard-count'}>{count}</span>
         </div>
@@ -1311,7 +1346,9 @@ export function GameBoard({ mode, onBack }: Props) {
   const [damageAnimUid, setDamageAnimUid] = useState<string | null>(null);
   const playAnimState = useState<{ name: string; emoji: string; color: string } | null>(null);
   const setPlayAnim = playAnimState[1];
-  const [deathAnim, setDeathAnim] = useState<{ name: string; emoji: string; color: string } | null>(null);
+  const [deathAnim, setDeathAnim] = useState<{ name: string; emoji: string; color: string } | null>(
+    null
+  );
   const [damageNumbers, setDamageNumbers] = useState<
     Array<{ id: number; value: number; x: number; y: number; type: 'damage' | 'heal' | 'buff' }>
   >([]);
@@ -1321,15 +1358,26 @@ export function GameBoard({ mode, onBack }: Props) {
   const [screenShake, setScreenShake] = useState(false);
   const [explosionFlash, setExplosionFlash] = useState(false);
   const [dyingCards, setDyingCards] = useState<Set<string>>(new Set());
-  const [cardDeathEffects, setCardDeathEffects] = useState<Map<string, 'fire' | 'poison' | 'ice'>>(new Map());
-  const targetingLineState = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
+  const [cardDeathEffects, setCardDeathEffects] = useState<Map<string, 'fire' | 'poison' | 'ice'>>(
+    new Map()
+  );
+  const targetingLineState = useState<{
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+  } | null>(null);
   // Attack notification state - shows when creatures can attack and player has mana
   const [showAttackNotification, setShowAttackNotification] = useState(false);
   const [hasPlayedNonLandCardThisTurn, setHasPlayedNonLandCardThisTurn] = useState(false);
   const [dailyQuests, setDailyQuests] = useState<DailyQuestState>(() => loadDailyQuestState());
-  const [achievements, setAchievements] = useState<AchievementsState>(() => loadAchievementsState());
+  const [achievements, setAchievements] = useState<AchievementsState>(() =>
+    loadAchievementsState()
+  );
   const [xpProfile, setXpProfile] = useState<XPProfileState>(() => loadXPProfileState());
-  const [telemetry, setTelemetry] = useState<TelemetryBufferState>(() => loadTelemetryBufferState());
+  const [telemetry, setTelemetry] = useState<TelemetryBufferState>(() =>
+    loadTelemetryBufferState()
+  );
   const [baselineMetrics, setBaselineMetrics] = useState<BaselineMetricsState>(() =>
     loadBaselineMetricsState()
   );
@@ -1363,10 +1411,43 @@ export function GameBoard({ mode, onBack }: Props) {
   const { messages, addMessage, clear: clearMessages, dismiss: dismissMessage } = useMessageFeed();
 
   const isP1Turn = gs.currentTurn === 'player1';
+  const activePlayerKey: 'player1' | 'player2' = mode === 'local' ? gs.currentTurn : 'player1';
+  const opponentKey: 'player1' | 'player2' = activePlayerKey === 'player1' ? 'player2' : 'player1';
   const myTurn = mode === 'ai' ? isP1Turn : true;
-  const me = gs.player1;
-  const enemy = gs.player2;
+  const me = gs[activePlayerKey];
+  const enemy = gs[opponentKey];
   const cardBackSrc = getCardBackSource();
+  const activePlayerLabel =
+    mode === 'local' ? (activePlayerKey === 'player1' ? 'Игрок 1' : 'Игрок 2') : 'Вы';
+  const opponentLabel =
+    mode === 'local' ? (opponentKey === 'player1' ? 'Игрок 1' : 'Игрок 2') : 'Хранитель Омска';
+  const activeDeckLabel =
+    mode === 'local'
+      ? activePlayerKey === 'player1'
+        ? 'Колода Игрока 1'
+        : 'Колода Игрока 2'
+      : 'Твоя колода';
+  const opponentDeckLabel =
+    mode === 'local'
+      ? opponentKey === 'player1'
+        ? 'Колода Игрока 1'
+        : 'Колода Игрока 2'
+      : 'Колода Хранителя';
+  const activeGraveyardLabel =
+    mode === 'local'
+      ? activePlayerKey === 'player1'
+        ? 'Сброс Игрока 1'
+        : 'Сброс Игрока 2'
+      : 'Твой сброс';
+  const opponentGraveyardLabel =
+    mode === 'local'
+      ? opponentKey === 'player1'
+        ? 'Сброс Игрока 1'
+        : 'Сброс Игрока 2'
+      : 'Сброс Хранителя';
+  const opponentNameForLog = mode === 'local' ? 'сопернику' : 'Хранителю';
+  const activeHeroIsCurrent = mode === 'local' ? true : isP1Turn;
+  const opponentHeroIsCurrent = mode === 'ai' ? !isP1Turn : false;
 
   const recordTelemetry = useCallback(
     (name: TelemetryEventName, payload: TelemetryPayload = {}) => {
@@ -1493,9 +1574,9 @@ export function GameBoard({ mode, onBack }: Props) {
       }
     }
     prevFieldRef.current = { p1: currentP1, p2: currentP2 };
-  // Intentionally omitting addMessage, deathAnim, me.graveyard, enemy.graveyard, gs.log
-  // to avoid re-running on every state change; using refs for graveyard lookup is intentional
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Intentionally omitting addMessage, deathAnim, me.graveyard, enemy.graveyard, gs.log
+    // to avoid re-running on every state change; using refs for graveyard lookup is intentional
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me.field, enemy.field]);
 
   // Clear death effects after animation completes
@@ -1572,7 +1653,9 @@ export function GameBoard({ mode, onBack }: Props) {
       const now = Date.now();
       const previousTurnDuration = now - turnStartedAtRef.current;
       if (prev.currentTurn === 'player1' && previousTurnDuration > 0) {
-        setBaselineMetrics((prevMetrics) => recordBaselineTurnEnded(prevMetrics, previousTurnDuration));
+        setBaselineMetrics((prevMetrics) =>
+          recordBaselineTurnEnded(prevMetrics, previousTurnDuration)
+        );
       }
       turnStartedAtRef.current = now;
       setHasPlayedNonLandCardThisTurn(false);
@@ -1687,14 +1770,11 @@ export function GameBoard({ mode, onBack }: Props) {
     []
   );
 
-  const showStatChange = useCallback(
-    (value: string, x: number, y: number, className: string) => {
-      const id = Date.now() + Math.random();
-      setStatFloats((prev) => [...prev, { id, value, x, y, className }]);
-      setTimeout(() => setStatFloats((prev) => prev.filter((sf) => sf.id !== id)), 800);
-    },
-    []
-  );
+  const showStatChange = useCallback((value: string, x: number, y: number, className: string) => {
+    const id = Date.now() + Math.random();
+    setStatFloats((prev) => [...prev, { id, value, x, y, className }]);
+    setTimeout(() => setStatFloats((prev) => prev.filter((sf) => sf.id !== id)), 800);
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -1799,7 +1879,7 @@ export function GameBoard({ mode, onBack }: Props) {
       const actionStartedAt = Date.now();
       const card = me.hand.find((c) => c.uid === uid);
       if (!card || !myTurn || gs.gameOver) return false;
-      const next = playCard(gs, 'player1', uid);
+      const next = playCard(gs, activePlayerKey, uid);
       if (next !== gs) {
         recordTelemetry(card.data.type === 'land' ? 'card_played_land' : 'card_played_non_land', {
           cardId: card.data.id,
@@ -1830,7 +1910,17 @@ export function GameBoard({ mode, onBack }: Props) {
       }
       return false;
     },
-    [gs, me.hand, myTurn, showCardNarrative, addMessage, setPlayAnim, me.mana, recordTelemetry]
+    [
+      activePlayerKey,
+      gs,
+      me.hand,
+      myTurn,
+      showCardNarrative,
+      addMessage,
+      setPlayAnim,
+      me.mana,
+      recordTelemetry,
+    ]
   );
 
   const handleDragStart = (e: React.DragEvent, uid: string) => {
@@ -1869,7 +1959,7 @@ export function GameBoard({ mode, onBack }: Props) {
     setSelectedAttacker(null);
     setSelectedAttackerSlot(null);
     if (!myTurn || gs.gameOver) {
-      setInspected({ card, owner: 'player1' });
+      setInspected({ card, owner: activePlayerKey });
       return;
     }
     if (selectedHand === uid) {
@@ -1877,7 +1967,7 @@ export function GameBoard({ mode, onBack }: Props) {
       return;
     }
     setSelectedHand(uid);
-    setInspected({ card, owner: 'player1' });
+    setInspected({ card, owner: activePlayerKey });
   };
 
   const clickMyCreature = (uid: string) => {
@@ -1885,7 +1975,7 @@ export function GameBoard({ mode, onBack }: Props) {
     if (!card) return;
     const slotIndex = me.field.indexOf(card);
     if (!myTurn || gs.gameOver) {
-      setInspected({ card, owner: 'player1' });
+      setInspected({ card, owner: activePlayerKey });
       return;
     }
     const canAct =
@@ -1916,7 +2006,7 @@ export function GameBoard({ mode, onBack }: Props) {
         }
       }
     } else {
-      setInspected({ card, owner: 'player1' });
+      setInspected({ card, owner: activePlayerKey });
       setSelectedAttacker(null);
       setSelectedAttackerSlot(null);
       setTargetingLine(null);
@@ -1929,7 +2019,7 @@ export function GameBoard({ mode, onBack }: Props) {
     if (selectedAttacker && myTurn && !gs.gameOver) {
       const attackerCard = me.field.find((c) => c.uid === selectedAttacker);
       if (!attackerCard) return;
-      const next = attackCreature(gs, 'player1', selectedAttacker, uid);
+      const next = attackCreature(gs, activePlayerKey, selectedAttacker, uid);
       if (next !== gs) {
         const atk = getEffectiveAttack(attackerCard, me, enemy);
         const defenderRef = cardRefsMap.current.get(uid);
@@ -1982,7 +2072,7 @@ export function GameBoard({ mode, onBack }: Props) {
       }
       return;
     }
-    setInspected({ card, owner: 'player2' });
+    setInspected({ card, owner: opponentKey });
     setSelectedHand(null);
   };
 
@@ -1990,7 +2080,7 @@ export function GameBoard({ mode, onBack }: Props) {
     if (!myTurn || !selectedAttacker || gs.gameOver) return;
     const attackerCard = me.field.find((c) => c.uid === selectedAttacker);
     if (!attackerCard) return;
-    const next = attackPlayer(gs, 'player1', selectedAttacker);
+    const next = attackPlayer(gs, activePlayerKey, selectedAttacker);
     if (next !== gs) {
       const atk = getEffectiveAttack(attackerCard, me, enemy);
       const enemyHeroElement = document.querySelector('[data-enemy-hero]');
@@ -2011,7 +2101,7 @@ export function GameBoard({ mode, onBack }: Props) {
       setGs(next);
       addMessage(
         'action',
-        `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} наносит удар Хранителю!`,
+        `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} наносит удар ${opponentNameForLog}!`,
         '💥',
         5000
       );
@@ -2163,7 +2253,7 @@ export function GameBoard({ mode, onBack }: Props) {
             return;
           }
         } else if (tappedHandZone && doPlayCard(selectedHand)) {
-            return;
+          return;
         }
       }
 
@@ -2256,19 +2346,29 @@ export function GameBoard({ mode, onBack }: Props) {
             >
               🧪 hub
             </span>
-            <span className="text-[10px] text-gray-400" title="Baseline counters" data-interactive-ui="true">
+            <span
+              className="text-[10px] text-gray-400"
+              title="Baseline counters"
+              data-interactive-ui="true"
+            >
               counters:{' '}
               <span className="text-[#f0d68a]">
-                {baselineMetrics.counters.matchesCompleted}/
-                {baselineMetrics.counters.turnsEnded}/
-                {baselineMetrics.counters.cardsPlayed}/
-                {baselineMetrics.counters.aiTurns}
+                {baselineMetrics.counters.matchesCompleted}/{baselineMetrics.counters.turnsEnded}/
+                {baselineMetrics.counters.cardsPlayed}/{baselineMetrics.counters.aiTurns}
               </span>
             </span>
-            <span className="text-[10px] text-gray-400" title="Telemetry events" data-interactive-ui="true">
+            <span
+              className="text-[10px] text-gray-400"
+              title="Telemetry events"
+              data-interactive-ui="true"
+            >
               events: <span className="text-[#f0d68a]">{telemetry.events.length}</span>
             </span>
-            <span className="text-[10px] text-gray-400" title="Progression level" data-interactive-ui="true">
+            <span
+              className="text-[10px] text-gray-400"
+              title="Progression level"
+              data-interactive-ui="true"
+            >
               level: <span className="text-[#f0d68a]">{xpProfile.level}</span>
             </span>
             <button
@@ -2322,15 +2422,20 @@ export function GameBoard({ mode, onBack }: Props) {
 
       {/* ENEMY HERO ZONE */}
       <div className="zone-enemy-hero hero-zone-row" data-enemy-hero="true">
-        <DeckStack count={enemy.deck.length} type="deck" cardBackSrc={cardBackSrc} label={mode === 'ai' ? 'Колода Хранителя' : 'Колода Игрока 2'} />
+        <DeckStack
+          count={enemy.deck.length}
+          type="deck"
+          cardBackSrc={cardBackSrc}
+          label={opponentDeckLabel}
+        />
         <PlayerArea
           player={enemy}
-          isCurrentPlayer={!isP1Turn}
-          label={mode === 'ai' ? 'Хранитель Омска' : 'Игрок 2'}
+          isCurrentPlayer={opponentHeroIsCurrent}
+          label={opponentLabel}
           heroIcon={mode === 'ai' ? '🗿' : '👤'}
           dataEnemyHero={true}
         />
-        <DeckStack count={enemy.graveyard.length} type="graveyard" label={mode === 'ai' ? 'Сброс Хранителя' : 'Сброс Игрока 2'} />
+        <DeckStack count={enemy.graveyard.length} type="graveyard" label={opponentGraveyardLabel} />
       </div>
 
       {/* ENEMY BOARD ZONE */}
@@ -2338,7 +2443,8 @@ export function GameBoard({ mode, onBack }: Props) {
         <div className="board-zone enemy">
           {Array.from({ length: 7 }, (_, i) => {
             const card = enemy.field[i];
-            const laneActive = selectedAttacker !== null && !gs.gameOver && selectedAttackerSlot === i;
+            const laneActive =
+              selectedAttacker !== null && !gs.gameOver && selectedAttackerSlot === i;
             return (
               <div
                 key={i}
@@ -2375,7 +2481,11 @@ export function GameBoard({ mode, onBack }: Props) {
           <div className="divider-buttons">
             {selectedAttacker && !gs.gameOver && myTurn && (
               <>
-                <button onClick={clickAttackHero} className="attack-hero-btn" data-interactive-ui="true">
+                <button
+                  onClick={clickAttackHero}
+                  className="attack-hero-btn"
+                  data-interactive-ui="true"
+                >
                   💥 В героя
                 </button>
                 <button
@@ -2391,13 +2501,17 @@ export function GameBoard({ mode, onBack }: Props) {
               </>
             )}
             {!gs.gameOver && myTurn && (
-              <button onClick={clickEndTurn} className="end-turn-btn ready" data-interactive-ui="true">
+              <button
+                onClick={clickEndTurn}
+                className="end-turn-btn ready"
+                data-interactive-ui="true"
+              >
                 Конец хода ⏭️
               </button>
             )}
           </div>
           <div className="hidden sm:block">
-            <PhaseIndicator gameState={gs} isMyTurn={myTurn} playerKey="player1" />
+            <PhaseIndicator gameState={gs} isMyTurn={myTurn} playerKey={activePlayerKey} />
           </div>
           <div className="divider-hint">{getHint()}</div>
           {/* Attack availability notification */}
@@ -2427,7 +2541,8 @@ export function GameBoard({ mode, onBack }: Props) {
               !card.hasAttacked &&
               card.frozen <= 0 &&
               !card.keywords.includes('defender');
-            const laneSourceActive = selectedAttacker !== null && !gs.gameOver && selectedAttackerSlot === i;
+            const laneSourceActive =
+              selectedAttacker !== null && !gs.gameOver && selectedAttackerSlot === i;
             return (
               <div
                 key={i}
@@ -2463,14 +2578,19 @@ export function GameBoard({ mode, onBack }: Props) {
 
       {/* PLAYER HERO ZONE */}
       <div className="zone-player-hero hero-zone-row">
-        <DeckStack count={me.deck.length} type="deck" cardBackSrc={cardBackSrc} label="Твоя колода" />
+        <DeckStack
+          count={me.deck.length}
+          type="deck"
+          cardBackSrc={cardBackSrc}
+          label={activeDeckLabel}
+        />
         <PlayerArea
           player={me}
-          isCurrentPlayer={isP1Turn}
-          label={mode === 'ai' ? 'Игрок' : 'Игрок 1'}
+          isCurrentPlayer={activeHeroIsCurrent}
+          label={activePlayerLabel}
           heroIcon="👤"
         />
-        <DeckStack count={me.graveyard.length} type="graveyard" label="Твой сброс" />
+        <DeckStack count={me.graveyard.length} type="graveyard" label={activeGraveyardLabel} />
       </div>
 
       {/* ACTION BAR */}
@@ -2630,9 +2750,25 @@ export function GameBoard({ mode, onBack }: Props) {
         <div className="modal-overlay">
           <div className="modal-overlay-content text-center">
             <h2 className="font-title text-2xl text-[#c9a84c] mb-4">
-              {me.health <= 0 ? '💀 Поражение' : '🏆 Победа!'}
+              {mode === 'local'
+                ? gs.winner === activePlayerKey
+                  ? '🏆 Победа!'
+                  : '💀 Поражение'
+                : me.health <= 0
+                  ? '💀 Поражение'
+                  : '🏆 Победа!'}
             </h2>
-            <p className="text-gray-300 mb-6">{me.health <= 0 ? 'Омск пал...' : 'Омск спасен!'}</p>
+            <p className="text-gray-300 mb-6">
+              {mode === 'local'
+                ? gs.winner === 'player1'
+                  ? 'Игрок 1 победил!'
+                  : gs.winner === 'player2'
+                    ? 'Игрок 2 победил!'
+                    : 'Ничья!'
+                : me.health <= 0
+                  ? 'Омск пал...'
+                  : 'Омск спасён!'}
+            </p>
             <div className="flex gap-4 justify-center">
               <button
                 onClick={restart}

@@ -41,16 +41,35 @@ const cardWidth = 400;
 const cardHeight = 300;
 const imageModel = process.env.POLLINATIONS_IMAGE_MODEL || 'flux';
 const imageBaseUrl = process.env.POLLINATIONS_IMAGE_BASE || 'https://gen.pollinations.ai/image';
-const pollinationsApiKey = process.env.POLLINATIONS_API_KEY || '';
+const rawPollinationsApiKey = process.env.POLLINATIONS_API_KEY || '';
+const pollinationsApiKey = /replace_with|your_token/i.test(rawPollinationsApiKey) ? '' : rawPollinationsApiKey.trim();
+const args = new Set(process.argv.slice(2));
+const forceRegenerate =
+  args.has('--force') || process.env.CARD_IMAGE_FORCE === '1' || process.env.FORCE_REGENERATE_CARD_IMAGES === 'true';
 
-const cardBackPrompt = 'ornate fantasy trading card back design, glowing runes, dark siberian arcane style, symmetrical composition';
+const omskArtDirection = [
+  'Omsk dark fantasy trading card illustration',
+  'Siberian mysticism on the Irtysh river',
+  'Soviet concrete blocks, tram wires, thermal power plant smoke, unfinished metro legends',
+  'cold cyan shadows with restrained amber industrial light',
+  'readable centered silhouette, bold composition, clear foreground subject',
+  'cinematic digital painting, textured brushwork, high contrast, atmospheric winter haze',
+  'no text, no letters, no numbers, no emoji, no logos, no watermark, no UI',
+].join(', ');
+
+const cardBackPrompt = [
+  'symmetrical ornate card back for Omsk: The Gathering',
+  'Irtysh river sigil, frozen metro tunnel geometry, thermal power plant halo',
+  'dark enamel, brass filigree, cyan arcane glow',
+  'centered readable emblem, premium fantasy card back',
+].join(', ');
 const cardBackSeed = 9001;
 
 const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 const supportedImageExt = new Set(['png', 'webp', 'jpg', 'jpeg', 'gif']);
 
 function buildPollinationsUrl(prompt, seed) {
-  const fullPrompt = `fantasy card game art, ${prompt}, dark fantasy style, digital painting`;
+  const fullPrompt = `${omskArtDirection}, subject: ${prompt}`;
   const encodedPrompt = encodeURIComponent(fullPrompt);
   const query = new URLSearchParams({
     model: imageModel,
@@ -164,7 +183,7 @@ async function writeLocalMapFile(cardMap, cardBackPath) {
 
 async function main() {
   if (!pollinationsApiKey) {
-    console.log('WARN: POLLINATIONS_API_KEY is not set. Requests to gen.pollinations.ai may fail with 401.');
+    throw new Error('POLLINATIONS_API_KEY is not set. Art refresh is blocked; add it to .env and rerun this script.');
   }
 
   const cardsSource = await fs.readFile(cardsSourcePath, 'utf8');
@@ -180,10 +199,13 @@ async function main() {
   const failed = [];
 
   console.log(`Found ${cards.length} card image entries.`);
+  if (forceRegenerate) {
+    console.log('Force regeneration enabled: existing covers and card back will be refreshed.');
+  }
 
   for (const [index, card] of cards.entries()) {
     const existing = existingFiles.get(card.id);
-    if (existing) {
+    if (existing && !forceRegenerate) {
       localCardImages[card.id] = `/cards/${existing}`;
       console.log(`[${index + 1}/${cards.length}] SKIP ${card.id} -> ${existing}`);
       await writeLocalMapFile(localCardImages, '');
@@ -204,12 +226,16 @@ async function main() {
     } catch (error) {
       failed.push({ id: card.id, reason: String(error) });
       console.log(`[${index + 1}/${cards.length}] ERR ${card.id} -> ${error}`);
+      if (existing) {
+        localCardImages[card.id] = `/cards/${existing}`;
+        console.log(`[${index + 1}/${cards.length}] KEEP ${card.id} -> ${existing}`);
+      }
     }
   }
 
   let localCardBack = '';
   const existingBack = existingFiles.get('card-back');
-  if (existingBack) {
+  if (existingBack && !forceRegenerate) {
     localCardBack = `/cards/${existingBack}`;
     console.log(`Card back SKIP -> ${existingBack}`);
   }
@@ -227,6 +253,10 @@ async function main() {
     }
   } catch (error) {
     console.log(`Card back ERR -> ${error}`);
+    if (existingBack) {
+      localCardBack = `/cards/${existingBack}`;
+      console.log(`Card back KEEP -> ${existingBack}`);
+    }
   }
 
   await writeLocalMapFile(localCardImages, localCardBack);

@@ -110,10 +110,12 @@ export function takeMulligan(state: GameState, playerKey: 'player1' | 'player2')
   }
 
   newState.mulliganCount++;
-  newState.log.push(`🃏 ${playerKey === 'player1' ? 'Вы' : 'Противник'} взяли муллиган (${newState.mulliganCount}/2)`);
+  newState.log.push(
+    `🃏 ${playerKey === 'player1' ? 'Вы' : 'Противник'} взяли муллиган (${newState.mulliganCount}/2)`
+  );
 
   // Check if new hand is keepable
-  const landCount = player.hand.filter(c => c.data.type === 'land').length;
+  const landCount = player.hand.filter((c) => c.data.type === 'land').length;
   const isKeepable = landCount >= 2 && landCount <= 4;
 
   if (newState.mulliganCount >= 2) {
@@ -121,7 +123,7 @@ export function takeMulligan(state: GameState, playerKey: 'player1' | 'player2')
     newState.mulliganPhase = false;
     newState.log.push('🔮 После 2го муллигана: просмотрите верхнюю карту (scry 1)');
     // Simple scry: put top card on bottom if it's a land and player has 0 lands
-    if (player.hand.filter(c => c.data.type === 'land').length === 0 && player.deck.length > 0) {
+    if (player.hand.filter((c) => c.data.type === 'land').length === 0 && player.deck.length > 0) {
       const top = player.deck.shift();
       if (top) {
         player.deck.push(top);
@@ -635,7 +637,9 @@ function applySpellEffect(
         // Take top 2 best cards
         player.hand.push(top[0]);
         if (top.length > 1) player.hand.push(top[1]);
-        state.log.push(`🔍 Пир-ревью: ${top[0].data.name} и ${top.length > 1 ? top[1].data.name : 'ничего'} в руку!`);
+        state.log.push(
+          `🔍 Пир-ревью: ${top[0].data.name} и ${top.length > 1 ? top[1].data.name : 'ничего'} в руку!`
+        );
         // Put rest back on top
         for (let i = 2; i < top.length; i++) {
           player.deck.unshift(top[i]);

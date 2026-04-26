@@ -357,7 +357,11 @@ export function aiTurn(state: GameState): {
           const next = attackCreature(gs, 'player2', att.uid, target.uid);
           if (next !== gs) {
             gs = next;
-            actions.push({ type: 'attack-creature', attackerUid: att.uid, defenderUid: target.uid });
+            actions.push({
+              type: 'attack-creature',
+              attackerUid: att.uid,
+              defenderUid: target.uid,
+            });
             if (!lastComment)
               lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
           }
