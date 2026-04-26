@@ -178,16 +178,16 @@ function createInitialGameStateForActiveDeck(): GameState {
 }
 
 const DAILY_QUEST_META: Array<{ id: DailyQuestId; label: string }> = [
-  { id: 'play_land', label: 'Play 1 land in a match' },
-  { id: 'play_non_land', label: 'Play 1 non-land card in a match' },
-  { id: 'complete_match', label: 'Complete 1 match (win or lose)' },
+  { id: 'play_land', label: 'Сыграть 1 землю' },
+  { id: 'play_non_land', label: 'Сыграть 1 карту' },
+  { id: 'complete_match', label: 'Завершить 1 бой' },
 ];
 
 const ACHIEVEMENTS_META: Array<{ id: AchievementId; label: string; emoji: string }> = [
-  { id: 'first_land', label: 'First land played', emoji: '🏔️' },
-  { id: 'first_spell_or_creature', label: 'First non-land played', emoji: '✨' },
-  { id: 'first_match_complete', label: 'First match complete', emoji: '🏁' },
-  { id: 'first_victory', label: 'First victory', emoji: '🏆' },
+  { id: 'first_land', label: 'Первая земля', emoji: '🏔️' },
+  { id: 'first_spell_or_creature', label: 'Первая карта', emoji: '✨' },
+  { id: 'first_match_complete', label: 'Первый завершённый бой', emoji: '🏁' },
+  { id: 'first_victory', label: 'Первая победа', emoji: '🏆' },
 ];
 
 function getLocalDateKey(now: Date = new Date()): string {
@@ -837,7 +837,7 @@ function DailyQuestsPanel({ quests }: { quests: DailyQuestState }) {
   return (
     <UICard className="bg-[#12101a]/85 border border-[#c9a84c]/20 p-2 rounded-lg w-[260px]">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="font-heading text-[#f0d68a] text-[11px]">📅 Daily Quests</span>
+        <span className="font-heading text-[#f0d68a] text-[11px]">📅 Задания дня</span>
         <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-gray-600/60 text-gray-300">
           v0
         </Badge>
@@ -868,7 +868,7 @@ function AchievementsPanel({ achievements }: { achievements: AchievementsState }
   return (
     <UICard className="bg-[#12101a]/85 border border-[#c9a84c]/20 p-2 rounded-lg w-[240px]">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="font-heading text-[#f0d68a] text-[11px]">🏆 Achievements</span>
+        <span className="font-heading text-[#f0d68a] text-[11px]">🏆 Достижения</span>
         <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-gray-600/60 text-gray-300">
           v0
         </Badge>
@@ -902,13 +902,13 @@ function XPProfilePanel({ profile }: { profile: XPProfileState }) {
   return (
     <UICard className="bg-[#12101a]/85 border border-[#c9a84c]/20 p-2 rounded-lg w-[180px]">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="font-heading text-[#f0d68a] text-[11px]">⭐ Profile</span>
+        <span className="font-heading text-[#f0d68a] text-[11px]">⭐ Профиль</span>
         <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-gray-600/60 text-gray-300">
-          XP v0
+          ОП v0
         </Badge>
       </div>
       <div className="flex items-center justify-between text-[10px] mb-0.5">
-        <span className="text-gray-300">Level {profile.level}</span>
+        <span className="text-gray-300">Уровень {profile.level}</span>
         <span className="text-[#f0d68a]">
           {profile.xpInLevel}/{XP_PER_LEVEL}
         </span>
@@ -926,18 +926,18 @@ function BaselineMetricsPanel({ metrics }: { metrics: BaselineMetricsState }) {
   return (
     <UICard className="bg-[#12101a]/85 border border-[#c9a84c]/20 p-2 rounded-lg w-[230px]">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="font-heading text-[#f0d68a] text-[11px]">📈 Baseline</span>
+        <span className="font-heading text-[#f0d68a] text-[11px]">📈 Метрики боя</span>
         <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-gray-600/60 text-gray-300">
           v0
         </Badge>
       </div>
       <div className="text-[10px] text-gray-300 leading-tight space-y-0.5">
-        <div>avg turn: {avgTurn}ms</div>
-        <div>avg ai: {avgAiTurn}ms</div>
-        <div>avg action: {avgAction}ms</div>
+        <div>Средний ход: {avgTurn} мс</div>
+        <div>Ход Хранителя: {avgAiTurn} мс</div>
+        <div>Действие карты: {avgAction} мс</div>
         <div className="text-gray-400 pt-0.5">
-          m:{metrics.counters.matchesCompleted} t:{metrics.counters.turnsEnded} c:
-          {metrics.counters.cardsPlayed} ai:{metrics.counters.aiTurns}
+          Бои:{metrics.counters.matchesCompleted} Ходы:{metrics.counters.turnsEnded} Карты:
+          {metrics.counters.cardsPlayed} ИИ:{metrics.counters.aiTurns}
         </div>
       </div>
     </UICard>
@@ -977,7 +977,7 @@ function PlayerArea({
       data-slot="card"
       data-enemy-hero={dataEnemyHero ? 'true' : undefined}
       className={cn(
-        'flex flex-col gap-0.5 p-1.5 border transition-all shrink-0',
+        'hero-card flex flex-col gap-0.5 p-1.5 border transition-all shrink-0',
         isCurrentPlayer
           ? 'bg-[#1a1508]/50 border-[#c9a84c]/30 shadow-lg shadow-[#c9a84c]/10'
           : 'bg-[#0f0f18]/50 border-gray-800/30'
@@ -989,27 +989,17 @@ function PlayerArea({
       <div className="flex items-center gap-1.5 w-full">
         <div
           className={cn(
-            'rounded-full flex items-center justify-center shrink-0 border',
+            'hero-avatar rounded-full flex items-center justify-center shrink-0 border',
             isCurrentPlayer ? 'bg-[#2a1a08] border-[#c9a84c]/50' : 'bg-[#1a1a2a] border-gray-700/50'
           )}
-          style={{
-            width: 'clamp(24px, 2.5vw, 36px)',
-            height: 'clamp(24px, 2.5vw, 36px)',
-            fontSize: 'clamp(11px, 1.3vw, 18px)',
-          }}
         >
           {heroIcon}
         </div>
-        <span
-          className="font-heading text-white font-bold truncate"
-          style={{ fontSize: 'clamp(9px, 1vw, 13px)' }}
-        >
-          {label}
-        </span>
+        <span className="hero-name font-heading text-white font-bold truncate">{label}</span>
         {isCurrentPlayer && (
           <Badge
             variant="secondary"
-            className="animate-pulse bg-[#f0d68a]/20 text-[#f0d68a] border-transparent text-[9px] h-4 px-1"
+            className="hero-current-badge animate-pulse bg-[#f0d68a]/20 text-[#f0d68a] border-transparent text-[9px] h-4 px-1"
           >
             ⚡
           </Badge>
@@ -1019,11 +1009,11 @@ function PlayerArea({
             <TooltipTrigger>
               <Badge
                 variant="outline"
-                className="gap-0.5 text-[9px] h-4 px-1 min-w-0"
+                className="hero-mini-badge gap-0.5 text-[9px] h-4 px-1 min-w-0"
                 aria-label={`Рука: ${player.hand.length}`}
               >
                 <span>🤚</span>
-                <span className="text-[8px] text-gray-400">Р</span>
+                <span className="hero-mini-label text-[8px] text-gray-400">Р</span>
                 <span>{player.hand.length}</span>
               </Badge>
             </TooltipTrigger>
@@ -1033,11 +1023,11 @@ function PlayerArea({
             <TooltipTrigger>
               <Badge
                 variant="outline"
-                className="gap-0.5 text-[9px] h-4 px-1 min-w-0"
+                className="hero-mini-badge gap-0.5 text-[9px] h-4 px-1 min-w-0"
                 aria-label={`Колода: ${player.deck.length}`}
               >
                 <span>📚</span>
-                <span className="text-[8px] text-gray-400">К</span>
+                <span className="hero-mini-label text-[8px] text-gray-400">К</span>
                 <span>{player.deck.length}</span>
               </Badge>
             </TooltipTrigger>
@@ -1047,11 +1037,11 @@ function PlayerArea({
             <TooltipTrigger>
               <Badge
                 variant="outline"
-                className="gap-0.5 text-[9px] h-4 px-1 min-w-0"
+                className="hero-mini-badge gap-0.5 text-[9px] h-4 px-1 min-w-0"
                 aria-label={`Кладбище: ${player.graveyard.length}`}
               >
                 <span>💀</span>
-                <span className="text-[8px] text-gray-400">С</span>
+                <span className="hero-mini-label text-[8px] text-gray-400">С</span>
                 <span>{player.graveyard.length}</span>
               </Badge>
             </TooltipTrigger>
@@ -1067,16 +1057,13 @@ function PlayerArea({
             <Progress
               value={healthPercent}
               className={cn(
-                'h-3 transition-all duration-500',
+                'hero-health-bar h-3 transition-all duration-500',
                 healthVariant === 'success' && 'progress-success',
                 healthVariant === 'warning' && 'progress-warning',
                 healthVariant === 'danger' && 'progress-danger'
               )}
             />
-            <span
-              className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white drop-shadow"
-              style={{ fontSize: 'clamp(8px, 0.8vw, 10px)' }}
-            >
+            <span className="hero-health-text absolute inset-0 flex items-center justify-center font-heading font-bold text-white drop-shadow">
               ❤️ {player.health}/{player.maxHealth}
             </span>
           </div>
@@ -1088,14 +1075,11 @@ function PlayerArea({
                     <Badge
                       key={i}
                       variant={i < player.mana ? 'mana-available' : 'mana-spent'}
-                      className="w-2 h-2 rounded-full p-0 min-w-0"
+                      className="hero-mana-dot w-2 h-2 rounded-full p-0 min-w-0"
                     />
                   ))}
                 </div>
-                <span
-                  className="text-blue-300 font-heading font-bold"
-                  style={{ fontSize: 'clamp(8px, 0.8vw, 11px)' }}
-                >
+                <span className="hero-mana-text text-blue-300 font-heading font-bold">
                   💎{player.mana}/{player.maxMana}
                 </span>
               </div>
@@ -1109,7 +1093,7 @@ function PlayerArea({
         </div>
 
         {/* Defender count row */}
-        <div className="flex items-center justify-center gap-1 text-[10px] text-gray-400 font-heading">
+        <div className="hero-defenders flex items-center justify-center gap-1 text-[10px] text-gray-400 font-heading">
           <span>🛡️</span>
           <span>Защитники: {defenderCount}</span>
         </div>
@@ -1339,6 +1323,7 @@ export function GameBoard({ mode, onBack }: Props) {
   const setAiActionStatus = aiActionStatusState[1];
   const [showTurnTransition, setShowTurnTransition] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const seenStoryEventsRef = useRef<Set<number>>(new Set());
   const [dragCardUid, setDragCardUid] = useState<string | null>(null);
   const [dropZoneActive, setDropZoneActive] = useState(false);
@@ -2312,112 +2297,108 @@ export function GameBoard({ mode, onBack }: Props) {
     <div className={`game-grid ${screenShake ? 'effect-screen-shake' : ''}`} onClick={clickBF}>
       {explosionFlash && <div className="explosion-flash" />}
       {/* TOP BAR */}
-      <div className="zone-topbar">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="text-gray-400 hover:text-white transition text-sm px-2 py-1"
-            data-interactive-ui="true"
-          >
+      <div className="zone-topbar game-topbar">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <button onClick={onBack} className="game-topbar-button" data-interactive-ui="true">
             ← Назад
           </button>
-          <span
-            className="text-[#c9a84c] font-heading font-bold"
-            style={{ fontSize: 'clamp(14px, 1.5vw, 18px)' }}
-          >
-            OMSK: The Gathering
-          </span>
+          <span className="game-topbar-title truncate">Омск: Собрание</span>
+          <span className="game-topbar-chip game-turn-chip">Ход {gs.turnNumber}</span>
+          {aiThinking && (
+            <span className="game-topbar-chip text-cyan-200 animate-pulse">Хранитель думает</span>
+          )}
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-start gap-2">
-            <BaselineMetricsPanel metrics={baselineMetrics} />
-            <XPProfilePanel profile={xpProfile} />
-            <DailyQuestsPanel quests={dailyQuests} />
-            <AchievementsPanel achievements={achievements} />
-          </div>
-          <div
-            className="flex items-center gap-1.5 rounded border border-[#3a3f5a] bg-[#121628]/80 px-1.5 py-1"
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDebugPanel((value) => !value);
+            }}
+            className="game-topbar-button game-debug-toggle"
+            title="Открыть отладочные метрики"
             data-interactive-ui="true"
           >
-            <span
-              className="text-[10px] text-gray-400"
-              title="Unified Debug Hub v0"
-              data-interactive-ui="true"
-            >
-              🧪 hub
-            </span>
-            <span
-              className="text-[10px] text-gray-400"
-              title="Baseline counters"
-              data-interactive-ui="true"
-            >
-              counters:{' '}
-              <span className="text-[#f0d68a]">
-                {baselineMetrics.counters.matchesCompleted}/{baselineMetrics.counters.turnsEnded}/
-                {baselineMetrics.counters.cardsPlayed}/{baselineMetrics.counters.aiTurns}
-              </span>
-            </span>
-            <span
-              className="text-[10px] text-gray-400"
-              title="Telemetry events"
-              data-interactive-ui="true"
-            >
-              events: <span className="text-[#f0d68a]">{telemetry.events.length}</span>
-            </span>
-            <span
-              className="text-[10px] text-gray-400"
-              title="Progression level"
-              data-interactive-ui="true"
-            >
-              level: <span className="text-[#f0d68a]">{xpProfile.level}</span>
-            </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                exportUnifiedDebugSnapshot();
-              }}
-              className="text-gray-400 hover:text-[#f0d68a] transition text-xs px-1.5 py-1"
-              title="Экспорт unified debug snapshot (JSON)"
-              data-interactive-ui="true"
-            >
-              📤 snapshot
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                clearUnifiedDebugLocalData();
-              }}
-              className="text-gray-500 hover:text-red-300 transition text-xs px-1.5 py-1"
-              title="Очистить unified debug/progression local data"
-              data-interactive-ui="true"
-            >
-              🧹 all
-            </button>
-          </div>
-          <span className="text-gray-400" style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}>
-            Ход {gs.turnNumber}
-          </span>
+            ⚙️ Отладка
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               setShowLog(true);
             }}
-            className="text-gray-400 hover:text-[#f0d68a] transition text-sm px-2 py-1"
+            className="game-topbar-button"
             title="Журнал действий"
             style={{ pointerEvents: 'auto', zIndex: 999 }}
             data-interactive-ui="true"
           >
-            📜 Лог
+            📜 Журнал
           </button>
-          {aiThinking && (
-            <span
-              className="text-cyan-400 animate-pulse"
-              style={{ fontSize: 'clamp(10px, 1vw, 13px)' }}
-            >
-              🤖 Думает...
-            </span>
-          )}
         </div>
+
+        {showDebugPanel && (
+          <div className="game-debug-drawer" data-interactive-ui="true">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div>
+                <div className="font-heading text-sm text-[#f0d68a]">Отладка и прогресс</div>
+                <div className="font-body text-xs text-slate-500">
+                  Метрики скрыты с игрового стола и доступны только здесь.
+                </div>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDebugPanel(false);
+                }}
+                className="game-topbar-button"
+                data-interactive-ui="true"
+              >
+                Закрыть
+              </button>
+            </div>
+            <div className="grid gap-2 lg:grid-cols-2 xl:grid-cols-4">
+              <BaselineMetricsPanel metrics={baselineMetrics} />
+              <XPProfilePanel profile={xpProfile} />
+              <DailyQuestsPanel quests={dailyQuests} />
+              <AchievementsPanel achievements={achievements} />
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2 rounded border border-[#3a3f5a] bg-[#121628]/80 px-2 py-1.5">
+              <span className="text-[10px] text-gray-400" title="Сводка счётчиков">
+                Счётчики:{' '}
+                <span className="text-[#f0d68a]">
+                  {baselineMetrics.counters.matchesCompleted}/{baselineMetrics.counters.turnsEnded}/
+                  {baselineMetrics.counters.cardsPlayed}/{baselineMetrics.counters.aiTurns}
+                </span>
+              </span>
+              <span className="text-[10px] text-gray-400" title="События телеметрии">
+                События: <span className="text-[#f0d68a]">{telemetry.events.length}</span>
+              </span>
+              <span className="text-[10px] text-gray-400" title="Уровень прогресса">
+                Уровень: <span className="text-[#f0d68a]">{xpProfile.level}</span>
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  exportUnifiedDebugSnapshot();
+                }}
+                className="text-gray-400 hover:text-[#f0d68a] transition text-xs px-1.5 py-1"
+                title="Экспортировать отладочный снимок в JSON"
+                data-interactive-ui="true"
+              >
+                📤 Снимок
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  clearUnifiedDebugLocalData();
+                }}
+                className="text-gray-500 hover:text-red-300 transition text-xs px-1.5 py-1"
+                title="Очистить локальные данные отладки и прогресса"
+                data-interactive-ui="true"
+              >
+                🧹 Очистить
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ENEMY HERO ZONE */}
@@ -2747,9 +2728,28 @@ export function GameBoard({ mode, onBack }: Props) {
 
       {/* GAME OVER */}
       {gs.gameOver && (
-        <div className="modal-overlay">
-          <div className="modal-overlay-content text-center">
-            <h2 className="font-title text-2xl text-[#c9a84c] mb-4">
+        <div
+          className={`game-over-screen ${
+            mode === 'local'
+              ? gs.winner === activePlayerKey
+                ? 'victory'
+                : 'defeat'
+              : me.health <= 0
+                ? 'defeat'
+                : 'victory'
+          }`}
+        >
+          <div className="game-over-panel text-center">
+            <div className="game-over-emblem">
+              {mode === 'local'
+                ? gs.winner === activePlayerKey
+                  ? '🌅'
+                  : '🏭'
+                : me.health <= 0
+                  ? '🏭'
+                  : '🌅'}
+            </div>
+            <h2 className="font-title text-2xl text-[#f0d68a] mb-4">
               {mode === 'local'
                 ? gs.winner === activePlayerKey
                   ? '🏆 Победа!'
@@ -2766,17 +2766,14 @@ export function GameBoard({ mode, onBack }: Props) {
                     ? 'Игрок 2 победил!'
                     : 'Ничья!'
                 : me.health <= 0
-                  ? 'Омск пал...'
-                  : 'Омск спасён!'}
+                  ? 'ТЭЦ гудит в темноте. Хранитель удержал город.'
+                  : 'Рассвет отражается в Иртыше. Хранитель отступил.'}
             </p>
             <div className="flex gap-4 justify-center">
-              <button
-                onClick={restart}
-                className="px-6 py-2 rounded-lg bg-[#c9a84c] text-black font-bold"
-              >
-                Играть снова
+              <button onClick={restart} className="game-over-action primary">
+                Новый бой
               </button>
-              <button onClick={onBack} className="px-6 py-2 rounded-lg border border-gray-600">
+              <button onClick={onBack} className="game-over-action">
                 В меню
               </button>
             </div>

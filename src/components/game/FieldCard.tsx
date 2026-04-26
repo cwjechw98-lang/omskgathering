@@ -129,7 +129,7 @@ export function FieldCard({
               {/* Card emoji */}
               <span
                 className="text-white drop-shadow-lg"
-                style={{ fontSize: 'clamp(16px, 2.2vw, 32px)' }}
+                style={{ fontSize: 'clamp(1rem, 1.85vw, 2.65rem)' }}
               >
                 {card.data.emoji}
               </span>
@@ -139,9 +139,9 @@ export function FieldCard({
                 variant="secondary"
                 className="bg-blue-700/80 backdrop-blur-sm text-white font-bold font-heading shadow-lg border border-blue-500/30"
                 style={{
-                  width: 'clamp(14px, 1.8vw, 24px)',
-                  height: 'clamp(14px, 1.8vw, 24px)',
-                  fontSize: 'clamp(8px, 1vw, 13px)',
+                  width: 'clamp(1rem, 1.35vw, 2rem)',
+                  height: 'clamp(1rem, 1.35vw, 2rem)',
+                  fontSize: 'clamp(0.5rem, 0.78vw, 1rem)',
                   padding: '0',
                   display: 'flex',
                   alignItems: 'center',
@@ -155,7 +155,7 @@ export function FieldCard({
             {/* Card name */}
             <div
               className="field-card-name font-heading text-white font-bold truncate mt-auto drop-shadow-md"
-              style={{ fontSize: 'clamp(6px, 0.85vw, 11px)' }}
+              style={{ fontSize: 'clamp(0.5rem, 0.62vw, 0.96rem)' }}
             >
               {card.data.name}
             </div>
@@ -168,7 +168,7 @@ export function FieldCard({
                     key={k}
                     variant="outline"
                     className="field-card-keyword bg-slate-800/60 backdrop-blur-sm border-slate-600/40 text-gray-300"
-                    style={{ fontSize: 'clamp(7px, 0.8vw, 12px)', padding: '1px 3px' }}
+                    style={{ fontSize: 'clamp(0.48rem, 0.58vw, 0.78rem)', padding: '1px 3px' }}
                     title={KW[k]}
                   >
                     {KWS[k]}
@@ -180,7 +180,7 @@ export function FieldCard({
             {/* Status icons */}
             <div
               className="field-card-status flex items-center gap-0.5 mt-0.5"
-              style={{ fontSize: 'clamp(7px, 0.8vw, 11px)' }}
+              style={{ fontSize: 'clamp(0.5rem, 0.58vw, 0.82rem)' }}
             >
               {frozen && (
                 <span
@@ -221,7 +221,7 @@ export function FieldCard({
                 {/* Attack stat - rust/orange accent */}
                 <Badge
                   className="field-card-stat-badge bg-gradient-to-br from-red-900/80 to-orange-800/60 backdrop-blur-sm text-white font-bold font-heading border border-red-700/40 shadow-lg"
-                  style={{ fontSize: 'clamp(10px, 1.2vw, 14px)', padding: '2px 6px' }}
+                  style={{ fontSize: 'clamp(0.62rem, 0.72vw, 1.05rem)', padding: '2px 6px' }}
                 >
                   {atk}⚔
                 </Badge>
@@ -233,7 +233,7 @@ export function FieldCard({
                       ? 'bg-gradient-to-br from-red-700/80 to-orange-700/60 border-red-600/40 animate-pulse'
                       : 'bg-gradient-to-br from-green-800/80 to-cyan-700/60 border-green-600/40'
                   }`}
-                  style={{ fontSize: 'clamp(10px, 1.2vw, 14px)', padding: '2px 6px' }}
+                  style={{ fontSize: 'clamp(0.62rem, 0.72vw, 1.05rem)', padding: '2px 6px' }}
                 >
                   {hp}❤
                 </Badge>

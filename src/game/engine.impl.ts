@@ -272,7 +272,7 @@ export function playCard(
     player.landsPlayed += 1;
     if (card.data.id === 'ploshchad_buhgoltsa' && player.maxMana === 3) {
       player.health = Math.min(player.maxHealth, player.health + 1);
-      newState.log.push('🗿 Площадь Бухгольца: третья земля — +1 HP!');
+      newState.log.push('🗿 Площадь Бухгольца: третья земля — +1 здоровье!');
     }
     newState.log.push(`🏔️ ${card.data.name} разыграна. Мана: ${player.mana}/${player.maxMana}`);
     return newState;
@@ -440,12 +440,12 @@ function applyEntryEffects(
 
     case 'babka_semechki':
       player.health = Math.min(player.maxHealth, player.health + 1);
-      state.log.push('🌻 Бабка с Семечками: +1 HP!');
+      state.log.push('🌻 Бабка с Семечками: +1 здоровье!');
       break;
 
     case 'trolleybus_driver':
       player.health = Math.min(player.maxHealth, player.health + 1);
-      state.log.push('🚎 Водитель Троллейбуса: +1 HP!');
+      state.log.push('🚎 Водитель Троллейбуса: +1 здоровье!');
       break;
 
     case 'rynochny_torgovets':
@@ -503,7 +503,7 @@ function applyEntryEffects(
 
     case 'duh_sibiri':
       player.health = Math.min(player.maxHealth, player.health + 4);
-      state.log.push('🌲 Дух Сибири: +4 HP!');
+      state.log.push('🌲 Дух Сибири: +4 здоровья!');
       break;
 
     case 'drakon_irtysha':
@@ -539,7 +539,7 @@ function applyEntryEffects(
         }
       }
       if (killed.length > 0) {
-        state.log.push(`🕳️ Black Hole уничтожает: ${killed.join(', ')}!`);
+        state.log.push(`🕳️ Чёрная Дыра уничтожает: ${killed.join(', ')}!`);
       }
       break;
     }
@@ -576,22 +576,22 @@ function applySpellEffect(
 
     case 'segfault': {
       const roll = rollDice(6);
-      state.lastDiceRoll = { sides: 6, result: roll, reason: 'Segfault' };
-      state.log.push(`🎲 Segfault: бросок D6 = ${roll}`);
+      state.lastDiceRoll = { sides: 6, result: roll, reason: 'Сбой памяти' };
+      state.log.push(`🎲 Сбой Памяти: бросок кубика = ${roll}`);
       if (roll === 1) {
         if (player.field.length > 0) {
           const target = player.field[Math.floor(Math.random() * player.field.length)];
           target.currentHealth -= 2;
-          state.log.push(`💀 Segfault бьёт СВОЕГО ${target.data.name} на 2!`);
+          state.log.push(`💀 Сбой Памяти бьёт СВОЕГО ${target.data.name} на 2!`);
         }
       } else {
         if (opponent.field.length > 0) {
           const target = opponent.field[Math.floor(Math.random() * opponent.field.length)];
           target.currentHealth -= 3;
-          state.log.push(`💀 Segfault бьёт вражеского ${target.data.name} на 3!`);
+          state.log.push(`💀 Сбой Памяти бьёт вражеского ${target.data.name} на 3!`);
         } else {
           opponent.health -= 3;
-          state.log.push('💀 Segfault: 3 урона вражескому герою!');
+          state.log.push('💀 Сбой Памяти: 3 урона вражескому герою!');
         }
       }
       break;
@@ -735,9 +735,9 @@ function applySpellEffect(
           getEffectiveAttack(b, opponent) > getEffectiveAttack(a, opponent) ? b : a
         );
         target.currentHealth = -999;
-        state.log.push(`🔴 Norminette FAIL: ${target.data.name} уничтожен!`);
+        state.log.push(`🔴 Норминетта: ${target.data.name} уничтожен!`);
       } else {
-        state.log.push('🔴 Norminette: нет целей.');
+        state.log.push('🔴 Норминетта: нет целей.');
       }
       break;
     }
@@ -746,7 +746,7 @@ function applySpellEffect(
       const roll = rollDice(6);
       const discardCount = Math.min(3, Math.max(1, Math.floor(roll / 2)));
       state.lastDiceRoll = { sides: 6, result: roll, reason: `Экзамен: сброс ${discardCount}` };
-      state.log.push(`🎲 Экзамен: D6 = ${roll}, сброс ${discardCount} карт!`);
+      state.log.push(`🎲 Экзамен: кубик = ${roll}, сброс ${discardCount} карт!`);
 
       for (let i = 0; i < discardCount && opponent.hand.length > 0; i++) {
         const idx = Math.floor(Math.random() * opponent.hand.length);
@@ -837,7 +837,7 @@ function applySpellEffect(
         c.buffHealth += 1;
         c.currentHealth += 1;
       }
-      state.log.push('✝️ Божественный Свет: +4 HP, всем существам +1/+1!');
+      state.log.push('✝️ Божественный Свет: +4 здоровья, всем существам +1/+1!');
       break;
   }
 }
@@ -893,7 +893,7 @@ export function attackPlayer(
     const healed = Math.max(0, Math.min(damage, opponentHealthBefore));
     if (healed > 0) {
       player.health = Math.min(player.maxHealth, player.health + healed);
-      newState.log.push(`💖 Привязка к жизни: +${healed} HP!`);
+      newState.log.push(`💖 Привязка к жизни: +${healed} здоровья!`);
     }
   }
 
@@ -1038,12 +1038,12 @@ export function attackCreature(
   // Lifelink
   if (hasKeyword(attacker, 'lifelink') && attackerDealtDamage && attackerDamageDealt > 0) {
     player.health = Math.min(player.maxHealth, player.health + attackerDamageDealt);
-    newState.log.push(`💖 Привязка к жизни: +${attackerDamageDealt} HP!`);
+    newState.log.push(`💖 Привязка к жизни: +${attackerDamageDealt} здоровья!`);
   }
 
   if (hasKeyword(defender, 'lifelink') && defenderDealtDamage && defenderDamageDealt > 0) {
     opponent.health = Math.min(opponent.maxHealth, opponent.health + defenderDamageDealt);
-    newState.log.push(`💖 Привязка к жизни (защитник): +${defenderDamageDealt} HP!`);
+    newState.log.push(`💖 Привязка к жизни (защитник): +${defenderDamageDealt} здоровья!`);
   }
 
   // Sneg elemental freezes attacker
@@ -1062,10 +1062,10 @@ export function attackCreature(
     newState.log.push(`❄️ ${defender.data.name} оттаял от удара!`);
   }
 
-  // Makefile-Golem: draw on kill
+  // Golem Sborny: draw on kill
   if (attacker.data.id === 'makefile_golem' && defender.currentHealth <= 0) {
     drawCard(player, newState.log);
-    newState.log.push('⚙️ Makefile-Голем: +1 карта за убийство!');
+    newState.log.push('⚙️ Голем Сборки: +1 карта за убийство!');
   }
 
   cleanupDead(newState);
@@ -1140,12 +1140,12 @@ export function endTurn(state: GameState): GameState {
   // Blagoustroistvo: heal
   if (nextPlayer.enchantments.some((c) => c.data.id === 'blagoustroistvo')) {
     nextPlayer.health = Math.min(nextPlayer.maxHealth, nextPlayer.health + 1);
-    newState.log.push('🌷 Благоустройство: +1 HP!');
+    newState.log.push('🌷 Благоустройство: +1 здоровье!');
   }
   if (nextPlayer.enchantments.some((c) => c.data.id === 'klyatva_metrostroya')) {
     if (nextPlayer.field.length >= 3) {
       nextPlayer.health = Math.min(nextPlayer.maxHealth, nextPlayer.health + 2);
-      newState.log.push('🚇 Клятва Метростроя: +2 HP за стройный фронт!');
+      newState.log.push('🚇 Клятва Метростроя: +2 здоровья за стройный фронт!');
     }
   }
 
@@ -1153,7 +1153,7 @@ export function endTurn(state: GameState): GameState {
   const coffeeCount = nextPlayer.field.filter((c) => c.data.id === 'coffee_machine').length;
   if (coffeeCount > 0) {
     nextPlayer.health = Math.min(nextPlayer.maxHealth, nextPlayer.health + coffeeCount);
-    newState.log.push(`☕ Кофемашина: +${coffeeCount} HP!`);
+    newState.log.push(`☕ Кофемашина: +${coffeeCount} здоровья!`);
   }
 
   // Babka semechki: heal self and babka
@@ -1163,7 +1163,7 @@ export function endTurn(state: GameState): GameState {
     for (const b of nextPlayer.field.filter((c) => c.data.id === 'babka_semechki')) {
       b.currentHealth = Math.min(b.maxHealth, b.currentHealth + 1);
     }
-    newState.log.push(`🌻 Бабка с Семечками: +${babkaCount} HP!`);
+    newState.log.push(`🌻 Бабка с Семечками: +${babkaCount} здоровья!`);
   }
 
   // Duh Omska: damage opponent
@@ -1171,7 +1171,7 @@ export function endTurn(state: GameState): GameState {
   const duhOwner = newState[duhOwnerKey];
   if (duhOwner.enchantments.some((c) => c.data.id === 'duh_omska')) {
     nextPlayer.health -= 1;
-    newState.log.push('👻 Дух Омска: -1 HP!');
+    newState.log.push('👻 Дух Омска: -1 здоровье!');
   }
   if (duhOwner.enchantments.some((c) => c.data.id === 'golos_telebashni')) {
     if (nextPlayer.hand.length >= 4) {
@@ -1202,7 +1202,7 @@ function cleanupDead(state: GameState) {
       // Death triggers
       if (card.data.id === 'shaurmaster') {
         player.health = Math.min(player.maxHealth, player.health + 2);
-        state.log.push('🌯 Мастер Шаурмы: +2 HP при смерти!');
+        state.log.push('🌯 Мастер Шаурмы: +2 здоровья при смерти!');
       }
       if (card.data.id === 'zhitel_podzemki') {
         opponent.health -= 2;
@@ -1222,7 +1222,7 @@ function cleanupDead(state: GameState) {
       // Zarya Pobedy: heal on ally death
       if (player.enchantments.some((c) => c.data.id === 'zarya_pobedy')) {
         player.health = Math.min(player.maxHealth, player.health + 2);
-        state.log.push('🌅 Заря Победы: +2 HP за павшего!');
+        state.log.push('🌅 Заря Победы: +2 здоровья за павшего!');
       }
 
       player.graveyard.push(card);

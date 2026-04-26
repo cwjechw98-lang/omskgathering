@@ -9,6 +9,8 @@ const outDir = path.resolve('output', 'ui-smoke');
 const viewports = [
   { name: 'desktop-1366', width: 1366, height: 768 },
   { name: 'desktop-1920', width: 1920, height: 1080 },
+  { name: 'desktop-2560', width: 2560, height: 1440 },
+  { name: 'desktop-3840', width: 3840, height: 2160 },
   { name: 'mobile-375', width: 375, height: 812 },
 ];
 
@@ -77,7 +79,7 @@ async function withServer(fn) {
 
 async function gotoMenu(page) {
   await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 30000 });
-  await page.getByText('Против Хранителя', { exact: true }).waitFor({ state: 'visible', timeout: 10000 });
+  await page.getByRole('button', { name: /Играть/ }).waitFor({ state: 'visible', timeout: 10000 });
 }
 
 async function assertNoDocumentHorizontalScroll(page, viewportName) {
@@ -105,7 +107,8 @@ async function assertNoDocumentHorizontalScroll(page, viewportName) {
 }
 
 async function skipIntro(page) {
-  await page.getByText('Против Хранителя', { exact: true }).click({ timeout: 10000 });
+  await page.evaluate(() => window.localStorage.setItem('tutorialCompleted', 'true'));
+  await page.getByRole('button', { name: /Играть/ }).click({ timeout: 10000 });
   await page.getByText('Пропустить', { exact: false }).waitFor({ state: 'visible', timeout: 10000 });
   await page.getByText('Пропустить', { exact: false }).click({ timeout: 10000 });
   await page.locator('.game-grid').waitFor({ state: 'visible', timeout: 10000 });
@@ -132,6 +135,10 @@ async function runGameBoardSmoke(browser, viewport) {
   await firstLand.dblclick({ timeout: 10000 });
   await page.locator('.card-field-container').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
   await endTurnButton.click({ timeout: 10000 });
+  await page.waitForFunction(
+    () => document.querySelector('.zone-player-hero [role="region"]')?.textContent?.includes('⚡'),
+    { timeout: 15000 }
+  );
 
   const metrics = await page.evaluate(() => {
     const slots = document.querySelectorAll('.creature-slot').length;
@@ -173,22 +180,25 @@ async function runMenuSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
   const page = await context.newPage();
   await gotoMenu(page);
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: path.join(outDir, 'menu.png'), fullPage: true });
 
   await page.getByText('Коллекция', { exact: true }).click({ timeout: 10000 });
-  await page.getByRole('heading', { name: /Коллекция/ }).waitFor({ state: 'visible', timeout: 10000 });
+  await page.getByRole('heading', { name: /Архив карт/ }).waitFor({ state: 'visible', timeout: 10000 });
   const visibleCards = await page.locator('.card-frame').count();
   if (visibleCards < 8) throw new Error(`collection rendered too few cards: ${visibleCards}`);
+  await page.waitForTimeout(700);
   await page.screenshot({ path: path.join(outDir, 'collection.png'), fullPage: true });
 
   await page.getByText('← Назад', { exact: true }).click({ timeout: 10000 });
-  await page.getByText('Правила Игры', { exact: true }).click({ timeout: 10000 });
-  await page.getByText('Правила игры', { exact: false }).waitFor({ state: 'visible', timeout: 10000 }).catch(async () => {
+  await page.getByText('Правила', { exact: true }).click({ timeout: 10000 });
+  await page.getByText('Учебный стенд', { exact: false }).waitFor({ state: 'visible', timeout: 10000 }).catch(async () => {
     await page.getByText('Типы карт', { exact: false }).waitFor({ state: 'visible', timeout: 10000 });
   });
 
   await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 30000 });
-  await page.getByText('Легенда Омска', { exact: true }).click({ timeout: 10000 });
-  await page.getByRole('heading', { name: /Легенда Омска/ }).waitFor({ state: 'visible', timeout: 10000 });
+  await page.getByText('Легенда', { exact: true }).click({ timeout: 10000 });
+  await page.getByRole('heading', { name: /Городская хроника/ }).waitFor({ state: 'visible', timeout: 10000 });
 
   await context.close();
   return { visibleCards };

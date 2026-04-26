@@ -4,9 +4,7 @@ import { WORLD_LORE } from '../data/lore';
 import { CardInstance } from '../game/types';
 import { generateUid, getEffectiveAttack, getEffectiveHealth } from '../game/engine';
 import { ParticleCanvas } from './effects/ParticleCanvas';
-import { Torch } from './effects/Torch';
 import { getCardCoverSources, handleImageErrorWithFallback } from '../utils/cardImages';
-import { Button } from './ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './ui/accordion';
 
 interface MainMenuProps {
@@ -46,173 +44,119 @@ function detectLiteFx(): boolean {
 export function MainMenu({ onStartGame }: MainMenuProps) {
   const [screen, setScreen] = useState<'menu' | 'cards' | 'rules' | 'lore'>('menu');
   const [liteFx] = useState(() => detectLiteFx());
+  const cardCount = ALL_CARDS.filter((c) => c.id !== 'chinovnik').length;
 
   if (screen === 'cards') return <CardCollection onBack={() => setScreen('menu')} />;
   if (screen === 'rules') return <Rules onBack={() => setScreen('menu')} />;
   if (screen === 'lore') return <LoreScreen onBack={() => setScreen('menu')} />;
 
   return (
-    <div className="h-[100dvh] bg-[#0a0a0f] flex flex-col items-center py-4 md:py-8 px-4 relative overflow-y-auto">
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_rgba(30,15,0,0.5)_0%,_rgba(5,5,10,1)_70%)]" />
-      <div
-        className="fixed inset-0 opacity-[0.02] pointer-events-none"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(201,168,76,0.5) 35px, rgba(201,168,76,0.5) 36px)',
-        }}
+    <div className="omsk-menu min-h-[100dvh] relative overflow-hidden bg-[#05070d] text-slate-100">
+      <img
+        src={`${import.meta.env.BASE_URL}cards/tuman_nad_irtyshom.jpg`}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover opacity-35"
+        loading="eager"
       />
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_18%,rgba(30,194,212,0.16),transparent_34%),linear-gradient(180deg,rgba(4,7,14,0.66)_0%,rgba(4,7,14,0.9)_56%,#05070d_100%)]" />
+      <div className="omsk-menu-map absolute inset-0 pointer-events-none opacity-40" />
+      <div className="omsk-menu-smoke absolute inset-x-[-10%] bottom-[-12%] h-1/2 pointer-events-none" />
       <ParticleCanvas
-        type="embers"
-        density={liteFx ? 24 : 40}
-        className="fixed inset-0"
+        type="magic"
+        density={liteFx ? 12 : 28}
+        className="absolute inset-0"
         interactive={false}
       />
-      <div className="fixed left-[10%] top-[30%] w-40 h-40 rounded-full fire-light pointer-events-none" />
-      <div
-        className="fixed right-[10%] top-[30%] w-40 h-40 rounded-full fire-light pointer-events-none"
-        style={{ animationDelay: '1s' }}
-      />
+      <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[min(92rem,94vw)] flex-col justify-center px-4 py-6 sm:px-6 lg:px-10">
+        <div className="grid items-center gap-7 lg:grid-cols-[minmax(20rem,0.92fr)_minmax(20rem,1.08fr)] xl:gap-12">
+          <section className="order-2 flex flex-col gap-4 lg:order-1">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/[0.08] px-3 py-1 font-heading text-xs text-cyan-100/80 backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(103,232,249,0.9)]" />
+              Иртышская линия активна
+            </div>
 
-      {[
-        { emoji: '🐦', x: '8%', y: '15%', size: '3rem', dur: '8s', delay: '0s' },
-        { emoji: '❄️', x: '85%', y: '20%', size: '2.5rem', dur: '10s', delay: '2s' },
-        { emoji: '🏭', x: '12%', y: '75%', size: '2.8rem', dur: '12s', delay: '4s' },
-        { emoji: '👻', x: '90%', y: '70%', size: '2.2rem', dur: '9s', delay: '1s' },
-        { emoji: '🐉', x: '75%', y: '85%', size: '3.5rem', dur: '11s', delay: '3s' },
-        { emoji: '🧙‍♀️', x: '20%', y: '88%', size: '2rem', dur: '7s', delay: '5s' },
-      ].map((obj, i) => (
-        <div
-          key={i}
-          className="fixed drift-slow pointer-events-none"
-          style={
-            {
-              left: obj.x,
-              top: obj.y,
-              fontSize: obj.size,
-              opacity: 0.06,
-              '--dur': obj.dur,
-              '--delay': obj.delay,
-            } as React.CSSProperties
-          }
-        >
-          {obj.emoji}
-        </div>
-      ))}
+            <div>
+              <h1 className="omsk-menu-title font-title text-gold-light title-glow">
+                Омск: Собрание
+              </h1>
+              <p className="mt-3 max-w-xl font-body text-sm leading-relaxed text-slate-300/80 sm:text-base">
+                Карточная дуэль у реки, где ТЭЦ гудит как древний алтарь, а недостроенное метро
+                ведёт к источникам маны.
+              </p>
+            </div>
 
-      <div className="relative z-10 flex flex-col items-center w-full max-w-md mx-auto my-auto">
-        <div className="relative flex items-center justify-center mb-2 md:mb-6 flex-shrink-0">
-          <div className="relative -mr-4 mt-8 hidden sm:block">
-            <Torch side="left" />
-          </div>
-          <div className="text-center px-4 md:px-8 relative">
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div
-                className="w-28 h-28 md:w-64 md:h-64 rounded-full border border-[#c9a84c]/10"
-                style={{ animation: 'runeRotate 30s linear infinite' }}
+            <div className="omsk-menu-actions">
+              <button
+                type="button"
+                onClick={onStartGame}
+                className="omsk-menu-button omsk-menu-button-primary"
               >
-                {['🜁', '🜂', '🜃', '🜄', '⛧', '☉', '☽', '♆'].map((r, i) => (
-                  <span
-                    key={i}
-                    className="absolute text-[#c9a84c]/20 text-sm md:text-lg"
-                    style={{
-                      left: `${50 + 45 * Math.cos((i * Math.PI) / 4)}%`,
-                      top: `${50 + 45 * Math.sin((i * Math.PI) / 4)}%`,
-                      transform: 'translate(-50%, -50%)',
-                    }}
-                  >
-                    {r}
+                <span className="omsk-menu-button-icon">🗿</span>
+                <span className="min-w-0">
+                  <span className="block truncate">Играть</span>
+                  <span className="block truncate font-body text-xs text-cyan-100/70 sm:text-sm">
+                    Против Хранителя Омска
                   </span>
-                ))}
-              </div>
-            </div>
-            <div className="mb-1 md:mb-3">
-              <div className="inline-block p-1.5 md:p-3 rounded-full border border-[#c9a84c]/30 bg-black/60 backdrop-blur-sm">
-                <span className="text-3xl md:text-6xl emoji-float inline-block">🃏</span>
-              </div>
-            </div>
-            <h1 className="font-title text-4xl md:text-7xl lg:text-9xl tracking-wider text-gold-light title-glow select-none">
-              OMSK
-            </h1>
-            <div className="flex items-center gap-2 md:gap-4 justify-center my-2">
-              <div className="h-px w-8 md:w-20 bg-gradient-to-r from-transparent to-[#c9a84c]/50" />
-              <span className="font-heading text-xs md:text-lg tracking-[0.4em] subtitle-shimmer select-none">
-                THE GATHERING
-              </span>
-              <div className="h-px w-8 md:w-20 bg-gradient-to-l from-transparent to-[#c9a84c]/50" />
-            </div>
-            <p className="font-body text-[#8a7a5a] mt-2 md:mt-3 text-xs md:text-sm max-w-xs md:max-w-md mx-auto italic leading-relaxed hidden xs:block">
-              «Под слоем асфальта, под недостроенным метро,
-              <br className="hidden sm:block" />
-              пульсирует древняя сила...»
-            </p>
-          </div>
-          <div className="relative -ml-4 mt-8 hidden sm:block">
-            <Torch side="right" />
-          </div>
-        </div>
+                </span>
+              </button>
 
-        {/* Adaptive button container */}
-        <div className="flex flex-col gap-1.5 md:gap-3 w-full px-2 md:px-0 flex-shrink-0">
-          <Button
-            variant="mythic"
-            size="xl"
-            onClick={onStartGame}
-            className="w-full rounded-xl gap-2 md:gap-4 py-3 md:py-4"
-          >
-            <span
-              className="text-2xl md:text-3xl emoji-float inline-block flex-shrink-0"
-              style={{ animationDelay: '0.5s' }}
-            >
-              🗿
-            </span>
-            <div className="text-left min-w-0 flex-1">
-              <div className="font-bold text-sm md:text-lg truncate">Против Хранителя</div>
-              <div className="text-xs text-red-300/70 font-body hidden sm:block truncate">
-                Сразитесь с Древним Духом Города
+              <button type="button" onClick={() => setScreen('cards')} className="omsk-menu-button">
+                <span className="omsk-menu-button-icon">📖</span>
+                <span className="min-w-0">
+                  <span className="block truncate">Коллекция</span>
+                  <span className="block truncate font-body text-xs text-slate-400 sm:text-sm">
+                    {cardCount} карт в архиве
+                  </span>
+                </span>
+              </button>
+
+              <button type="button" onClick={() => setScreen('rules')} className="omsk-menu-button">
+                <span className="omsk-menu-button-icon">📋</span>
+                <span className="min-w-0">
+                  <span className="block truncate">Правила</span>
+                  <span className="block truncate font-body text-xs text-slate-400 sm:text-sm">
+                    Ход, мана, бой
+                  </span>
+                </span>
+              </button>
+
+              <button type="button" onClick={() => setScreen('lore')} className="omsk-menu-button">
+                <span className="omsk-menu-button-icon">📜</span>
+                <span className="min-w-0">
+                  <span className="block truncate">Легенда</span>
+                  <span className="block truncate font-body text-xs text-slate-400 sm:text-sm">
+                    Архив метро и источники маны
+                  </span>
+                </span>
+              </button>
+            </div>
+
+            <footer className="font-body text-xs text-slate-500">
+              «Ты не можешь покинуть Омск. Никто не может.»
+            </footer>
+          </section>
+
+          <section className="order-1 flex items-center justify-center lg:order-2">
+            <div className="omsk-sigil-shell">
+              <div className="omsk-sigil-ring" />
+              <div className="omsk-sigil-card">
+                <img
+                  src={`${import.meta.env.BASE_URL}cards/card-back.jpg`}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  loading="eager"
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(103,232,249,0.22),transparent_40%),linear-gradient(180deg,transparent,rgba(4,7,14,0.42))]" />
+              </div>
+              <div className="omsk-sigil-caption">
+                <span>ТЭЦ</span>
+                <span>Иртыш</span>
+                <span>Метро</span>
               </div>
             </div>
-          </Button>
-          <Button
-            variant="blue"
-            size="lg"
-            onClick={() => setScreen('lore')}
-            className="w-full rounded-xl gap-2 md:gap-3 py-2.5 md:py-3"
-          >
-            <span className="flex-shrink-0">📜</span>
-            <span className="truncate">Легенда Омска</span>
-          </Button>
-          <Button
-            variant="purple"
-            size="lg"
-            onClick={() => setScreen('cards')}
-            className="w-full rounded-xl gap-2 md:gap-3 py-2.5 md:py-3"
-          >
-            <span className="flex-shrink-0">📖</span>
-            <span className="truncate">Коллекция</span>
-            <span className="font-body text-xs text-purple-400/60 ml-1 hidden sm:inline">
-              ({ALL_CARDS.filter((c) => c.id !== 'chinovnik').length} карт)
-            </span>
-          </Button>
-          <Button
-            variant="nav"
-            size="default"
-            onClick={() => setScreen('rules')}
-            className="w-full rounded-xl bg-[#12121e] hover:bg-[#1e1e30] text-sm gap-2 py-2 md:py-2.5"
-          >
-            <span className="flex-shrink-0">📋</span>
-            <span className="truncate">Правила Игры</span>
-          </Button>
+          </section>
         </div>
-
-        <div className="mt-2 md:mt-6 text-center relative z-10 flex-shrink-0 px-4">
-          <p className="font-body text-[#5a4a30] text-[10px] md:text-xs italic">
-            «Ты не можешь покинуть Омск. Никто не может.»
-          </p>
-          <p className="font-heading text-[#3a3020] text-[9px] md:text-[10px] mt-1 tracking-widest">
-            OMSK: THE GATHERING © MMXXVI
-          </p>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -241,7 +185,7 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div className="h-[100dvh] bg-[#0a0a0f] relative flex flex-col overflow-hidden">
+    <div className="omsk-archive-screen h-[100dvh] bg-[#0a0a0f] relative flex flex-col overflow-hidden">
       <ParticleCanvas
         type="magic"
         density={liteFx ? 12 : 22}
@@ -249,15 +193,15 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
         interactive={false}
       />
       {/* Fixed header */}
-      <div className="shrink-0 max-w-3xl w-full mx-auto px-4 pt-4 relative z-10">
-        <div className="flex items-center justify-between mb-3">
+      <div className="shrink-0 max-w-5xl w-full mx-auto px-4 pt-4 relative z-10">
+        <div className="omsk-screen-header flex items-center justify-between mb-3">
           <button
             onClick={onBack}
             className="text-[#8a7a5a] hover:text-[#f0d68a] font-heading text-sm transition"
           >
             ← Назад
           </button>
-          <h2 className="font-title text-2xl text-gold-light title-glow">📜 Легенда Омска</h2>
+          <h2 className="font-title text-2xl text-gold-light title-glow">📜 Городская хроника</h2>
           <div className="w-16" />
         </div>
 
@@ -280,8 +224,8 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
 
       {/* Scrollable content */}
       <div className="flex-1 min-h-0 overflow-y-auto relative z-10">
-        <div className="max-w-3xl mx-auto px-4 pb-6">
-          <div className="bg-[#0f0f18]/90 rounded-xl border border-[#c9a84c]/15 overflow-hidden backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto px-4 pb-6">
+          <div className="omsk-archive-panel bg-[#0f0f18]/90 rounded-xl border border-[#c9a84c]/15 overflow-hidden backdrop-blur-sm">
             {/* Chapter Image */}
             <div className="relative h-40 md:h-56 overflow-hidden border-b border-[#c9a84c]/15">
               <img
@@ -365,7 +309,7 @@ function CardCollection({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div className="h-[100dvh] bg-[#0a0a0f] flex flex-col relative overflow-hidden">
+    <div className="omsk-archive-screen h-[100dvh] bg-[#0a0a0f] flex flex-col relative overflow-hidden">
       <ParticleCanvas
         type="magic"
         density={liteFx ? 8 : 12}
@@ -374,14 +318,14 @@ function CardCollection({ onBack }: { onBack: () => void }) {
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/80 z-20 border-b border-[#c9a84c]/15 shrink-0">
+      <div className="omsk-screen-header flex items-center justify-between px-4 py-3 bg-black/80 z-20 border-b border-[#c9a84c]/15 shrink-0">
         <button
           onClick={onBack}
           className="text-[#8a7a5a] hover:text-[#f0d68a] font-heading text-sm transition"
         >
           ← Назад
         </button>
-        <h2 className="font-title text-xl text-gold-light">📖 Коллекция ({filtered.length})</h2>
+        <h2 className="font-title text-xl text-gold-light">📖 Архив карт ({filtered.length})</h2>
         <div className="w-16" />
       </div>
 
@@ -814,7 +758,7 @@ function Rules({ onBack }: { onBack: () => void }) {
     {
       id: 'goal',
       title: '🎯 Цель',
-      text: `Уменьшить здоровье Хранителя Омска (или противника) с 30 до 0.\nОба игрока начинают с 30 HP, 5 картами и колодой. Максимум карт в руке — 10.`,
+      text: `Уменьшить здоровье Хранителя Омска (или противника) с 30 до 0.\nОба игрока начинают с 30 здоровья, 5 картами и колодой. Максимум карт в руке — 10.`,
     },
     {
       id: 'turns',
@@ -859,8 +803,8 @@ function Rules({ onBack }: { onBack: () => void }) {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-[#0a0a0f] p-4 overflow-y-auto">
-      <div className="max-w-2xl mx-auto pb-8 relative z-10">
+    <div className="omsk-archive-screen min-h-[100dvh] bg-[#0a0a0f] p-4 overflow-y-auto">
+      <div className="max-w-3xl mx-auto pb-8 relative z-10">
         <button
           onClick={onBack}
           className="text-[#8a7a5a] hover:text-[#f0d68a] mb-4 font-heading text-sm"
@@ -868,7 +812,7 @@ function Rules({ onBack }: { onBack: () => void }) {
           ← Назад
         </button>
         <h2 className="font-title text-2xl text-gold-light mb-6 text-center title-glow">
-          📋 Правила Игры
+          📋 Учебный стенд
         </h2>
         <Accordion type="multiple" className="space-y-2">
           {rules.map((r) => (

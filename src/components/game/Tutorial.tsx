@@ -106,7 +106,7 @@ export function Tutorial({ gameState, playerKey, onSkip }: TutorialProps) {
 
       {/* Hint card */}
       <div
-        className="tutorial-hint-panel fixed bottom-[clamp(120px,18vh,200px)] left-1/2 -translate-x-1/2 z-[95] pointer-events-auto"
+        className="tutorial-hint-panel fixed bottom-[clamp(120px,18vh,200px)] left-1/2 -translate-x-1/2 z-[180] pointer-events-auto"
         style={{ width: 'clamp(280px, 60vw, 420px)' }}
       >
         <div

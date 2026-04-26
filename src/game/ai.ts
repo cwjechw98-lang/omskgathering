@@ -46,14 +46,14 @@ const COMMENTS: Record<string, { high: string[]; mid: string[]; low: string[] }>
     low: ['🐉 ДРАКОН! СПАСИ МЕНЯ!'],
   },
   pisiner_21: {
-    high: ['👨‍💻 git push --force! Принимай коммит!'],
+    high: ['👨‍💻 Принудительный пуш! Принимай коммит!'],
     mid: ['👨‍💻 Компилируется... подождите...'],
-    low: ['👨‍💻 Stack overflow в реальной жизни...'],
+    low: ['👨‍💻 Переполнение стека в реальной жизни...'],
   },
   cluster_lord: {
-    high: ['🖥️ sudo rm -rf /твоя_жизнь!'],
+    high: ['🖥️ Кластер стирает твою жизнь из реальности!'],
     mid: ['🖥️ Кластер активирован!'],
-    low: ['🖥️ Kernel panic! Help!'],
+    low: ['🖥️ Паника ядра! Нужна помощь!'],
   },
   dvornik: {
     high: ['🧹 ПОДМЕТУ ТЕБЯ С ПОЛЯ!'],
@@ -86,9 +86,9 @@ const COMMENTS: Record<string, { high: string[]; mid: string[]; low: string[] }>
     low: ['🥶 Замри... пожалуйста... дай время...'],
   },
   norminette: {
-    high: ['🔴 NORMINETTE FAIL! Удалён из проекта!'],
+    high: ['🔴 Норминетта: провал! Удалён из проекта!'],
     mid: ['🔴 Проверочка...'],
-    low: ['🔴 Хоть Norminette поможет...'],
+    low: ['🔴 Хоть Норминетта поможет...'],
   },
   ne_pokiday_omsk: {
     high: ['🚫 НЕ ПОКИДАЙ ОМСК!!! Ха-ха!'],
@@ -96,12 +96,12 @@ const COMMENTS: Record<string, { high: string[]; mid: string[]; low: string[] }>
     low: ['🚫 Отчаянный манёвр!'],
   },
   makefile_golem: {
-    high: ['⚙️ make destroy && make victory!'],
+    high: ['⚙️ Сборка разрушения, сборка победы!'],
     mid: ['⚙️ Компиляция...'],
-    low: ['⚙️ make help...'],
+    low: ['⚙️ Нужна справка...'],
   },
   blackhole: {
-    high: ['🕳️ rm -rf /* УНИЧТОЖИТЬ ВСЁ!!!'],
+    high: ['🕳️ СТЕРЕТЬ ВСЁ!!!'],
     mid: ['🕳️ Чёрная дыра поглощает...'],
     low: ['🕳️ Пусть дыра всё решит...'],
   },
