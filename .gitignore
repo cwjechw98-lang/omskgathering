@@ -22,3 +22,19 @@ Thumbs.db
 .agent/
 agent-mcp/
 .opencode
+
+# Local research scratch (kept on disk, never committed)
+.dsh-research/
+.dsh-uploads/
+.research/
+.tmp-research/
+.tmp-backups/
+_src/
+
+# Local scratch / backups
+$null
+*.backup
+*.bak-*
+.tmp-lint.txt
+.tmp-tsc.txt
+.tmp-splice.mjs
