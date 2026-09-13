@@ -1,19 +1,40 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+// ═══════════════════════════════════════════
+// MESSAGE FEED COMPONENT
+// ═══════════════════════════════════════════
+// Отображение игровых сообщений (AI, действия, смерть, история)
+
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AI_CHARACTER } from '../../data/lore';
 
-export type GameMessage = {
+export type GameMessageType = 'ai' | 'narrative' | 'death' | 'action' | 'story' | 'system';
+
+interface GameMessage {
   id: number;
-  type: 'ai' | 'narrative' | 'death' | 'action' | 'story' | 'system';
+  type: GameMessageType;
   text: string;
   emoji: string;
   createdAt: number;
   duration: number;
-};
+}
 
 let msgIdCounter = 0;
 
-// eslint-disable-next-line react-refresh/only-export-components
-export function useMessageFeed() {
+interface UseMessageFeedReturn {
+  messages: GameMessage[];
+  addMessage: (
+    type: GameMessageType,
+    text: string,
+    emoji: string,
+    duration?: number
+  ) => void;
+  clear: () => void;
+  dismiss: (id: number) => void;
+}
+
+/**
+ * Хук для управления лентой сообщений
+ */
+export function useMessageFeed(): UseMessageFeedReturn {
   const [messages, setMessages] = useState<GameMessage[]>([]);
   const mountedRef = useRef(true);
 
@@ -25,10 +46,9 @@ export function useMessageFeed() {
   }, []);
 
   const addMessage = useCallback(
-    (type: GameMessage['type'], text: string, emoji: string, duration = 5000) => {
+    (type: GameMessageType, text: string, emoji: string, duration = 5000) => {
       const id = ++msgIdCounter;
-      const now = Date.now();
-      const msg: GameMessage = { id, type, text, emoji, createdAt: now, duration };
+      const msg: GameMessage = { id, type, text, emoji, createdAt: Date.now(), duration };
       setMessages((prev) => [...prev.slice(-5), msg]);
     },
     []
@@ -45,7 +65,6 @@ export function useMessageFeed() {
   }, [messages.length]);
 
   const clear = useCallback(() => setMessages([]), []);
-
   const dismiss = useCallback((id: number) => {
     setMessages((prev) => prev.filter((m) => m.id !== id));
   }, []);
@@ -53,15 +72,15 @@ export function useMessageFeed() {
   return { messages, addMessage, clear, dismiss };
 }
 
-export function MessageFeed({
-  messages,
-  onDismiss,
-  compact = false,
-}: {
+interface MessageFeedProps {
   messages: GameMessage[];
   onDismiss?: (id: number) => void;
-  compact?: boolean;
-}) {
+}
+
+/**
+ * Компонент отображения ленты сообщений
+ */
+export function MessageFeed({ messages, onDismiss }: MessageFeedProps) {
   const feedRef = useRef<HTMLDivElement>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -81,11 +100,11 @@ export function MessageFeed({
 
   return (
     <div
-      className={`absolute z-40 pointer-events-none ${compact ? 'left-2 right-2' : 'left-3'}`}
+      className="absolute z-layer-ui pointer-events-none left-3"
       style={{
-        top: compact ? 'clamp(52px, 6.8vh, 76px)' : 'clamp(55px, 7vh, 80px)',
-        width: compact ? 'auto' : 'clamp(260px, 22vw, 380px)',
-        maxHeight: compact ? 'clamp(136px, 24vh, 200px)' : 'clamp(200px, 35vh, 400px)',
+        top: 'clamp(55px, 7vh, 80px)',
+        width: 'clamp(260px, 22vw, 380px)',
+        maxHeight: 'clamp(200px, 35vh, 400px)',
       }}
     >
       <div
@@ -138,12 +157,11 @@ export function MessageFeed({
                       className="text-gray-200 font-body leading-relaxed italic"
                       style={{ fontSize: 'clamp(12px, 1.15vw, 16px)' }}
                     >
-                      &laquo;{msg.text}&raquo;
+                      «{msg.text}»
                     </p>
                   </div>
                 </div>
               )}
-
               {!isAI && (
                 <div className="flex items-start gap-2">
                   <span style={{ fontSize: 'clamp(16px, 1.8vw, 24px)' }}>{msg.emoji}</span>
@@ -169,7 +187,7 @@ export function MessageFeed({
                   className="absolute top-1 right-1 text-gray-600 hover:text-white text-xs w-4 h-4 flex items-center justify-center rounded-full hover:bg-gray-700/50 transition pointer-events-auto"
                   title="Закрыть"
                 >
-                  &#10005;
+                  ✕
                 </button>
               )}
             </div>
