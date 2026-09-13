@@ -56,7 +56,8 @@ interface TutorialProps {
   onSkip: () => void;
 }
 
-function getActiveStep(
+// eslint-disable-next-line react-refresh/only-export-components
+export function getActiveTutorialStep(
   gameState: GameState,
   playerKey: 'player1' | 'player2',
   hintContext?: TutorialProps['hintContext']
@@ -70,13 +71,15 @@ function getActiveStep(
 
   const me = gameState[playerKey];
   const hasLands = me.hand.some((c) => c.data.type === 'land') && me.landsPlayed < me.maxLandsPerTurn;
-  const hasPlayable = me.hand.some((c) => c.data.type !== 'land' && c.data.cost <= me.mana);
+  const hasPlayableNonLandCard = me.hand.some(
+    (c) => c.data.type !== 'land' && c.data.cost <= me.mana
+  );
   const hasAttackers = me.field.some(
     (c) => !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !c.keywords.includes('defender')
   );
 
   if (hasLands && me.landsPlayed === 0) return 1;
-  if (hasPlayable || me.mana > 0) return 2;
+  if (hasPlayableNonLandCard) return 2;
   if (hasAttackers) return 3;
   return 4;
 }
@@ -90,7 +93,7 @@ export function Tutorial({ gameState, playerKey, hintContext, onSkip }: Tutorial
 
   if (completed || dismissed) return null;
 
-  const stepIndex = getActiveStep(gameState, playerKey, hintContext) - 1;
+  const stepIndex = getActiveTutorialStep(gameState, playerKey, hintContext) - 1;
   const currentStep = STEPS[Math.min(stepIndex, STEPS.length - 1)];
 
   const handleSkip = () => {

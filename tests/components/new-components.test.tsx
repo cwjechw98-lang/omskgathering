@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 import { PhaseIndicator } from '../../src/components/game/PhaseIndicator';
-import { Tutorial } from '../../src/components/game/Tutorial';
+import { Tutorial, getActiveTutorialStep } from '../../src/components/game/Tutorial';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -149,8 +149,7 @@ describe('Tutorial', () => {
   it('рендерится и показывает шаг', () => {
     const gs = makeMockGameState();
     render(<Tutorial gameState={gs} playerKey="player1" onSkip={() => {}} />);
-    // mana=3 => шаг 2 (Существо/Заклинание) или шаг 4
-    // getActiveStep: нет земель, mana>0 => stepIndex=1 => STEPS[1]
+    // mana=3 и нет карт в руке => показывается общий блок обучения
     expect(screen.getByText(/Шаг/)).toBeTruthy();
   });
 
@@ -162,5 +161,27 @@ describe('Tutorial', () => {
     fireEvent.click(btn);
     expect(onSkip).toHaveBeenCalledTimes(1);
     expect(localStorage.getItem('tutorialCompleted')).toBe('true');
+  });
+
+  it('показывает шаг завершения хода, если есть мана, но нет разыгрываемых карт', () => {
+    const gs = makeMockGameState({
+      player1: {
+        ...makeMockGameState().player1,
+        mana: 3,
+        hand: [
+          {
+            uid: 'expensive-creature',
+            data: {
+              id: 'expensive-creature',
+              type: 'creature',
+              cost: 5,
+              keywords: [],
+            },
+          },
+        ],
+      },
+    });
+
+    expect(getActiveTutorialStep(gs, 'player1')).toBe(4);
   });
 });
