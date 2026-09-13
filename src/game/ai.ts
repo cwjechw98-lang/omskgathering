@@ -180,23 +180,54 @@ function getPlayerDefenders(p: PlayerState): CardInstance[] {
   return p.field.filter((c) => kw(c, 'defender') && c.frozen <= 0 && c.currentHealth > 0);
 }
 
-// ====== MAIN AI TURN ======
+// ====== AI TURN STRUCTURE ======
 export type AIAttackAction =
   | { type: 'attack-hero'; attackerUid: string }
   | { type: 'attack-creature'; attackerUid: string; defenderUid: string };
 
-export function aiTurn(state: GameState): {
+export type AITurnResult = {
   state: GameState;
   comment: string | null;
   actions: AIAttackAction[];
-} {
+};
+
+/**
+ * Ход AI: разыгрывает карты и атакует
+ * @returns Новое состояние, комментарий и список атак
+ */
+export function aiTurn(state: GameState): AITurnResult {
   let gs = JSON.parse(JSON.stringify(state)) as GameState;
   let lastComment: string | null = null;
   const actions: AIAttackAction[] = [];
 
-  // ========== PHASE 1: PLAY A LAND ==========
+  // PHASE 1: Play a land
+  const landResult = playLandPhase(gs);
+  gs = landResult.state;
+
+  // PHASE 2: Play cards (priority-based)
+  const cardsResult = playCardsPhase(gs, lastComment);
+  gs = cardsResult.state;
+  lastComment = cardsResult.comment;
+
+  // PHASE 3: Attack
+  const attackResult = attackPhase(gs, lastComment);
+  gs = attackResult.state;
+  lastComment = attackResult.comment;
+  actions.push(...attackResult.actions);
+
+  // PHASE 4: End turn
+  gs = endTurn(gs);
+
+  return { state: gs, comment: lastComment, actions };
+}
+
+/**
+ * Фаза 1: Розыгрыш земли
+ */
+function playLandPhase(gs: GameState): { state: GameState } {
   const landInHand = gs.player2.hand.find((c) => c.data.type === 'land');
   const preferredLand = gs.player2.hand.find((c) => c.data.id === 'ploshchad_buhgoltsa');
+  
   if ((preferredLand || landInHand) && gs.player2.landsPlayed < gs.player2.maxLandsPerTurn) {
     const landToPlay = preferredLand || landInHand;
     if (landToPlay) {
@@ -204,10 +235,18 @@ export function aiTurn(state: GameState): {
       if (next !== gs) gs = next;
     }
   }
+  
+  return { state: gs };
+}
 
-  // ========== PHASE 2: PLAY CARDS (priority-based) ==========
+/**
+ * Фаза 2: Розыгрыш карт с приоритетами
+ */
+function playCardsPhase(gs: GameState, lastComment: string | null): { state: GameState; comment: string | null } {
   let played = true;
   let safety = 0;
+  let comment = lastComment;
+
   while (played && safety < 20) {
     safety++;
     played = false;
@@ -228,14 +267,13 @@ export function aiTurn(state: GameState): {
 
     // Don't play creatures if field is full
     if (best.card.data.type === 'creature' && ai.field.length >= 7) {
-      // Try next card that isn't a creature
       const nonCreature = playable.find((x) => x.card.data.type !== 'creature');
       if (!nonCreature) break;
       const next = playCard(gs, 'player2', nonCreature.card.uid);
       if (next !== gs) {
         gs = next;
         played = true;
-        lastComment = getComment(nonCreature.card.data.id, gs.player2.health, gs.player2.maxHealth);
+        comment = getComment(nonCreature.card.data.id, gs.player2.health, gs.player2.maxHealth);
       }
       continue;
     }
@@ -245,160 +283,162 @@ export function aiTurn(state: GameState): {
     if (next !== prev) {
       gs = next;
       played = true;
-      lastComment = getComment(best.card.data.id, gs.player2.health, gs.player2.maxHealth);
+      comment = getComment(best.card.data.id, gs.player2.health, gs.player2.maxHealth);
     }
   }
 
-  // ========== PHASE 3: ATTACK ==========
-  // Recalculate attackers from current state
-  let attackers = gs.player2.field.filter((c) => canCreatureAttack(c, gs));
+  return { state: gs, comment };
+}
 
-  // Check for lethal: can we kill the player this turn?
-  const defenders = getPlayerDefenders(gs.player1);
+/**
+ * Фаза 3: Атака
+ */
+function attackPhase(
+  gs: GameState,
+  lastComment: string | null
+): { state: GameState; comment: string | null; actions: AIAttackAction[] } {
+  let state = gs;
+  let comment = lastComment;
+  const actions: AIAttackAction[] = [];
+
+  // Recalculate attackers from current state
+  let attackers = state.player2.field.filter((c) => canCreatureAttack(c, state));
+
+  // Check for lethal
+  const defenders = getPlayerDefenders(state.player1);
   const canBypassDefenders = (c: CardInstance) =>
     kw(c, 'unblockable') || (kw(c, 'flying') && !defenders.some((d) => kw(d, 'flying')));
 
   const bypassDamage = attackers
     .filter(canBypassDefenders)
-    .reduce((s, c) => s + getEffectiveAttack(c, gs.player2, gs.player1), 0);
+    .reduce((s, c) => s + getEffectiveAttack(c, state.player2, state.player1), 0);
 
   const isLethal =
     defenders.length === 0 &&
-    attackers.reduce((s, c) => s + getEffectiveAttack(c, gs.player2, gs.player1), 0) >=
-      gs.player1.health;
+    attackers.reduce((s, c) => s + getEffectiveAttack(c, state.player2, state.player1), 0) >=
+      state.player1.health;
 
-  const isLethalWithBypass = bypassDamage >= gs.player1.health;
+  const isLethalWithBypass = bypassDamage >= state.player1.health;
 
-  // Execute attacks one by one
+  // Execute attacks
   for (let i = 0; i < 20; i++) {
-    // Refresh attacker list each iteration (creatures may have died)
-    attackers = gs.player2.field.filter((c) => canCreatureAttack(c, gs));
+    attackers = state.player2.field.filter((c) => canCreatureAttack(c, state));
     if (attackers.length === 0) break;
 
-    const att = attackers[0]; // Take first available attacker
-    const atkPow = getEffectiveAttack(att, gs.player2, gs.player1);
-    const atkHp = getEffectiveHealth(att, gs.player2);
-
-    // Refresh defenders
-    const currentDefenders = getPlayerDefenders(gs.player1);
-
-    // === STRATEGY: can we bypass defenders? ===
+    const att = attackers[0];
+    const atkPow = getEffectiveAttack(att, state.player2, state.player1);
+    const atkHp = getEffectiveHealth(att, state.player2);
+    const currentDefenders = getPlayerDefenders(state.player1);
     const canBypass = canBypassDefenders(att);
 
-    // Go for lethal!
-    if (isLethal || isLethalWithBypass) {
-      if (canBypass || currentDefenders.length === 0) {
-        const next = attackPlayer(gs, 'player2', att.uid);
-        if (next !== gs) {
-          gs = next;
-          actions.push({ type: 'attack-hero', attackerUid: att.uid });
-          if (!lastComment) lastComment = '⚔️ ЗА ОМСК!!! ФИНАЛЬНАЯ АТАКА!!!';
-        }
-        if (gs.gameOver) break;
-        continue;
-      }
-    }
-
-    // === Can bypass defenders → attack face ===
-    if (canBypass && currentDefenders.length > 0) {
-      const next = attackPlayer(gs, 'player2', att.uid);
-      if (next !== gs) {
-        gs = next;
+    // Go for lethal
+    if ((isLethal || isLethalWithBypass) && (canBypass || currentDefenders.length === 0)) {
+      const next = attackPlayer(state, 'player2', att.uid);
+      if (next !== state) {
+        state = next;
         actions.push({ type: 'attack-hero', attackerUid: att.uid });
-        if (!lastComment)
-          lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
+        if (!comment) comment = '⚔️ ЗА ОМСК!!! ФИНАЛЬНАЯ АТАКА!!!';
       }
-      if (gs.gameOver) break;
+      if (state.gameOver) break;
       continue;
     }
 
-    // === Must attack defenders first ===
+    // Can bypass defenders → attack face
+    if (canBypass && currentDefenders.length > 0) {
+      const next = attackPlayer(state, 'player2', att.uid);
+      if (next !== state) {
+        state = next;
+        actions.push({ type: 'attack-hero', attackerUid: att.uid });
+        if (!comment) comment = getComment(att.data.id, state.player2.health, state.player2.maxHealth);
+      }
+      if (state.gameOver) break;
+      continue;
+    }
+
+    // Must attack defenders first
     if (currentDefenders.length > 0) {
-      const target = findBestTarget(att, atkPow, atkHp, currentDefenders, gs.player2, gs.player1);
+      const target = findBestTarget(att, atkPow, atkHp, currentDefenders, state.player2, state.player1);
       if (target) {
-        const next = attackCreature(gs, 'player2', att.uid, target.uid);
-        if (next !== gs) {
-          gs = next;
+        const next = attackCreature(state, 'player2', att.uid, target.uid);
+        if (next !== state) {
+          state = next;
           actions.push({ type: 'attack-creature', attackerUid: att.uid, defenderUid: target.uid });
-          if (!lastComment)
-            lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
+          if (!comment) comment = getComment(att.data.id, state.player2.health, state.player2.maxHealth);
         }
       } else {
-        // No good target, skip this attacker (mark as attacked to prevent infinite loop)
         att.hasAttacked = true;
       }
-      if (gs.gameOver) break;
+      if (state.gameOver) break;
       continue;
     }
 
-    // === No defenders: evaluate trade vs face ===
-    const enemyCreatures = gs.player1.field.filter((c) => c.currentHealth > 0);
+    // No defenders: evaluate trade vs face
+    const enemyCreatures = state.player1.field.filter((c) => c.currentHealth > 0);
 
-    // === PRIORITY: If no enemy creatures → attack hero directly ===
+    // No enemy creatures → attack hero
     if (enemyCreatures.length === 0) {
-      const next = attackPlayer(gs, 'player2', att.uid);
-      if (next !== gs) {
-        gs = next;
+      const next = attackPlayer(state, 'player2', att.uid);
+      if (next !== state) {
+        state = next;
         actions.push({ type: 'attack-hero', attackerUid: att.uid });
-        if (!lastComment)
-          lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
+        if (!comment) comment = getComment(att.data.id, state.player2.health, state.player2.maxHealth);
       }
-      if (gs.gameOver) break;
+      if (state.gameOver) break;
       continue;
     }
 
-    // === PRIORITY: Attack small enemies (HP <= 2) first - easy trades ===
-    const smallEnemies = enemyCreatures.filter((e) => getEffectiveHealth(e, gs.player1) <= 2);
+    // Attack small enemies (HP <= 2) first
+    const smallEnemies = enemyCreatures.filter((e) => getEffectiveHealth(e, state.player1) <= 2);
     if (smallEnemies.length > 0) {
-      const smallTrade = findBestTrade(att, atkPow, atkHp, smallEnemies, gs.player2, gs.player1);
+      const smallTrade = findBestTrade(att, atkPow, atkHp, smallEnemies, state.player2, state.player1);
       if (smallTrade && smallTrade.score > 0) {
         const target = smallEnemies.find((e) => e.uid === smallTrade.uid);
         if (target) {
-          const next = attackCreature(gs, 'player2', att.uid, target.uid);
-          if (next !== gs) {
-            gs = next;
+          const next = attackCreature(state, 'player2', att.uid, target.uid);
+          if (next !== state) {
+            state = next;
             actions.push({ type: 'attack-creature', attackerUid: att.uid, defenderUid: target.uid });
-            if (!lastComment)
-              lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
+            if (!comment) comment = getComment(att.data.id, state.player2.health, state.player2.maxHealth);
           }
-          if (gs.gameOver) break;
+          if (state.gameOver) break;
           continue;
         }
       }
     }
 
-    // Otherwise evaluate trade vs face
-    const trade = findBestTrade(att, atkPow, atkHp, enemyCreatures, gs.player2, gs.player1);
+    // Evaluate trade vs face
+    const trade = findBestTrade(att, atkPow, atkHp, enemyCreatures, state.player2, state.player1);
 
     if (trade && trade.score > 25) {
-      // Good trade available — take it
-      const next = attackCreature(gs, 'player2', att.uid, trade.uid);
-      if (next !== gs) {
-        gs = next;
+      const next = attackCreature(state, 'player2', att.uid, trade.uid);
+      if (next !== state) {
+        state = next;
         actions.push({ type: 'attack-creature', attackerUid: att.uid, defenderUid: trade.uid });
-        if (!lastComment)
-          lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
+        if (!comment) comment = getComment(att.data.id, state.player2.health, state.player2.maxHealth);
       }
     } else {
-      // Go face!
-      const next = attackPlayer(gs, 'player2', att.uid);
-      if (next !== gs) {
-        gs = next;
+      const next = attackPlayer(state, 'player2', att.uid);
+      if (next !== state) {
+        state = next;
         actions.push({ type: 'attack-hero', attackerUid: att.uid });
-        if (!lastComment)
-          lastComment = getComment(att.data.id, gs.player2.health, gs.player2.maxHealth);
+        if (!comment) comment = getComment(att.data.id, state.player2.health, state.player2.maxHealth);
       }
     }
 
-    if (gs.gameOver) break;
+    if (state.gameOver) break;
   }
 
-  // ========== PHASE 4: END TURN ==========
-  gs = endTurn(gs);
-  return { state: gs, comment: lastComment, actions };
+  return { state, comment, actions };
 }
 
-// ========== CARD SCORING ==========
+// ═══════════════════════════════════════════
+// CARD SCORING
+// ═══════════════════════════════════════════
+
+/**
+ * Оценивает карту для розыгрыша
+ * @returns Score: чем выше, тем приоритетнее
+ */
 function scoreCardToPlay(card: CardInstance, ai: PlayerState, enemy: PlayerState): number {
   const enemyThreat = enemy.field.reduce(
     (s, c) => s + (c.currentAttack || 0) * 1.5 + (c.currentHealth || 0) * 0.5,
@@ -527,7 +567,14 @@ function scoreCardToPlay(card: CardInstance, ai: PlayerState, enemy: PlayerState
   return 0;
 }
 
-// ========== FIND BEST TARGET (for mandatory defender attacks) ==========
+// ═══════════════════════════════════════════
+// TARGET SELECTION
+// ═══════════════════════════════════════════
+
+/**
+ * Находит лучшую цель для атаки (обязательные защитники)
+ * @returns Лучшая цель или null
+ */
 function findBestTarget(
   att: CardInstance,
   atkPow: number,
@@ -540,7 +587,6 @@ function findBestTarget(
   let bestScore = -999;
 
   for (const t of targets) {
-    // Can't attack flying without flying
     if (kw(t, 'flying') && !kw(att, 'flying')) continue;
 
     const tHp = getEffectiveHealth(t, enemyPlayer);
@@ -549,15 +595,11 @@ function findBestTarget(
     const willSurvive = tAtk < atkHp || (kw(att, 'first_strike') && canKill);
 
     let score = 0;
-    if (canKill && willSurvive)
-      score = 100 + (t.data.cost || 0) * 5; // Best: kill and survive
-    else if (canKill)
-      score = 50 + (t.data.cost || 0) * 3; // OK: kill but die
-    else if (willSurvive)
-      score = 30; // Chip damage, survive
-    else score = 10; // Bad trade but must attack defenders
+    if (canKill && willSurvive) score = 100 + (t.data.cost || 0) * 5;
+    else if (canKill) score = 50 + (t.data.cost || 0) * 3;
+    else if (willSurvive) score = 30;
+    else score = 10;
 
-    // Prioritize high-attack targets
     score += tAtk * 2;
 
     if (score > bestScore) {
@@ -566,11 +608,13 @@ function findBestTarget(
     }
   }
 
-  // Always return something for defenders (must attack them)
   return best || targets[0] || null;
 }
 
-// ========== FIND BEST VOLUNTARY TRADE ==========
+/**
+ * Оценивает выгодную торговлю при атаке
+ * @returns Лучшая торговля или null
+ */
 function findBestTrade(
   att: CardInstance,
   atkPow: number,
@@ -582,7 +626,6 @@ function findBestTrade(
   let best: { uid: string; score: number } | null = null;
 
   for (const e of enemies) {
-    // Can't attack flying without flying
     if (kw(e, 'flying') && !kw(att, 'flying')) continue;
 
     const eHp = getEffectiveHealth(e, enemyPlayer);
@@ -592,20 +635,17 @@ function findBestTrade(
 
     let score = 0;
 
-    // Scoring trades
     if (canKill && willSurvive) {
-      score = 60 + (e.data.cost || 0) * 5 + eAtk * 3; // Great trade
+      score = 60 + (e.data.cost || 0) * 5 + eAtk * 3;
     } else if (canKill && !willSurvive) {
-      // Worth it if target is more valuable
       const valueDiff = (e.data.cost || 0) - (att.data.cost || 0);
       score = 20 + valueDiff * 5 + eAtk * 2;
     }
 
-    // Priority bonuses for dangerous targets
-    if (eAtk >= 5 && canKill) score += 30; // Kill big threats
+    if (eAtk >= 5 && canKill) score += 30;
     if (kw(e, 'lifelink') && canKill) score += 25;
     if (kw(e, 'deathtouch') && canKill && willSurvive) score += 20;
-    if (kw(e, 'unblockable') && canKill) score += 35; // MUST kill unblockable
+    if (kw(e, 'unblockable') && canKill) score += 35;
 
     if (!best || score > best.score) {
       best = { uid: e.uid, score };
