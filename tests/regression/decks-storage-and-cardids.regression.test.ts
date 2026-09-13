@@ -73,6 +73,98 @@ describe('decksStorage regression', () => {
     expect(state.activeDeckId).toBeNull();
   });
 
+  it('loadDecksState merges duplicate card entries, caps total deck size, trims ids/names, and keeps valid activeDeckId', () => {
+    const raw = {
+      version: 1,
+      decks: [
+        {
+          id: '  deck-main  ',
+          name: '  Main Deck  ',
+          cards: [
+            { cardId: ' bird_omsk ', count: 3 },
+            { cardId: 'bird_omsk', count: 7 },
+            { cardId: 'dvornik', count: 1.9 },
+            { cardId: ' ', count: 4 },
+          ],
+          createdAt: 100,
+          updatedAt: 200,
+        },
+      ],
+      activeDeckId: '  deck-main  ',
+    };
+
+    window.localStorage.setItem(DECKS_STORAGE_KEY, JSON.stringify(raw));
+
+    const state = loadDecksState();
+
+    expect(state.decks).toHaveLength(1);
+    expect(state.decks[0].id).toBe('deck-main');
+    expect(state.decks[0].name).toBe('Main Deck');
+    expect(state.decks[0].cards).toEqual([
+      { cardId: 'bird_omsk', count: 8 },
+      { cardId: 'dvornik', count: 1 },
+    ]);
+    expect(state.activeDeckId).toBe('deck-main');
+  });
+
+  it('loadDecksState drops duplicate deck ids and normalizes active deck to null when duplicate removed', () => {
+    const raw = {
+      version: 1,
+      decks: [
+        {
+          id: 'duplicate-id',
+          name: 'First Deck',
+          cards: [{ cardId: 'bird_omsk', count: 1 }],
+          createdAt: 1,
+          updatedAt: 2,
+        },
+        {
+          id: 'duplicate-id',
+          name: 'Second Deck',
+          cards: [{ cardId: 'dvornik', count: 1 }],
+          createdAt: 3,
+          updatedAt: 4,
+        },
+      ],
+      activeDeckId: 'missing-id',
+    };
+
+    window.localStorage.setItem(DECKS_STORAGE_KEY, JSON.stringify(raw));
+
+    const state = loadDecksState();
+
+    expect(state.decks).toHaveLength(1);
+    expect(state.decks[0].name).toBe('First Deck');
+    expect(state.activeDeckId).toBeNull();
+  });
+
+  it('loadDecksState enforces hard cap of 240 cards during deck normalization', () => {
+    const raw = {
+      version: 1,
+      decks: [
+        {
+          id: 'big-deck',
+          name: 'Big Deck',
+          cards: Array.from({ length: 80 }, (_, idx) => ({
+            cardId: `card-${idx + 1}`,
+            count: 8,
+          })),
+          createdAt: 1,
+          updatedAt: 2,
+        },
+      ],
+      activeDeckId: 'big-deck',
+    };
+
+    window.localStorage.setItem(DECKS_STORAGE_KEY, JSON.stringify(raw));
+
+    const state = loadDecksState();
+    const total = state.decks[0].cards.reduce((acc, entry) => acc + entry.count, 0);
+
+    expect(total).toBe(240);
+    expect(state.activeDeckId).toBe('big-deck');
+  });
+
   it('setActiveDeckId sets active deck only when deck exists', () => {
     const state: DecksStorageState = {
       version: 1,
@@ -112,6 +204,25 @@ describe('decksStorage regression', () => {
     expect(expanded).toHaveLength(240);
     expect(expanded.slice(0, 8)).toEqual(Array.from({ length: 8 }, () => 'card-1'));
     expect(expanded.slice(8, 16)).toEqual(Array.from({ length: 8 }, () => 'card-2'));
+  });
+
+  it('expandDeckCardIds merges duplicate entries and ignores invalid entries consistently', () => {
+    const malformedDeck: SavedDeck = {
+      id: 'malformed',
+      name: 'Malformed',
+      createdAt: 1,
+      updatedAt: 1,
+      cards: [
+        { cardId: 'bird_omsk', count: 3 },
+        { cardId: ' bird_omsk ', count: 6 },
+        { cardId: 'dvornik', count: Number.NaN },
+        { cardId: '', count: 5 },
+      ],
+    };
+
+    const expanded = expandDeckCardIds(malformedDeck);
+
+    expect(expanded).toEqual(Array.from({ length: 8 }, () => 'bird_omsk'));
   });
 });
 

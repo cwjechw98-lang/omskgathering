@@ -32,39 +32,80 @@ function createDefaultDecksState(): DecksStorageState {
 function normalizeDeckCardEntry(value: unknown): DeckCardEntry | null {
   if (!value || typeof value !== 'object') return null;
   const candidate = value as Partial<DeckCardEntry>;
-  if (typeof candidate.cardId !== 'string' || candidate.cardId.length === 0) return null;
+  if (typeof candidate.cardId !== 'string') return null;
+  const cardId = candidate.cardId.trim();
+  if (cardId.length === 0) return null;
   const count = Math.floor(Number(candidate.count));
   if (!Number.isFinite(count) || count <= 0) return null;
   const safeCount = Math.min(count, MAX_COPIES_PER_CARD);
 
   return {
-    cardId: candidate.cardId,
+    cardId,
     count: safeCount,
   };
+}
+
+function normalizeDeckCards(values: unknown[]): DeckCardEntry[] {
+  const countsByCardId = new Map<string, number>();
+  const cardOrder: string[] = [];
+
+  for (const value of values) {
+    const entry = normalizeDeckCardEntry(value);
+    if (!entry) continue;
+
+    const previous = countsByCardId.get(entry.cardId) ?? 0;
+    if (previous === 0) {
+      cardOrder.push(entry.cardId);
+    }
+    countsByCardId.set(entry.cardId, Math.min(MAX_COPIES_PER_CARD, previous + entry.count));
+  }
+
+  let remainingCards = MAX_EXPANDED_DECK_SIZE;
+  const cards: DeckCardEntry[] = [];
+
+  for (const cardId of cardOrder) {
+    if (remainingCards <= 0) break;
+
+    const count = countsByCardId.get(cardId) ?? 0;
+    if (count <= 0) continue;
+
+    const nextCount = Math.min(count, remainingCards);
+    cards.push({ cardId, count: nextCount });
+    remainingCards -= nextCount;
+  }
+
+  return cards;
 }
 
 function normalizeDeck(value: unknown): SavedDeck | null {
   if (!value || typeof value !== 'object') return null;
   const candidate = value as Partial<SavedDeck>;
-  if (typeof candidate.id !== 'string' || candidate.id.length === 0) return null;
-  if (typeof candidate.name !== 'string' || candidate.name.trim().length === 0) return null;
+  if (typeof candidate.id !== 'string') return null;
+  const deckId = candidate.id.trim();
+  if (deckId.length === 0) return null;
+  if (typeof candidate.name !== 'string') return null;
+  const normalizedName = candidate.name.trim();
+  if (normalizedName.length === 0) return null;
   if (!Array.isArray(candidate.cards)) return null;
 
-  const cards = candidate.cards
-    .map(normalizeDeckCardEntry)
-    .filter((entry): entry is DeckCardEntry => Boolean(entry));
+  const cards = normalizeDeckCards(candidate.cards);
 
   if (cards.length === 0) return null;
 
-  const createdAt = Number(candidate.createdAt);
-  const updatedAt = Number(candidate.updatedAt);
+  const now = Date.now();
+  const createdAtRaw = Number(candidate.createdAt);
+  const updatedAtRaw = Number(candidate.updatedAt);
+  const createdAt =
+    Number.isFinite(createdAtRaw) && createdAtRaw >= 0 ? Math.floor(createdAtRaw) : now;
+  const normalizedUpdatedAt =
+    Number.isFinite(updatedAtRaw) && updatedAtRaw >= 0 ? Math.floor(updatedAtRaw) : createdAt;
 
   return {
-    id: candidate.id,
-    name: candidate.name.trim(),
+    id: deckId,
+    name: normalizedName,
     cards,
-    createdAt: Number.isFinite(createdAt) ? createdAt : Date.now(),
-    updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now(),
+    createdAt,
+    updatedAt: Math.max(createdAt, normalizedUpdatedAt),
   };
 }
 
@@ -74,13 +115,24 @@ function normalizeDecksState(value: unknown): DecksStorageState | null {
   if (candidate.version !== 1) return null;
   if (!Array.isArray(candidate.decks)) return null;
 
-  const decks = candidate.decks
+  const normalizedDecks = candidate.decks
     .map(normalizeDeck)
     .filter((deck): deck is SavedDeck => Boolean(deck));
 
+  const decks: SavedDeck[] = [];
+  const seenDeckIds = new Set<string>();
+  for (const deck of normalizedDecks) {
+    if (seenDeckIds.has(deck.id)) continue;
+    seenDeckIds.add(deck.id);
+    decks.push(deck);
+  }
+
+  const requestedActiveDeckId =
+    typeof candidate.activeDeckId === 'string' ? candidate.activeDeckId.trim() : '';
+
   const activeDeckId =
-    typeof candidate.activeDeckId === 'string' && decks.some((deck) => deck.id === candidate.activeDeckId)
-      ? candidate.activeDeckId
+    requestedActiveDeckId.length > 0 && decks.some((deck) => deck.id === requestedActiveDeckId)
+      ? requestedActiveDeckId
       : null;
 
   return {
@@ -105,17 +157,20 @@ export function loadDecksState(): DecksStorageState {
 export function saveDecksState(state: DecksStorageState): void {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(DECKS_STORAGE_KEY, JSON.stringify(state));
+    const normalizedState = normalizeDecksState(state) ?? createDefaultDecksState();
+    window.localStorage.setItem(DECKS_STORAGE_KEY, JSON.stringify(normalizedState));
   } catch {
     // no-op: localStorage can be unavailable
   }
 }
 
 export function setActiveDeckId(state: DecksStorageState, deckId: string): DecksStorageState {
-  if (!state.decks.some((deck) => deck.id === deckId)) return state;
+  const normalizedDeckId = deckId.trim();
+  if (normalizedDeckId.length === 0) return state;
+  if (!state.decks.some((deck) => deck.id === normalizedDeckId)) return state;
   return {
     ...state,
-    activeDeckId: deckId,
+    activeDeckId: normalizedDeckId,
   };
 }
 
@@ -125,10 +180,10 @@ export function getActiveDeck(state: DecksStorageState): SavedDeck | null {
 }
 
 export function expandDeckCardIds(deck: SavedDeck): string[] {
+  const normalizedCards = normalizeDeckCards(deck.cards);
   const cardIds: string[] = [];
-  for (const entry of deck.cards) {
-    const copies = Math.min(Math.max(0, Math.floor(entry.count)), MAX_COPIES_PER_CARD);
-    for (let i = 0; i < copies; i++) {
+  for (const entry of normalizedCards) {
+    for (let i = 0; i < entry.count; i++) {
       cardIds.push(entry.cardId);
       if (cardIds.length >= MAX_EXPANDED_DECK_SIZE) {
         return cardIds;
