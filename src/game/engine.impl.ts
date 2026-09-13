@@ -240,12 +240,131 @@ function hasDefender(player: PlayerState): boolean {
   return player.field.some(isBlocker);
 }
 
+/**
+ * Разыгрывает карту земли
+ * @returns Новое состояние или исходное если нельзя сыграть
+ */
+function playLandCard(
+  state: GameState,
+  player: PlayerState,
+  cardIndex: number,
+  card: CardInstance
+): GameState {
+  if (player.landsPlayed >= player.maxLandsPerTurn) {
+    state.log.push('❌ Уже разыграна земля в этом ходу!');
+    return state;
+  }
+
+  player.hand.splice(cardIndex, 1);
+  player.maxMana += 1;
+  player.mana += 1;
+  player.landsPlayed += 1;
+
+  if (card.data.id === 'ploshchad_buhgoltsa' && player.maxMana === 3) {
+    player.health = Math.min(player.maxHealth, player.health + 1);
+    state.log.push('🗿 Площадь Бухгольца: третья земля — +1 HP!');
+  }
+
+  state.log.push(`🏔️ ${card.data.name} разыграна. Мана: ${player.mana}/${player.maxMana}`);
+  return state;
+}
+
+/**
+ * Разыгрывает карту существа
+ * @returns Новое состояние или исходное если нельзя сыграть
+ */
+function playCreatureCard(
+  state: GameState,
+  player: PlayerState,
+  opponent: PlayerState,
+  cardIndex: number,
+  card: CardInstance,
+  manaCost: number
+): GameState {
+  if (player.field.length >= 7) {
+    state.log.push('❌ Поле полно! (максимум 7 существ)');
+    // Mana was already deducted by playCard; refund it. The card never left the
+    // hand, so it must NOT be re-inserted here (doing so duplicated the instance).
+    player.mana += manaCost;
+    return state;
+  }
+
+  player.hand.splice(cardIndex, 1);
+  card.summoningSickness = !hasKeyword(card, 'haste');
+  card.hasAttacked = false;
+
+  if (opponent.enchantments.some((c) => c.data.id === 'omskaya_zima')) {
+    applyFreeze(card, 1);
+    state.log.push(`🌨️ ${card.data.name} входит замороженным из-за Омской Зимы!`);
+  }
+
+  player.field.push(card);
+  state.log.push(`🃏 ${card.data.emoji} ${card.data.name} выходит на поле!`);
+
+  applyEntryEffects(card, player, opponent, state);
+
+  if (player.enchantments.some((c) => c.data.id === 'holy_graph')) {
+    drawCard(player, state.log);
+    state.log.push('📊 Святой Граф: +1 карта за существо!');
+  }
+
+  cleanupDead(state);
+  return state;
+}
+
+/**
+ * Разыгрывает заклинание
+ * @returns Новое состояние или исходное если нельзя сыграть
+ */
+function playSpellCard(
+  state: GameState,
+  player: PlayerState,
+  opponent: PlayerState,
+  cardIndex: number,
+  card: CardInstance
+): GameState {
+  player.hand.splice(cardIndex, 1);
+  applySpellEffect(card, player, opponent, state);
+  player.graveyard.push(card);
+
+  const kotCount = player.field.filter((c) => c.data.id === 'kot_ucheniy').length;
+  for (let i = 0; i < kotCount; i++) {
+    drawCard(player, state.log);
+    state.log.push('🐱 Учёный Кот: +1 карта за заклинание!');
+  }
+
+  const arkhivarCount = player.field.filter((c) => c.data.id === 'arkhivar_omskoi_kreposti').length;
+  for (let i = 0; i < arkhivarCount; i++) {
+    drawCard(player, state.log);
+    state.log.push('🗝️ Архивариус Крепости: +1 карта за заклинание!');
+  }
+
+  cleanupDead(state);
+  return state;
+}
+
+/**
+ * Разыгрывает наложение
+ * @returns Новое состояние или исходное если нельзя сыграть
+ */
+function playEnchantmentCard(
+  state: GameState,
+  player: PlayerState,
+  cardIndex: number,
+  card: CardInstance
+): GameState {
+  player.hand.splice(cardIndex, 1);
+  player.enchantments.push(card);
+  state.log.push(`✨ ${card.data.emoji} ${card.data.name} наложено!`);
+  cleanupDead(state);
+  return state;
+}
+
 export function playCard(
   state: GameState,
   playerKey: 'player1' | 'player2',
   cardUid: string
 ): GameState {
-  // Authoritative turn check (prevents out-of-turn play in any UI mode)
   if (state.gameOver) return state;
   if (state.currentTurn !== playerKey) return state;
 
@@ -260,20 +379,7 @@ export function playCard(
 
   // Land handling
   if (card.data.type === 'land') {
-    if (player.landsPlayed >= player.maxLandsPerTurn) {
-      newState.log.push('❌ Уже разыграна земля в этом ходу!');
-      return state;
-    }
-    player.hand.splice(cardIndex, 1);
-    player.maxMana += 1;
-    player.mana += 1;
-    player.landsPlayed += 1;
-    if (card.data.id === 'ploshchad_buhgoltsa' && player.maxMana === 3) {
-      player.health = Math.min(player.maxHealth, player.health + 1);
-      newState.log.push('🗿 Площадь Бухгольца: третья земля — +1 HP!');
-    }
-    newState.log.push(`🏔️ ${card.data.name} разыграна. Мана: ${player.mana}/${player.maxMana}`);
-    return newState;
+    return playLandCard(newState, player, cardIndex, card);
   }
 
   // Check mana cost
@@ -285,66 +391,25 @@ export function playCard(
 
   if (player.mana < manaCost) {
     newState.log.push(`❌ Не хватает маны! Нужно ${manaCost}, есть ${player.mana}`);
-    return state;
+    return newState;
   }
 
   player.mana -= manaCost;
-  player.hand.splice(cardIndex, 1);
 
   if (card.data.type === 'creature') {
-    if (player.field.length >= 7) {
-      newState.log.push('❌ Поле полно! (максимум 7 существ)');
-      player.mana += manaCost;
-      player.hand.splice(cardIndex, 0, card);
-      return state;
-    }
-
-    card.summoningSickness = !hasKeyword(card, 'haste');
-    card.hasAttacked = false;
-
-    // Omskaya Zima: enter frozen
-    if (opponent.enchantments.some((c) => c.data.id === 'omskaya_zima')) {
-      applyFreeze(card, 1);
-      newState.log.push(`🌨️ ${card.data.name} входит замороженным из-за Омской Зимы!`);
-    }
-
-    player.field.push(card);
-    newState.log.push(`🃏 ${card.data.emoji} ${card.data.name} выходит на поле!`);
-
-    applyEntryEffects(card, player, opponent, newState);
-
-    // Holy Graph: draw on creature play
-    if (player.enchantments.some((c) => c.data.id === 'holy_graph')) {
-      drawCard(player, newState.log);
-      newState.log.push('📊 Святой Граф: +1 карта за существо!');
-    }
+    return playCreatureCard(newState, player, opponent, cardIndex, card, manaCost);
   } else if (card.data.type === 'spell') {
-    applySpellEffect(card, player, opponent, newState);
-    player.graveyard.push(card);
-
-    // Kot ucheniy: draw on spell
-    const kotCount = player.field.filter((c) => c.data.id === 'kot_ucheniy').length;
-    for (let ki = 0; ki < kotCount; ki++) {
-      drawCard(player, newState.log);
-      newState.log.push('🐱 Учёный Кот: +1 карта за заклинание!');
+    // Rosgvardiya counter
+    if (opponent.field.some((c) => c.data.id === 'rosgvardiya')) {
+      player.hand.splice(cardIndex, 1);
+      player.graveyard.push(card);
+      newState.log.push(`🛡️ Росгвардия: ${card.data.name} заблокирована!`);
+      cleanupDead(newState);
+      return newState;
     }
-    const arkhivarCount = player.field.filter(
-      (c) => c.data.id === 'arkhivar_omskoi_kreposti'
-    ).length;
-    for (let ai = 0; ai < arkhivarCount; ai++) {
-      drawCard(player, newState.log);
-      newState.log.push('🗝️ Архивариус Крепости: +1 карта за заклинание!');
-    }
+    return playSpellCard(newState, player, opponent, cardIndex, card);
   } else if (card.data.type === 'enchantment') {
-    player.enchantments.push(card);
-    newState.log.push(`✨ ${card.data.emoji} ${card.data.name} наложено!`);
-  }
-
-  // Rosgvardiya: counter enemy spells
-  if (opponent.field.some((c) => c.data.id === 'rosgvardiya') && card.data.type === 'spell') {
-    // Destroy the spell instead
-    player.graveyard.push(card); // Spell goes to graveyard
-    newState.log.push(`🛡️ Росгвардия: ${card.data.name} заблокирована!`);
+    return playEnchantmentCard(newState, player, cardIndex, card);
   }
 
   cleanupDead(newState);
