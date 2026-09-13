@@ -20,8 +20,14 @@ const CARD_BY_ID = new Map(CANDIDATE_CARDS.map((card) => [card.id, card]));
 const MAX_COPIES_PER_CARD = 8;
 const MAX_EXPANDED_DECK_SIZE = 240;
 const RECOMMENDED_DECK_SIZE = 40;
+const DEFAULT_DECK_NAME = 'Новая колода';
 
 type SortOption = 'name_asc' | 'cost_asc';
+
+type EditorSnapshot = {
+  deckName: string;
+  counts: Record<string, number>;
+};
 
 const CARD_TYPE_LABELS: Record<CardType, string> = {
   creature: 'Существо',
@@ -35,42 +41,113 @@ function createDeckId(): string {
 }
 
 function clampCardCount(raw: number, min = 0): number {
-  return Math.min(MAX_COPIES_PER_CARD, Math.max(min, Math.floor(raw)));
+  const numericValue = Number(raw);
+  if (!Number.isFinite(numericValue)) return min;
+  return Math.min(MAX_COPIES_PER_CARD, Math.max(min, Math.floor(numericValue)));
 }
 
 function toDeckEntries(counts: Record<string, number>): DeckCardEntry[] {
   return Object.entries(counts)
-    .filter(([, count]) => count > 0)
-    .map(([cardId, count]) => ({ cardId, count }))
+    .filter(([cardId, count]) => CARD_BY_ID.has(cardId) && count > 0)
+    .map(([cardId, count]) => ({ cardId, count: clampCardCount(count, 1) }))
     .sort((a, b) => a.cardId.localeCompare(b.cardId));
 }
 
 function getTotalCards(counts: Record<string, number>): number {
-  return Object.values(counts).reduce((acc, value) => acc + value, 0);
+  return Object.values(counts).reduce((acc, value) => acc + clampCardCount(value), 0);
 }
 
 function entriesToCounts(entries: DeckCardEntry[]): Record<string, number> {
   const counts: Record<string, number> = {};
+  let remainingTotal = MAX_EXPANDED_DECK_SIZE;
+
   for (const entry of entries) {
+    if (remainingTotal <= 0) break;
     if (!CARD_BY_ID.has(entry.cardId)) continue;
-    counts[entry.cardId] = clampCardCount(entry.count, 1);
+
+    const normalizedCount = clampCardCount(entry.count, 1);
+    const current = counts[entry.cardId] ?? 0;
+    const mergedCount = Math.min(MAX_COPIES_PER_CARD, current + normalizedCount);
+    const addedCopies = mergedCount - current;
+
+    if (addedCopies <= 0) continue;
+
+    const allowedCopies = Math.min(addedCopies, remainingTotal);
+    if (allowedCopies <= 0) break;
+
+    counts[entry.cardId] = current + allowedCopies;
+    remainingTotal -= allowedCopies;
   }
   return counts;
 }
 
 function normalizeEntriesForSave(entries: DeckCardEntry[]): DeckCardEntry[] {
-  return entries
-    .map((entry) => ({
-      cardId: entry.cardId,
-      count: clampCardCount(entry.count, 1),
+  return toDeckEntries(entriesToCounts(entries));
+}
+
+function normalizeCountsForSnapshot(raw: Record<string, number>): Record<string, number> {
+  const normalizedCounts = entriesToCounts(
+    Object.entries(raw).map(([cardId, count]) => ({
+      cardId,
+      count,
     }))
-    .filter((entry) => CARD_BY_ID.has(entry.cardId));
+  );
+
+  return Object.entries(normalizedCounts)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .reduce<Record<string, number>>((acc, [cardId, count]) => {
+      acc[cardId] = count;
+      return acc;
+    }, {});
+}
+
+function createSnapshot(deckName: string, rawCounts: Record<string, number>): EditorSnapshot {
+  return {
+    deckName: deckName.trim(),
+    counts: normalizeCountsForSnapshot(rawCounts),
+  };
+}
+
+function areSnapshotsEqual(a: EditorSnapshot, b: EditorSnapshot): boolean {
+  if (a.deckName !== b.deckName) return false;
+  const aKeys = Object.keys(a.counts);
+  const bKeys = Object.keys(b.counts);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every((key) => a.counts[key] === b.counts[key]);
+}
+
+function createDuplicateDeckName(existingDecks: SavedDeck[], baseName: string): string {
+  const normalizedBase = baseName.trim() || DEFAULT_DECK_NAME;
+  const firstCandidate = `${normalizedBase} (копия)`;
+  const hasFirstCandidate = existingDecks.some((deck) => deck.name === firstCandidate);
+  if (!hasFirstCandidate) return firstCandidate;
+
+  let index = 2;
+  while (existingDecks.some((deck) => deck.name === `${normalizedBase} (копия ${index})`)) {
+    index += 1;
+  }
+  return `${normalizedBase} (копия ${index})`;
+}
+
+function getFallbackActiveDeckIdAfterDeletion(decks: SavedDeck[], deletedDeckId: string): string | null {
+  const deletedIndex = decks.findIndex((deck) => deck.id === deletedDeckId);
+  const remainingDecks = decks.filter((deck) => deck.id !== deletedDeckId);
+
+  if (remainingDecks.length === 0) return null;
+  if (deletedIndex < 0) return remainingDecks[0].id;
+
+  const logicalNext = remainingDecks[deletedIndex] ?? remainingDecks[deletedIndex - 1];
+  return logicalNext?.id ?? null;
 }
 
 export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
   const [storageState, setStorageState] = useState<DecksStorageState>(() => loadDecksState());
-  const [deckName, setDeckName] = useState('Новая колода');
+  const [deckName, setDeckName] = useState(DEFAULT_DECK_NAME);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [loadedDeckId, setLoadedDeckId] = useState<string | null>(null);
+  const [lastSavedSnapshot, setLastSavedSnapshot] = useState<EditorSnapshot>(() =>
+    createSnapshot(DEFAULT_DECK_NAME, {})
+  );
   const [status, setStatus] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | CardType>('all');
@@ -170,6 +247,11 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
     };
   }, [landsInDeck, totalCards]);
 
+  const hasUnsavedChanges = useMemo(() => {
+    const currentSnapshot = createSnapshot(deckName, counts);
+    return !areSnapshotsEqual(currentSnapshot, lastSavedSnapshot);
+  }, [counts, deckName, lastSavedSnapshot]);
+
   const persistState = (next: DecksStorageState) => {
     setStorageState(next);
     saveDecksState(next);
@@ -177,25 +259,33 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
   };
 
   const changeCount = (cardId: string, delta: number) => {
+    if (!CARD_BY_ID.has(cardId)) {
+      setStatus('Нельзя изменить количество: карта не найдена.');
+      return;
+    }
+
+    const normalizedDelta = Math.trunc(Number(delta));
+    if (!Number.isFinite(normalizedDelta) || normalizedDelta === 0) return;
+
     setCounts((prev) => {
       const current = prev[cardId] ?? 0;
       const currentTotal = getTotalCards(prev);
 
-      if (delta > 0 && currentTotal >= MAX_EXPANDED_DECK_SIZE) {
+      if (normalizedDelta > 0 && currentTotal >= MAX_EXPANDED_DECK_SIZE) {
         setStatus(`Достигнут максимальный размер колоды: ${MAX_EXPANDED_DECK_SIZE} карт.`);
         return prev;
       }
 
-      let next = clampCardCount(current + delta);
+      let next = clampCardCount(current + normalizedDelta);
 
-      if (delta > 0 && next > current) {
+      if (normalizedDelta > 0 && next > current) {
         const maxAllowedForCard = Math.min(MAX_COPIES_PER_CARD, current + (MAX_EXPANDED_DECK_SIZE - currentTotal));
         if (next > maxAllowedForCard) {
           next = maxAllowedForCard;
         }
       }
 
-      if (next === current && delta > 0) {
+      if (next === current && normalizedDelta > 0) {
         setStatus(`Нельзя добавить больше карт: максимум ${MAX_EXPANDED_DECK_SIZE} в колоде.`);
         return prev;
       }
@@ -207,9 +297,9 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
         return rest;
       }
 
-      if (delta > 0 && getTotalCards({ ...prev, [cardId]: next }) >= MAX_EXPANDED_DECK_SIZE) {
+      if (normalizedDelta > 0 && getTotalCards({ ...prev, [cardId]: next }) >= MAX_EXPANDED_DECK_SIZE) {
         setStatus(`Достигнут лимит: ${MAX_EXPANDED_DECK_SIZE} карт в колоде.`);
-      } else if (delta !== 0) {
+      } else if (normalizedDelta !== 0) {
         setStatus(null);
       }
 
@@ -219,8 +309,8 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
 
   const saveDeck = () => {
     const trimmedName = deckName.trim();
-    const total = getTotalCards(counts);
     const entries = normalizeEntriesForSave(toDeckEntries(counts));
+    const total = entries.reduce((acc, entry) => acc + entry.count, 0);
 
     if (!trimmedName) {
       setStatus('Введите имя колоды.');
@@ -270,13 +360,21 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
     };
     const nextState = setActiveDeckId(withDecks, deckIdToActivate);
     persistState(nextState);
+    setLoadedDeckId(deckIdToActivate);
+    setLastSavedSnapshot(createSnapshot(trimmedName, counts));
     setStatus('Колода сохранена и выбрана активной.');
   };
 
   const loadIntoEditor = (deck: SavedDeck) => {
-    setDeckName(deck.name);
-    setCounts(entriesToCounts(deck.cards));
-    setStatus(`Колода «${deck.name}» загружена в редактор.`);
+    const nextCounts = entriesToCounts(Array.isArray(deck.cards) ? deck.cards : []);
+    const normalizedDeckName = deck.name.trim() || DEFAULT_DECK_NAME;
+    const normalizedDeckId = deck.id.trim();
+
+    setDeckName(normalizedDeckName);
+    setCounts(nextCounts);
+    setLoadedDeckId(normalizedDeckId.length > 0 ? normalizedDeckId : null);
+    setLastSavedSnapshot(createSnapshot(normalizedDeckName, nextCounts));
+    setStatus(`Колода «${normalizedDeckName}» загружена в редактор.`);
   };
 
   const activateDeck = (deckId: string) => {
@@ -284,6 +382,78 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
     persistState(next);
     const deck = next.decks.find((item) => item.id === deckId);
     setStatus(deck ? `Активная колода: ${deck.name}` : 'Активная колода обновлена.');
+  };
+
+  const duplicateDeck = (deck: SavedDeck) => {
+    const now = Date.now();
+    const normalizedCards = normalizeEntriesForSave(deck.cards);
+    if (normalizedCards.length === 0) {
+      setStatus('Нельзя дублировать колоду без валидных карт.');
+      return;
+    }
+
+    const duplicated: SavedDeck = {
+      ...deck,
+      id: createDeckId(),
+      name: createDuplicateDeckName(storageState.decks, deck.name),
+      cards: normalizedCards,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const nextState: DecksStorageState = {
+      version: 1,
+      decks: [duplicated, ...storageState.decks],
+      activeDeckId: storageState.activeDeckId,
+    };
+
+    persistState(nextState);
+    setStatus(`Колода «${deck.name}» дублирована как «${duplicated.name}».`);
+  };
+
+  const deleteDeck = (deck: SavedDeck) => {
+    const nextDecks = storageState.decks.filter((item) => item.id !== deck.id);
+    const wasActive = storageState.activeDeckId === deck.id;
+    const fallbackActiveDeckId = wasActive
+      ? getFallbackActiveDeckIdAfterDeletion(storageState.decks, deck.id)
+      : storageState.activeDeckId;
+    const wasLoadedInEditor = loadedDeckId === deck.id;
+
+    let nextState: DecksStorageState = {
+      version: 1,
+      decks: nextDecks,
+      activeDeckId: wasActive ? null : storageState.activeDeckId,
+    };
+
+    if (wasActive && fallbackActiveDeckId) {
+      nextState = setActiveDeckId(nextState, fallbackActiveDeckId);
+    }
+
+    persistState(nextState);
+
+    if (wasLoadedInEditor) {
+      setDeckName(DEFAULT_DECK_NAME);
+      setCounts({});
+      setLoadedDeckId(null);
+      setLastSavedSnapshot(createSnapshot(DEFAULT_DECK_NAME, {}));
+    }
+
+    const statusParts = [`Колода «${deck.name}» удалена.`];
+
+    if (wasActive) {
+      const newActive = nextState.decks.find((item) => item.id === nextState.activeDeckId);
+      if (newActive) {
+        statusParts.push(`Активная колода: ${newActive.name}.`);
+      } else {
+        statusParts.push('Активной колоды больше нет.');
+      }
+    }
+
+    if (wasLoadedInEditor) {
+      statusParts.push('Редактор сброшен к новой пустой колоде.');
+    }
+
+    setStatus(statusParts.join(' '));
   };
 
   return (
@@ -311,6 +481,9 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
           </div>
           <div className="text-xs text-gray-400">
             Карт в текущей колоде: {totalCards} / {MAX_EXPANDED_DECK_SIZE}
+          </div>
+          <div className={`text-xs ${hasUnsavedChanges ? 'text-amber-300' : 'text-emerald-300'}`}>
+            {hasUnsavedChanges ? 'Есть несохранённые изменения' : 'Все изменения сохранены'}
           </div>
           <div className={`text-xs ${deckSizeHint.tone === 'ok' ? 'text-emerald-300' : 'text-amber-300'}`}>
             {deckSizeHint.text}
@@ -468,6 +641,12 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
                           </Button>
                           <Button variant="blue" size="sm" onClick={() => activateDeck(deck.id)}>
                             Сделать активной
+                          </Button>
+                          <Button variant="purple" size="sm" onClick={() => duplicateDeck(deck)}>
+                            Дублировать
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => deleteDeck(deck)}>
+                            Удалить
                           </Button>
                         </div>
                       </div>
