@@ -62,12 +62,14 @@
   --omsk-cyan-muted: rgba(103, 232, 249, 0.44);
   --omsk-sodium: #f0c15b;
   --omsk-red: #ef4444;
+  /* Пропорция 2:3 — ровно как у файлов арта (682x1024). Было 1.4/1.35: карта
+     выходила квадратнее игральной, а object-cover срезал 10% картинки. */
   --card-w: clamp(80px, 10vw, 160px);
-  --card-h: calc(var(--card-w) * 1.4);
+  --card-h: calc(var(--card-w) * 1.5);
   --field-card-w: clamp(72px, 8vw, 140px);
-  --field-card-h: calc(var(--field-card-w) * 1.35);
+  --field-card-h: calc(var(--field-card-w) * 1.5);
   --hand-card-w: clamp(68px, 7.5vw, 130px);
-  --hand-card-h: calc(var(--hand-card-w) * 1.35);
+  --hand-card-h: calc(var(--hand-card-w) * 1.5);
   --slot-w: calc(var(--field-card-w) + 8px);
   --slot-h: calc(var(--field-card-h) + 10px);
   --font-title: 'Cinzel Decorative', 'Cinzel', serif;
@@ -100,7 +102,9 @@
   --herozone-h: clamp(52px, 6.8vh, 66px);
   --divider-h: clamp(40px, 5.5vh, 54px);
   --actionbar-h: clamp(32px, 4vh, 44px);
-  --handzone-h: calc(var(--hand-card-h) + clamp(18px, 2.9vh, 30px));
+  /* Запас над рукой: карта при наведении/выборе приподнимается и раньше
+     срезалась верхом зоны (замер: 20–28 px среза, scripts/ui-audit.mjs). */
+  --handzone-h: calc(var(--hand-card-h) + clamp(38px, 5.2vh, 56px));
 }
 
 html {
@@ -825,7 +829,9 @@ html {
   align-items: flex-end;
   justify-content: center;
   height: 100%;
-  padding: clamp(6px, 1vh, 14px) clamp(4px, 0.8vw, 10px) clamp(4px, 0.8vh, 8px);
+  /* нижний отступ не меньше свеса веера: --card-offset опускает крайние карты,
+     и раньше они уходили ниже зоны и обрезались (замер: свес 4–12 px) */
+  padding: clamp(6px, 1vh, 14px) clamp(4px, 0.8vw, 10px) clamp(16px, 2.2vh, 24px);
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
@@ -852,13 +858,13 @@ html {
 }
 
 .hand-card-wrapper:hover {
-  transform: rotate(0deg) translateY(-22px) scale(1.16);
+  transform: rotate(0deg) translateY(-10px) scale(1.07);
   z-index: var(--z-hand-hover);
   filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.6));
 }
 
 .hand-card-wrapper.selected {
-  transform: rotate(0deg) translateY(-28px) scale(1.2);
+  transform: rotate(0deg) translateY(-12px) scale(1.09);
   z-index: var(--z-hand-selected);
   filter: drop-shadow(0 10px 20px rgba(250, 204, 21, 0.35));
 }
@@ -1734,7 +1740,7 @@ body {
     --hand-card-w: clamp(42px, 10vw, 58px);
     --herozone-h: clamp(74px, 10.5vh, 96px);
     --actionbar-h: clamp(30px, 3.8vh, 40px);
-    --handzone-h: calc(var(--hand-card-h) + clamp(12px, 1.8vh, 18px));
+    --handzone-h: calc(var(--hand-card-h) + clamp(30px, 4.2vh, 46px));
   }
 
   .board-zone {
@@ -1849,7 +1855,7 @@ body {
 
   .hand-zone {
     padding-top: clamp(1px, 0.3vh, 4px);
-    padding-bottom: clamp(2px, 0.45vh, 6px);
+    padding-bottom: clamp(10px, 1.6vh, 16px);
     z-index: var(--z-hand-zone);
   }
 
@@ -2086,6 +2092,18 @@ body {
 .card-preview-shell {
   position: relative;
   z-index: 1;
+}
+
+/* ═══ КАРТЫ НА ПОЛЕ: пропорция как у файлов арта ═══
+   На мобильном .field-card-mobile растягивалась на весь слот (100%/100%),
+   а слот в 7-колоночной сетке выходил шире, чем выше — карта получалась
+   альбомной и object-cover срезал 43–46% картинки (замер: scripts/ui-audit.mjs).
+   Возвращаем пропорцию 2:3, как у самих файлов карт. */
+@media (max-width: 480px) {
+  .field-card-mobile {
+    height: auto !important;
+    aspect-ratio: 2 / 3;
+  }
 }
 
 /* ═══ EFFECTS OVERLAY LAYER (ui-fix.md) ═══ */
