@@ -2663,8 +2663,12 @@ export function GameBoard({ mode, onBack }: Props) {
                 className={`hand-card-wrapper ${selectedHand === card.uid ? 'selected' : ''} ${newlyDrawnUids.has(card.uid) ? 'card-draw-animation' : ''}`}
                 style={
                   {
-                    '--card-angle': `${(idx - (me.hand.length - 1) / 2) * 3}deg`,
-                    '--card-offset': `${Math.abs(idx - (me.hand.length - 1) / 2) * 2}px`,
+                    // свес веера ограничен: без предела крайние карты уходили ниже
+                    // зоны руки и обрезались (замер: свес 4–12 px, scripts/ui-audit.mjs)
+                    // угол 2°, а не 3°: у повёрнутой карты нижний угол уходит вниз на
+                    // (ширина/2)·sin(угол) и срезался краем зоны руки
+                    '--card-angle': `${(idx - (me.hand.length - 1) / 2) * 2}deg`,
+                    '--card-offset': `${Math.min(Math.abs(idx - (me.hand.length - 1) / 2), 3) * 2}px`,
                     '--card-index': idx,
                   } as React.CSSProperties
                 }

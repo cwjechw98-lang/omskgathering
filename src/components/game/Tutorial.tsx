@@ -131,8 +131,11 @@ export function Tutorial({ gameState, playerKey, hintContext, onSkip }: Tutorial
       />
 
       {/* Hint card */}
+      {/* Панель привязана к высоте зоны руки, а не к «красивому» отступу: прежний
+          bottom: clamp(120px,18vh,200px) при зоне руки ~199 px садился прямо на карты
+          и закрывал их (проверка зрением + замер в scripts/ui-audit.mjs). */}
       <div
-        className="tutorial-hint-panel fixed bottom-[clamp(120px,18vh,200px)] left-1/2 -translate-x-1/2 z-[180] pointer-events-auto"
+        className="tutorial-hint-panel fixed bottom-[calc(var(--handzone-h)+8px)] left-1/2 -translate-x-1/2 z-[180] pointer-events-auto"
         style={{ width: 'clamp(280px, 60vw, 420px)' }}
       >
         <div
