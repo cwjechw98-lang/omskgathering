@@ -14,7 +14,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Пролог: Город, который не отпускает',
     emoji: '🌑',
-    imagePrompt: 'dark mystical city omsk under northern lights, snow covered buildings, ominous atmosphere, fantasy art',
+    imagePrompt:
+      'dark mystical city omsk under northern lights, snow covered buildings, ominous atmosphere, fantasy art',
     text: `Говорят, что Омск — обычный город в Западной Сибири. Два миллиона жителей, Иртыш, нефтезаводы, вечная зима. Но те, кто видел НАСТОЯЩИЙ Омск, знают правду.
 
 Под слоем асфальта, под недостроенным метро, под замёрзшей коркой Иртыша пульсирует древняя сила. Она пришла сюда задолго до казаков, задолго до татар — когда сибирские шаманы впервые произнесли Слово Силы на берегу великой реки.
@@ -24,7 +25,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Глава I: Пять Источников Маны',
     emoji: '💎',
-    imagePrompt: 'five magical crystal sources floating over city, white blue black red green mana symbols, fantasy artwork',
+    imagePrompt:
+      'five magical crystal sources floating over city, white blue black red green mana symbols, fantasy artwork',
     text: `Магическая сила Омска проявляется через пять Источников — места силы, разбросанные по городу:
 
 🏛️ ПРОСПЕКТ МИРА — Белая мана порядка и закона. Здесь стоят храмы, суды, администрация. Белая мана исцеляет и защищает, но требует подчинения.
@@ -40,7 +42,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Глава II: Птица-Омич и Пророчество',
     emoji: '🐦',
-    imagePrompt: 'magical glowing crow bird flying over dark city, mystical prophecy, northern lights, fantasy art',
+    imagePrompt:
+      'magical glowing crow bird flying over dark city, mystical prophecy, northern lights, fantasy art',
     text: `В 2012 году над Омском появилась Птица. Не обычная ворона — существо из чистой магии, принявшее форму птицы. Она кружила над городом семь дней и семь ночей, а потом произнесла пророчество:
 
 «Придёт день, когда Омск станет ареной великой битвы. Маги со всех концов соберутся здесь, чтобы сразиться за право контролировать Источники Маны. И только один останется стоять.»
@@ -52,7 +55,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Глава III: Фракции Омска',
     emoji: '⚔️',
-    imagePrompt: 'five factions battling in city square, officials grandmas river spirits underground dwellers industrial workers bears, epic fantasy battle',
+    imagePrompt:
+      'five factions battling in city square, officials grandmas river spirits underground dwellers industrial workers bears, epic fantasy battle',
     text: `Пять великих фракций борются за контроль над Омском:
 
 🏛️ ОРДЕН ПРОСПЕКТА — чиновники, бабушки, троллейбусники. Они верят в порядок и традиции. Их лидер — Мэр Омска, обещающий метро уже 50 лет.
@@ -70,21 +74,23 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Глава IV: Школа 21 — Цифровые Маги',
     emoji: '💻',
-    imagePrompt: 'magical computer cluster room with glowing code, programmers casting spells, digital magic, matrix style',
+    imagePrompt:
+      'magical computer cluster room with glowing code, programmers casting spells, digital magic, matrix style',
     text: `Школа 21 появилась в Омске недавно, но быстро стала самой загадочной силой в городе. Их кластеры — это не просто компьютерные классы. Это порталы в цифровое измерение, где код становится заклинанием.
 
 Писинеры — так называют учеников Школы. Они проходят через Бассейн (не тот, что с водой), сдают пир-ревью (не тот, что с пирогами) и покоряют Святой Граф — магическую карту прогресса, которая определяет их силу.
 
 Бокал — загадочный управляющий Школы, который видит всё через камеры и отчёты. Говорят, он не человек, а искусственный интеллект, обретший сознание.
 
-Норминетта — страшнейшее заклинание Школы. Она проверяет «код» существования каждого создания, и если находит ошибку — уничтожает без пощады. Многие пали от её красных букв: «FAIL».
+Норминетта — страшнейшее заклинание Школы. Она проверяет «код» существования каждого создания, и если находит ошибку — уничтожает без пощады. Многие пали от её красных букв: «ПРОВАЛ».
 
-Самое опасное оружие Школы — Makefile-Голем. Созданный из чистого кода компиляции, он выполняет команду «make destroy» буквально.`,
+Самое опасное оружие Школы — Голем Сборки. Созданный из чистого кода компиляции, он выполняет команду разрушения буквально.`,
   },
   {
     title: 'Глава V: Омская Зима',
     emoji: '❄️',
-    imagePrompt: 'frozen city omsk in eternal winter, snowstorm, ice covered buildings, -50 celsius, magical frost',
+    imagePrompt:
+      'frozen city omsk in eternal winter, snowstorm, ice covered buildings, -50 celsius, magical frost',
     text: `Девять месяцев в году Омск скован морозом. Но это не обычный холод — это магия.
 
 Омская Зима — древнее наложение, наложенное на город тысячи лет назад шаманом, чьё имя забыто. Он хотел защитить Источники Маны от чужаков, заключив город в вечный лёд.
@@ -98,7 +104,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Глава VI: Легенда о Метро',
     emoji: '🚇',
-    imagePrompt: 'abandoned underground metro station, dark tunnel, ghostly train arriving, mysterious atmosphere',
+    imagePrompt:
+      'abandoned underground metro station, dark tunnel, ghostly train arriving, mysterious atmosphere',
     text: `Самая трагическая история Омска — история о Метро, которое так и не было построено.
 
 В 1979 году начали копать. Вырыли одну станцию. Потом деньги кончились. Потом начались странности: рабочие слышали голоса под землёй, техника ломалась, стены тряслись.
@@ -113,7 +120,8 @@ export const WORLD_LORE: LoreChapter[] = [
   {
     title: 'Эпилог: Ты не можешь покинуть Омск',
     emoji: '🚫',
-    imagePrompt: 'giant magical bird circling over frozen city, no escape, ominous warning, fantasy artwork',
+    imagePrompt:
+      'giant magical bird circling over frozen city, no escape, ominous warning, fantasy artwork',
     text: `Теперь ты знаешь правду. Омск — не просто город. Это арена, тюрьма и сокровищница одновременно. Пять Источников Маны дают силу тому, кто сумеет их обуздать. Но каждый, кто приходит в Омск за силой, обнаруживает, что уйти невозможно. Птица-Омич следит. Дух Омска не отпускает. Заклинание «Не Покидай Омск» активно всегда. Твой единственный выход — стать сильнейшим магом города. Победи всех соперников, подчини все фракции, овладей всеми Источниками. Или останься навечно. Добро пожаловать в Омск. Ты не можешь покинуть Омск. 🐦`,
   },
 ];
@@ -142,7 +150,7 @@ export const CARD_NARRATIVES: Record<string, string> = {
   teplostantsiya_golem:
     '🏭 Трубы ТЭЦ-5 ревут! Из клубов пара и огня выступает Голем — живое воплощение промышленной мощи Омска!',
   blackhole:
-    '💻 Экран мерцает... «rm -rf /» выполнено. Реальность схлопывается в чёрную дыру кода.',
+    '💻 Экран мерцает... команда стирания выполнена. Реальность схлопывается в чёрную дыру кода.',
   cluster_lord:
     '🖥️ 300 мониторов вспыхивают одновременно. Лорд Кластера обретает форму из чистого кода и электричества!',
   sibirskiy_medved:
@@ -161,7 +169,7 @@ export const CARD_NARRATIVES: Record<string, string> = {
     '💥 БАБАХ!!! Где-то на Левобережье рванула газовая труба! Ударная волна прокатывается по всему полю!',
   bocal:
     '🏢 Двери Школы 21 открываются. Бокал выходит — и его взгляд пронзает каждого, оценивая, анализируя...',
-  norminette: '🔴 На экране появляется страшное слово: «FAIL». Норминетта вынесла приговор!',
+  norminette: '🔴 На экране появляется страшное слово: «ПРОВАЛ». Норминетта вынесла приговор!',
   moroz_50: '🥶 Термометр трещит от холода. -50°C. Даже мысли замерзают.',
   bozhestvenniy_svet:
     '✝️ Купола Успенского собора озаряются светом. Божественная энергия исцеляет и укрепляет!',
@@ -170,7 +178,7 @@ export const CARD_NARRATIVES: Record<string, string> = {
   holy_graph:
     '📊 Святой Граф раскрывается во всей красе — бесконечная карта путей и возможностей кодера.',
   makefile_golem:
-    '⚙️ «make all» — и из строк кода собирается грозный Голем. «make destroy» — и он идёт в атаку!',
+    '⚙️ Команда сборки поднимает грозного Голема из строк кода, а команда разрушения ведёт его в атаку!',
   duh_sibiri:
     '🌲 Тайга вздыхает. Из вековых кедров и лиственниц складывается исполинская фигура — Дух Сибири пробудился.',
   pirat_irtysha:
@@ -214,7 +222,7 @@ export const DEATH_QUOTES: Record<string, string> = {
   mer_omska: '🏛️ Мэр пал... но чиновники продолжают работать...',
   drakon_irtysha: '🌊 Дракон возвращается в глубины Иртыша...',
   teplostantsiya_golem: '🏭 ТЭЦ-5 замолкает... свет гаснет...',
-  blackhole: '💻 «Segmentation fault» — последняя ошибка...',
+  blackhole: '💻 Сбой памяти — последняя ошибка...',
   cluster_lord: '🖥️ Кластер отключается... 300 мониторов гаснут...',
   sibirskiy_medved: '🌲 Медведь уходит в тайгу... но вернётся весной...',
   irtysh_vodyanoy: '🌊 Водяной растворяется в реке...',
@@ -225,12 +233,12 @@ export const DEATH_QUOTES: Record<string, string> = {
   duh_omska: '👻 Дух города засыпает... до следующей битвы...',
   vzryv_gaza: '💥 Газ выветрился... но запах остался...',
   bocal: '🏢 Бокал закрывает камеры... но он всё ещё видит...',
-  norminette: '🔴 Norminette перезагружается... «FAIL» мигает в последний раз...',
+  norminette: '🔴 Норминетта перезагружается... «ПРОВАЛ» мигает в последний раз...',
   moroz_50: '🥶 Мороз отступает... термометр показывает -49...',
   bozhestvenniy_svet: '✝️ Свет меркнет... но вера остаётся...',
   zarya_pobedy: '🌅 Заря гаснет... но завтра взойдёт снова...',
   holy_graph: '📊 Граф закрывается... путь ещё не пройден...',
-  makefile_golem: '⚙️ «make clean» — Голем разбирается на строчки кода...',
+  makefile_golem: '⚙️ Команда очистки разбирает Голема на строчки кода...',
   duh_sibiri: '🌲 Дух возвращается в тайгу... кедровые ветки клонятся...',
   pirat_irtysha: '🏴‍☠️ Пират тонет в Иртыше... чёрный флаг опускается...',
   sneg_elemental: '❄️ Элементаль тает... снежинки падают на землю...',
@@ -244,8 +252,8 @@ export function getAILoreComment(cardId: string): string {
     mer_omska: ['🏛️ Мэр! Покажи им силу бюрократии!', '🏛️ Чиновники, вперёд!'],
     drakon_irtysha: ['🌊 ДРАКОН! Сожги их всех!', '🌊 Иртыш ликует!'],
     teplostantsiya_golem: ['🏭 ТЭЦ на полную! ЖГИ!', '🏭 Промышленная мощь Омска!'],
-    blackhole: ['💻 rm -rf /tvoi_mechty', '💻 Код схлопывается...'],
-    cluster_lord: ['🖥️ sudo rm -rf /vragi', '🖥️ 300 FPS в реальной жизни!'],
+    blackhole: ['💻 Твои мечты стерты из реальности.', '💻 Код схлопывается...'],
+    cluster_lord: ['🖥️ Кластер стирает врагов из реальности.', '🖥️ 300 кадров в реальной жизни!'],
     sibirskiy_medved: ['🌲 МЕДВЕДЬ! Покажи им тайгу!', '🌲 Сибирь не сдаётся!'],
     irtysh_vodyanoy: ['🌊 Водяной, топ их!', '🌊 Река выходит из берегов!'],
     tenevoy_omich: ['🌑 Тень накрывает город...', '🌑 Омск — город теней...'],
@@ -255,12 +263,12 @@ export function getAILoreComment(cardId: string): string {
     duh_omska: ['👻 Дух города с тобой!', '👻 Омск — это сила!'],
     vzryv_gaza: ['💥 БАБАХ! Газовая атака!', '💥 Левобережье ликует!'],
     bocal: ['🏢 Бокал наблюдает...', '🏢 Школа 21 в деле!'],
-    norminette: ['🔴 NORMINETTE FAIL!', '🔴 Код не прошёл проверку!'],
+    norminette: ['🔴 Норминетта: провал!', '🔴 Код не прошёл проверку!'],
     moroz_50: ['🥶 МИНУС ПЯТЬДЕСЯТ!', '🥶 Даже мысли замерзают...'],
     bozhestvenniy_svet: ['✝️ Свет собора с тобой!', '✝️ Божья благодать!'],
     zarya_pobedy: ['🌅 Заря победы близка!', '🌅 Омск не сдаётся!'],
     holy_graph: ['📊 Пройди Святой Граф!', '📊 Путь кодера!'],
-    makefile_golem: ['⚙️ make destroy!', '⚙️ Компиляция успеха!'],
+    makefile_golem: ['⚙️ Команда разрушения!', '⚙️ Компиляция успеха!'],
     duh_sibiri: ['🌲 Сила тайги!', '🌲 Сибирь вечна!'],
     pirat_irtysha: ['🏴‍☠️ Пират на охоте!', '🏴‍☠️ Иртыш — наше море!'],
     sneg_elemental: ['❄️ Снежная буря!', '❄️ Ледяной ветер!'],
@@ -273,29 +281,29 @@ export function getAILoreComment(cardId: string): string {
 
 // ─── INTRO SEQUENCE ───
 export const INTRO_SEQUENCE = [
-  { 
-    emoji: '🌑', 
+  {
+    emoji: '🌑',
     text: 'Омск. 2026 год.',
-    imagePrompt: 'dark omsk city skyline 2026, night, ominous atmosphere, cinematic'
+    imagePrompt: 'dark omsk city skyline 2026, night, ominous atmosphere, cinematic',
   },
-  { 
-    emoji: '🏛️', 
+  {
+    emoji: '🏛️',
     text: 'Пять Источников Маны пробуждаются...',
-    imagePrompt: 'five magical crystal sources glowing underground, mystical energy, fantasy art'
+    imagePrompt: 'five magical crystal sources glowing underground, mystical energy, fantasy art',
   },
-  { 
-    emoji: '🐦', 
+  {
+    emoji: '🐦',
     text: 'Птица-Омич кружит над городом...',
-    imagePrompt: 'glowing magical crow bird circling over dark city, prophetic vision'
+    imagePrompt: 'glowing magical crow bird circling over dark city, prophetic vision',
   },
-  { 
-    emoji: '⚔️', 
+  {
+    emoji: '⚔️',
     text: 'Маги собираются на битву...',
-    imagePrompt: 'mages gathering for battle, magical energy, dark fantasy'
+    imagePrompt: 'mages gathering for battle, magical energy, dark fantasy',
   },
-  { 
-    emoji: '🚫', 
+  {
+    emoji: '🚫',
     text: 'Ты не можешь покинуть Омск.',
-    imagePrompt: 'giant magical bird blocking city exit, no escape, ominous warning'
+    imagePrompt: 'giant magical bird blocking city exit, no escape, ominous warning',
   },
 ];
