@@ -151,7 +151,13 @@ async function fetchImage(url) {
 
 function parseCardsForImages(cardsSource) {
   const cards = [];
-  const entryRegex = /id:\s*'([^']+)'[\s\S]*?imageUrl:\s*img\('([^']+)',\s*(\d+)\)/g;
+  // 72 of the 75 cards write the call across several lines, as
+  //   imageUrl: img(
+  //     'prompt',
+  //     110
+  //   ),
+  // so the quote must not be required immediately after the opening paren.
+  const entryRegex = /id:\s*'([^']+)'[\s\S]*?imageUrl:\s*img\(\s*'([^']+)',\s*(\d+)\s*\)/g;
 
   let match;
   while ((match = entryRegex.exec(cardsSource)) !== null) {
@@ -217,6 +223,17 @@ async function main() {
   const cards = parseCardsForImages(cardsSource);
   if (cards.length === 0) {
     throw new Error('No cards with imageUrl: img(...) were found in src/data/cards.ts');
+  }
+
+  // Safety net: this script rewrites src/data/localCardImages.ts from whatever it
+  // parsed. A parser that silently under-matches would shrink the map and drop
+  // covers for every card it missed, so refuse to continue on any shortfall.
+  const declaredImageUrls = (cardsSource.match(/imageUrl:\s*img\(/g) || []).length;
+  if (cards.length !== declaredImageUrls) {
+    throw new Error(
+      `Parsed ${cards.length} card image entries, but src/data/cards.ts declares ${declaredImageUrls}. ` +
+        'Refusing to run: src/data/localCardImages.ts would be rewritten with an incomplete map.'
+    );
   }
 
   await fs.mkdir(outputDir, { recursive: true });
