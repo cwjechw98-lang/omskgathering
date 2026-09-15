@@ -55,7 +55,7 @@ export function HandCard({
 
       <div className="relative z-10 flex flex-col h-full p-[clamp(2px,0.3vw,5px)]">
         <div className="flex justify-between items-start">
-          <span style={{ fontSize: 'clamp(14px, 1.8vw, 28px)' }}>{card.data.emoji}</span>
+          <span style={{ fontSize: 'clamp(0.9rem, 1.55vw, 2.2rem)' }}>{card.data.emoji}</span>
           <span
             className={`rounded-full flex items-center justify-center font-bold font-heading ${
               isLand
@@ -65,9 +65,9 @@ export function HandCard({
                   : 'bg-gray-700 text-gray-400'
             }`}
             style={{
-              width: 'clamp(14px, 1.6vw, 22px)',
-              height: 'clamp(14px, 1.6vw, 22px)',
-              fontSize: 'clamp(8px, 0.9vw, 12px)',
+              width: 'clamp(1rem, 1.25vw, 1.8rem)',
+              height: 'clamp(1rem, 1.25vw, 1.8rem)',
+              fontSize: 'clamp(0.5rem, 0.68vw, 0.94rem)',
             }}
           >
             {card.data.cost}
@@ -76,7 +76,7 @@ export function HandCard({
 
         <div
           className="font-heading text-white font-bold leading-tight mt-auto"
-          style={{ fontSize: 'clamp(5px, 0.7vw, 9px)' }}
+          style={{ fontSize: 'clamp(0.46rem, 0.52vw, 0.84rem)' }}
         >
           {card.data.name}
         </div>
@@ -85,13 +85,13 @@ export function HandCard({
           <div className="flex justify-between items-end mt-0.5">
             <span
               className="text-red-300 font-bold font-heading"
-              style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}
+              style={{ fontSize: 'clamp(0.5rem, 0.62vw, 0.9rem)' }}
             >
               {card.data.attack}&#9876;
             </span>
             <span
               className="text-green-300 font-bold font-heading"
-              style={{ fontSize: 'clamp(7px, 0.9vw, 11px)' }}
+              style={{ fontSize: 'clamp(0.5rem, 0.62vw, 0.9rem)' }}
             >
               {card.data.health}&#10084;
             </span>
@@ -100,20 +100,23 @@ export function HandCard({
         {card.data.type === 'land' && (
           <div
             className="text-[#c9a84c] font-bold text-center"
-            style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}
+            style={{ fontSize: 'clamp(0.54rem, 0.7vw, 0.96rem)' }}
           >
             &#127956;&#65039;
           </div>
         )}
         {card.data.type === 'spell' && (
-          <div className="text-blue-300 text-center" style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}>
+          <div
+            className="text-blue-300 text-center"
+            style={{ fontSize: 'clamp(0.54rem, 0.7vw, 0.96rem)' }}
+          >
             &#10024;
           </div>
         )}
         {card.data.type === 'enchantment' && (
           <div
             className="text-purple-300 text-center"
-            style={{ fontSize: 'clamp(8px, 1vw, 12px)' }}
+            style={{ fontSize: 'clamp(0.54rem, 0.7vw, 0.96rem)' }}
           >
             &#128302;
           </div>

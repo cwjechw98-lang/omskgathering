@@ -19,6 +19,7 @@ describe('GameBoard smoke', () => {
     expect(document.querySelector('.zone-topbar')).toBeInTheDocument();
     expect(document.querySelector('.zone-enemy-hero')).toBeInTheDocument();
     expect(document.querySelector('.zone-player-hero')).toBeInTheDocument();
+    expect(screen.getByText('Вы')).toBeInTheDocument();
     // Check for end turn button
     expect(screen.getByText(/Конец хода/)).toBeInTheDocument();
   });

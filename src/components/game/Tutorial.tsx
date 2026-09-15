@@ -16,28 +16,32 @@ const STEPS: TutorialStep[] = [
     id: 1,
     emoji: '🏔️',
     title: 'Сыграйте ЗЕМЛЮ',
-    description: 'Перетащите карту Земли из руки на поле или дважды кликните по ней. Земля даёт ману для игры других карт.',
+    description:
+      'Перетащите карту Земли из руки на поле или дважды кликните по ней. Земля даёт ману для игры других карт.',
     spotlight: 'hand',
   },
   {
     id: 2,
     emoji: '⚔️',
     title: 'Сыграйте СУЩЕСТВО или ЗАКЛИНАНИЕ',
-    description: 'Используйте ману для разыгрывания карт из руки. Перетащите карту на поле или дважды кликните по ней.',
+    description:
+      'Используйте ману для разыгрывания карт из руки. Перетащите карту на поле или дважды кликните по ней.',
     spotlight: 'hand',
   },
   {
     id: 3,
     emoji: '💥',
     title: 'АТАКУЙТЕ противника',
-    description: 'Кликните по существу с зелёной рамкой (⚔️), затем выберите цель — вражеское существо или кнопку «В героя».',
+    description:
+      'Кликните по существу с зелёной рамкой (⚔️), затем выберите цель — вражеское существо или кнопку «В героя».',
     spotlight: 'player-board',
   },
   {
     id: 4,
     emoji: '⏭️',
     title: 'Нажмите КОНЕЦ ХОДА',
-    description: 'Завершите свой ход нажатием кнопки «Конец хода». Вы получите ману и карту в начале следующего хода.',
+    description:
+      'Завершите свой ход нажатием кнопки «Конец хода». Вы получите ману и карту в начале следующего хода.',
     spotlight: 'end-turn',
   },
 ];
@@ -75,7 +79,8 @@ export function getActiveTutorialStep(
     (c) => c.data.type !== 'land' && c.data.cost <= me.mana
   );
   const hasAttackers = me.field.some(
-    (c) => !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !c.keywords.includes('defender')
+    (c) =>
+      !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !c.keywords.includes('defender')
   );
 
   if (hasLands && me.landsPlayed === 0) return 1;
@@ -106,10 +111,14 @@ export function Tutorial({ gameState, playerKey, hintContext, onSkip }: Tutorial
 
   const spotlightClass = (() => {
     switch (currentStep.spotlight) {
-      case 'hand': return 'tutorial-spotlight-hand';
-      case 'player-board': return 'tutorial-spotlight-board';
-      case 'end-turn': return 'tutorial-spotlight-endturn';
-      default: return '';
+      case 'hand':
+        return 'tutorial-spotlight-hand';
+      case 'player-board':
+        return 'tutorial-spotlight-board';
+      case 'end-turn':
+        return 'tutorial-spotlight-endturn';
+      default:
+        return '';
     }
   })();
 
@@ -123,7 +132,7 @@ export function Tutorial({ gameState, playerKey, hintContext, onSkip }: Tutorial
 
       {/* Hint card */}
       <div
-        className="tutorial-hint-panel fixed bottom-[clamp(120px,18vh,200px)] left-1/2 -translate-x-1/2 z-[95] pointer-events-auto"
+        className="tutorial-hint-panel fixed bottom-[clamp(120px,18vh,200px)] left-1/2 -translate-x-1/2 z-[180] pointer-events-auto"
         style={{ width: 'clamp(280px, 60vw, 420px)' }}
       >
         <div

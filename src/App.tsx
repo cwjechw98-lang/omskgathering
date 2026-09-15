@@ -11,12 +11,10 @@ type Screen = 'menu' | 'intro' | 'game';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('menu');
-  const [gameMode, setGameMode] = useState<'ai' | 'local'>('ai');
   const [hasSeenIntro, setHasSeenIntro] = useState(false);
 
-  const startGame = (mode: 'ai' | 'local') => {
-    setGameMode(mode);
-    if (!hasSeenIntro && mode === 'ai') {
+  const startGame = () => {
+    if (!hasSeenIntro) {
       setScreen('intro');
     } else {
       setScreen('game');
@@ -41,7 +39,7 @@ function App() {
       <ErrorBoundary>
         <TooltipProvider>
           <EffectsProvider>
-            <GameBoard mode={gameMode} onBack={() => setScreen('menu')} />
+            <GameBoard mode="ai" onBack={() => setScreen('menu')} />
             <EffectsLayer />
           </EffectsProvider>
         </TooltipProvider>

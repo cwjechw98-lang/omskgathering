@@ -17,7 +17,8 @@ export function getCardCoverSources(card: Pick<CardData, 'id' | 'imageUrl'>): {
   const localSrc = LOCAL_CARD_IMAGES[card.id];
   if (localSrc) {
     // Vite сам подставит /omskgathering/ на GitHub и / на локальном компе
-    const finalSrc = (import.meta as unknown as ImportMeta).env.BASE_URL + localSrc.replace(/^\//, '');
+    const finalSrc =
+      (import.meta as unknown as ImportMeta).env.BASE_URL + localSrc.replace(/^\//, '');
     return { src: finalSrc, fallback: card.imageUrl };
   }
   return { src: card.imageUrl };
@@ -25,7 +26,9 @@ export function getCardCoverSources(card: Pick<CardData, 'id' | 'imageUrl'>): {
 
 export function getCardBackSource(): string | undefined {
   if (!LOCAL_CARD_BACK_IMAGE) return undefined;
-  return (import.meta as unknown as ImportMeta).env.BASE_URL + LOCAL_CARD_BACK_IMAGE.replace(/^\//, '');
+  return (
+    (import.meta as unknown as ImportMeta).env.BASE_URL + LOCAL_CARD_BACK_IMAGE.replace(/^\//, '')
+  );
 }
 
 export function handleImageErrorWithFallback(img: HTMLImageElement): void {
