@@ -9,7 +9,12 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": false,
-    "outDir": ".tmp-regression"
+    "outDir": ".tmp-regression",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
-  "include": ["tests/regression/**/*.ts", "src/game/**/*.ts", "src/data/cards.ts"]
+  "include": ["tests/regression/**/*.ts", "src/game/**/*.ts", "src/data/cards.ts"],
+  "exclude": ["src/game/hooks/**"]
 }

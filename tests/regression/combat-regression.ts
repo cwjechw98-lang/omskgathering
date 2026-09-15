@@ -622,7 +622,15 @@ function testManaCostRejectsUnderfundedPlay(): void {
   const state = makeState(p1, makePlayer(), 'player1');
 
   const afterPlay = playCard(state, 'player1', expensiveCreature.uid);
-  expect(afterPlay === state, 'playing a card without enough mana should return unchanged state');
+  // playCard возвращает глубокую копию состояния (и пишет причину отказа в лог),
+  // поэтому ссылочное тождество проверять нельзя — проверяем функциональные
+  // инварианты: карта действительно НЕ разыграна.
+  expect(afterPlay.player1.hand.length === 1, 'card must stay in hand when mana is not enough');
+  expect(afterPlay.player1.hand[0].uid === expensiveCreature.uid, 'the very same card must stay in hand');
+  expect(afterPlay.player1.mana === 3, 'mana must not be spent on a rejected play');
+  expect(afterPlay.player1.field.length === 0, 'nothing may enter the field');
+  expect(afterPlay.player1.graveyard.length === 0, 'nothing may go to the graveyard');
+  expect(afterPlay.log.length > state.log.length, 'the rejection should be reported in the log');
 }
 
 function testHandLimitBurnsOverflow(): void {
@@ -651,7 +659,12 @@ function testFieldLimitRejectsExtraCreature(): void {
   const state = makeState(p1, makePlayer(), 'player1');
 
   const afterPlay = playCard(state, 'player1', extra.uid);
-  expect(afterPlay === state, 'playing creature when field is full should return unchanged state');
+  // См. testManaCostRejectsUnderfundedPlay: playCard отдаёт копию, а не тот же объект.
+  expect(afterPlay.player1.field.length === 7, 'field must stay at 7 creatures');
+  expect(afterPlay.player1.hand.length === 1, 'the creature must stay in hand');
+  expect(afterPlay.player1.hand[0].uid === extra.uid, 'the very same creature must stay in hand');
+  expect(afterPlay.player1.mana === 10, 'mana must not be spent when the field is full');
+  expect(afterPlay.log.length > state.log.length, 'the rejection should be reported in the log');
 }
 
 function testDeckExhaustionDealsDamage(): void {
@@ -687,7 +700,11 @@ function testLandPlayLimitedToOnePerTurn(): void {
   expect(afterFirst.player1.maxMana === 1, 'first land should give +1 maxMana');
 
   const afterSecond = playCard(afterFirst, 'player1', land2.uid);
-  expect(afterSecond === afterFirst, 'second land play should be rejected');
+  // См. testManaCostRejectsUnderfundedPlay: playCard отдаёт копию, а не тот же объект.
+  expect(afterSecond.player1.maxMana === 1, 'maxMana must stay at 1 after a rejected second land');
+  expect(afterSecond.player1.mana === afterFirst.player1.mana, 'mana must not change on a rejected land play');
+  expect(afterSecond.player1.hand.some(c => c.uid === land2.uid), 'the second land must stay in hand');
+  expect(afterSecond.log.length > afterFirst.log.length, 'the rejection should be reported in the log');
 }
 
 function testBabkaCanAttackWhenBuffed(): void {
@@ -993,11 +1010,28 @@ function run(): void {
     { name: 'Ploshchad Buhgoltsa heals when played as third land', fn: testPloshchadBuhgoltsaHealsOnThirdLandPlayed },
   ];
 
+  // Раньше цикл падал на первой же ошибке и обрывал прогон: нельзя было узнать,
+  // сколько проверок ещё сломано. Теперь собираем все провалы и печатаем сводку.
+  const failures: { name: string; error: string }[] = [];
   for (const t of tests) {
-    t.fn();
-    console.log(`PASS: ${t.name}`);
+    try {
+      t.fn();
+      console.log(`PASS: ${t.name}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      failures.push({ name: t.name, error: message });
+      console.log(`FAIL: ${t.name}`);
+      console.log(`      ${message}`);
+    }
   }
-  console.log(`Combat regression: ${tests.length}/${tests.length} tests passed`);
+
+  const passed = tests.length - failures.length;
+  console.log(`\nCombat regression: ${passed}/${tests.length} tests passed`);
+  if (failures.length > 0) {
+    console.log(`\nПровалилось ${failures.length}:`);
+    for (const f of failures) console.log(`  - ${f.name}: ${f.error}`);
+    process.exitCode = 1;
+  }
 }
 
 run();

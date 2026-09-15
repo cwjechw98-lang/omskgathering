@@ -59,7 +59,7 @@ describe('Replay regression tests', () => {
     // Results should be identical (deterministic)
     expect(result1.turnNumber).toBe(result2.turnNumber);
     expect(result1.player1.health).toBe(result2.player1.health);
-    expect(result2.player2.health).toBe(result2.player2.health);
+    expect(result2.player2.health).toBe(result1.player2.health);
     expect(result1.player1.hand.length).toBe(result2.player1.hand.length);
     expect(result1.player2.hand.length).toBe(result2.player2.hand.length);
   });
