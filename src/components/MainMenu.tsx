@@ -243,7 +243,9 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
         <div className="max-w-5xl mx-auto px-4 pb-6">
           <div className="omsk-archive-panel bg-[#0f0f18]/90 rounded-xl border border-[#c9a84c]/15 overflow-hidden backdrop-blur-sm">
             {/* Chapter Image */}
-            <div className="relative h-40 md:h-56 overflow-hidden border-b border-[#c9a84c]/15">
+            {/* Баннер главы: было h-40/h-56 — при ширине панели ~990 px это полоса
+                4.4:1, срезавшая 55% картинки 800x400. Подняли до 256/384 px: срез 21%. */}
+            <div className="relative h-64 md:h-96 overflow-hidden border-b border-[#c9a84c]/15">
               <img
                 src={getLoreImageUrl(ch)}
                 alt={WORLD_LORE[ch].title}
