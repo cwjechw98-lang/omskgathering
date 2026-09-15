@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .tmp-regression/
+.tmp-midscene/
 output/
 
 npm-debug.log*
@@ -38,3 +39,7 @@ $null
 .tmp-lint.txt
 .tmp-tsc.txt
 .tmp-splice.mjs
+
+# Midscene (AI UI checks) run artifacts
+midscene_run/
+ai-image-check.json
