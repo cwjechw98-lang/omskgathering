@@ -16,7 +16,7 @@
 
 Файл `.env` должен содержать:
 ```env
-POLLINATIONS_API_KEY=sk_qExVrb9RH4xwr3DOV3GtOSngNDpxjWdf
+POLLINATIONS_API_KEY=replace_with_your_token
 POLLINATIONS_IMAGE_MODEL=grok-imagine
 ```
 

@@ -74,6 +74,24 @@ function extFromContentType(contentType) {
   return 'jpg';
 }
 
+// Сервер Pollinations умеет ответить HTTP 200 с JSON-телом ошибки
+// ({"success":false,...,"status":500}), поэтому res.ok недостаточно:
+// без проверки магических байтов такой ответ сохраняется как .jpg,
+// и в public/cards появляется битая «картинка» (так был испорчен exam_42).
+function sniffImageFormat(bytes) {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'jpg';
+  if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'png';
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+    bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+  ) {
+    return 'webp';
+  }
+  if (bytes.length >= 6 && bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return 'gif';
+  return null;
+}
+
 async function fetchImage(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -94,9 +112,18 @@ async function fetchImage(url) {
       throw new Error(`HTTP ${res.status}${body ? `: ${body.slice(0, 120)}` : ''}`);
     }
     const bytes = new Uint8Array(await res.arrayBuffer());
+    const sniffed = sniffImageFormat(bytes);
+    if (!sniffed) {
+      const preview = new TextDecoder('utf-8', { fatal: false })
+        .decode(bytes.slice(0, 160))
+        .replace(/\s+/g, ' ')
+        .trim();
+      throw new Error(`ответ не является изображением (начало: ${preview || '<пусто>'})`);
+    }
     return {
       contentType: res.headers.get('content-type') || '',
       bytes,
+      format: sniffed,
     };
   } finally {
     clearTimeout(timer);
@@ -192,8 +219,8 @@ async function main() {
 
     const url = buildPollinationsUrl(card.prompt, card.seed);
     try {
-      const { contentType, bytes } = await fetchImage(url);
-      const ext = extFromContentType(contentType);
+      const { contentType, bytes, format } = await fetchImage(url);
+      const ext = format || extFromContentType(contentType);
       const fileName = `${card.id}.${ext}`;
       const filePath = path.join(outputDir, fileName);
       await fs.writeFile(filePath, bytes);
