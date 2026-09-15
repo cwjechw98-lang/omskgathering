@@ -49,6 +49,7 @@ const SCREENS = [
   { name: 'Коллекция', go: /Коллекция/, back: /Назад/ },
   { name: 'Коллекция: карта открыта', go: /Коллекция/, thenCard: true, back: /Назад/ },
   { name: 'Конструктор колод', go: /Конструктор колод/, back: /Назад/ },
+  { name: 'Конструктор: колода сохранена', go: /Конструктор колод/, thenDeck: true, back: /Назад/ },
   { name: 'Правила', go: /^📋 Правила|Правила/, back: /Назад/ },
   { name: 'Легенда', go: /Легенда/, back: /Назад/ },
 ];
@@ -110,6 +111,27 @@ for (const vp of VIEWPORTS) {
         if (tile) tile.click();
       });
       await page.waitForTimeout(1100);
+    }
+    if (screen.thenDeck) {
+      // состояние «колода собрана и сохранена» статичный скан не видит:
+      // список сохранённых колод с четырьмя кнопками в строке появляется только после сохранения
+      await page.fill('input[placeholder="Например: Быстрый Омск"]', 'Аудит-колода');
+      for (let i = 0; i < 8; i++) {
+        await page.evaluate(() => {
+          const plus = Array.from(document.querySelectorAll('button')).find(
+            (b) => (b.textContent || '').trim() === '+'
+          );
+          if (plus) plus.click();
+        });
+        await page.waitForTimeout(120);
+      }
+      await page.evaluate(() => {
+        const b = Array.from(document.querySelectorAll('button')).find((x) =>
+          /Сохранить колоду/.test(x.innerText)
+        );
+        if (b) b.click();
+      });
+      await page.waitForTimeout(800);
     }
 
     const defects = await page.evaluate((vpName) => {
@@ -257,11 +279,26 @@ for (const vp of VIEWPORTS) {
     }
   }
 
+  // перед полем убираем активную колоду, оставленную конструктором:
+  // saveDeck() делает сохранённую колоду активной, и аудит дальше играл колодой
+  // без земель — мана 0/0, ни одна карта не разыгрывается, поле всегда пустое
+  await page.evaluate(() => {
+    try {
+      localStorage.removeItem('omsk.decks.v1');
+    } catch {
+      /* приватный режим — не критично */
+    }
+  });
+
   // игровое поле — в предыдущей версии аудита его не было вовсе
   if (await clickButton(page, /Играть/.source)) {
     await page.waitForTimeout(2600);
     await clickButton(page, /Пропустить/.source); // слайдшоу -> поле
     await page.waitForTimeout(3200);
+    // Обучение закрываем: с открытой подсказкой клики по руке не доходили до карт,
+    // и аудит молча не разыгрывал ни одной карты (проверено пробником).
+    await clickButton(page, /Пропустить обучение/.source);
+    await page.waitForTimeout(600);
 
     // ─── ПОЛЕ В ДИНАМИКЕ: розыгрыш карт, ход ИИ, геометрия руки и карт ───
     // Статичный замер поля бесполезен: на старте оно пустое, а обрезка арта
@@ -320,6 +357,15 @@ for (const vp of VIEWPORTS) {
           handClippedByZone: boxes.filter((b) => b.bottom > zoneBox.bottom + 1).length,
           handClippedByViewport: boxes.filter((b) => b.bottom > vh + 1).length,
           handOverflow: zone ? zone.scrollWidth - zone.clientWidth : 0,
+          // сколько пикселей приходится на одну карту в веере: если меньше ширины карты,
+          // карты перекрывают друг друга и видны частично
+          handSpread:
+            zone && sizes[0] && sizes.length > 1
+              ? Math.round((zone.clientWidth - sizes[0].w) / (sizes.length - 1))
+              : null,
+          handVisible: zone && sizes[0] && sizes.length > 1
+            ? +Math.min(1, (zone.clientWidth - sizes[0].w) / (sizes.length - 1) / sizes[0].w).toFixed(2)
+            : null,
           // на сколько карта в поднятом состоянии (наведение/выбор) выходит за верх зоны
           hoverLiftClip: (() => {
             if (!zoneBox) return 0;
@@ -363,11 +409,29 @@ for (const vp of VIEWPORTS) {
       });
       await page.waitForTimeout(220);
     };
+    // Ход игрока опознаётся по кнопке «Конец хода»: без этой проверки клики
+    // попадали в ход Хранителя и розыгрыш молча не происходил.
+    const waitMyTurn = async (timeout = 20000) => {
+      const started = Date.now();
+      while (Date.now() - started < timeout) {
+        const ok = await page.evaluate(() =>
+          Array.from(document.querySelectorAll('button')).some((b) => /Конец хода/.test(b.innerText))
+        );
+        if (ok) return true;
+        await page.waitForTimeout(300);
+      }
+      return false;
+    };
+    const fieldCount = () =>
+      page.evaluate(() => document.querySelectorAll('.board-zone.player .card-in-field').length);
+
     const playHandCard = async (i) => {
       // Розыгрыш устроен так: клик по карте выбирает её и открывает превью, а
       // следующий клик ПО КАРТЕ (превью закрывается и проверяет точку попадания)
       // разыгрывает. Программный .click() даёт точку (0,0) и только закрывает
       // превью, поэтому здесь настоящие клики мышью по координатам центра карты.
+      if (!(await waitMyTurn())) return false;
+      const before = await fieldCount();
       const center = async () =>
         page.evaluate((idx) => {
           const w = document.querySelectorAll('.hand-card-wrapper')[idx];
@@ -383,7 +447,22 @@ for (const vp of VIEWPORTS) {
       const c2 = (await center()) || c1; // выбранная карта приподнимается — берём точку заново
       await page.mouse.click(c2.x, c2.y);
       await page.waitForTimeout(700);
-      return true;
+      return (await fieldCount()) > before;
+    };
+    const playSomething = async () => {
+      // играбельная карта помечена в разметке (cursor-grab / зелёная рамка).
+      // Кликать в первую попавшуюся нельзя: там всегда земля, а земля даёт ману
+      // и на поле не выходит — существ так и не появлялось.
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const idx = await page.evaluate(() =>
+          Array.from(document.querySelectorAll('.card-hand-container')).findIndex((c) =>
+            /cursor-grab/.test(c.className)
+          )
+        );
+        if (idx < 0) return false;
+        if (await playHandCard(idx)) return true;
+      }
+      return false;
     };
     const endTurn = async () => {
       const ok = await clickButton(page, /Конец хода/.source);
@@ -399,6 +478,57 @@ for (const vp of VIEWPORTS) {
       }
       return m;
     };
+
+    // Диагностика розыгрыша: --diag печатает, что именно происходит при клике по карте.
+    const diag = args.includes('--diag');
+    if (diag) {
+      const probe = await page.evaluate(() => {
+        const t = document.querySelector('.card-hand-container');
+        const w = t && t.closest('.hand-card-wrapper');
+        if (!t) return { карта: 'не найдена' };
+        const r = t.getBoundingClientRect();
+        const cx = Math.round(r.left + r.width / 2);
+        const cy = Math.round(r.top + r.height / 2);
+        const hit = document.elementFromPoint(cx, cy);
+        return {
+          точка: `${cx},${cy}`,
+          карта: (t.innerText || '').replace(/\s+/g, ' ').slice(0, 24),
+          играбельна: /cursor-grab/.test(t.className),
+          подТочкой: hit ? `${hit.tagName.toLowerCase()}.${String(hit.className).slice(0, 60)}` : null,
+          мана: (document.querySelector('.zone-player-hero')?.innerText || '').replace(/\s+/g, ' ').match(/💎\S+/)?.[0] || '?',
+          подсказкаОбучения: !!document.querySelector('.tutorial-hint-panel'),
+          обёртка: w ? 'есть' : 'нет',
+        };
+      });
+      console.log(`[${vp.name}] ДИАГ до клика: ${JSON.stringify(probe)}`);
+      const c = await page.evaluate(() => {
+        const t = document.querySelector('.card-hand-container');
+        const r = t.getBoundingClientRect();
+        return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+      });
+      await page.mouse.click(c.x, c.y);
+      await page.waitForTimeout(500);
+      const after1 = await page.evaluate(() => ({
+        превью: document.querySelectorAll('.card-preview-overlay').length,
+        выбрано: document.querySelectorAll('.hand-card-wrapper.selected').length,
+      }));
+      const c2 = await page.evaluate(() => {
+        const t = document.querySelector('.card-hand-container');
+        const r = t.getBoundingClientRect();
+        return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+      });
+      await page.mouse.click(c2.x, c2.y);
+      await page.waitForTimeout(800);
+      const after2 = await page.evaluate(() => ({
+        превью: document.querySelectorAll('.card-preview-overlay').length,
+        рука: document.querySelectorAll('.hand-card-wrapper').length,
+        поле: document.querySelectorAll('.board-zone.player .card-in-field').length,
+        мана: (document.querySelector('.zone-player-hero')?.innerText || '').replace(/\s+/g, ' ').match(/💎\S+/)?.[0] || '?',
+      }));
+      console.log(`[${vp.name}] ДИАГ после 1-го клика: ${JSON.stringify(after1)}`);
+      console.log(`[${vp.name}] ДИАГ после 2-го клика: ${JSON.stringify(after2)}`);
+      await closePreview();
+    }
 
     await snap('старт');
     // превью карты: арт-полоса наверху — отдельный источник обрезки
@@ -429,11 +559,81 @@ for (const vp of VIEWPORTS) {
       await page.waitForTimeout(300);
     }
 
-    for (let round = 1; round <= 3; round++) {
-      await playHandCard(0);
-      await playHandCard(1);
+    const combatResults = [];
+    for (let round = 1; round <= 5; round++) {
+      for (let k = 0; k < 3; k++) await playSomething();
+      if (combatResults.length < 2) await tryAttack(`ход${round}`);
       await endTurn();
       await snap(`ход${round}`);
+    }
+    report.combat = report.combat || [];
+    report.combat.push({ vp: vp.name, attempts: combatResults });
+
+    // ─── стресс: большая рука. Жалоба звучала как «внизу, где много карт» ───
+    for (let r = 1; r <= 4; r++) {
+      await playSomething();
+      await endTurn();
+    }
+    await snap('большая-рука');
+
+    // ─── бой: атакуем СРАЗУ, как только наше существо вышло на поле ───
+    // Отдельная фаза «потом» не работает: к тому моменту Хранитель уже убивает
+    // наших существ, поле пустое, и атаковать некому.
+    async function tryAttack(label) {
+      await waitMyTurn();
+      const available = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('.board-zone.player .card-in-field')).length
+      );
+      if (!available) return false;
+      const attackerReady = await page.evaluate(() => {
+        const cards = Array.from(document.querySelectorAll('.board-zone.player .card-in-field'));
+        // может действовать — подсвечена зелёным кольцом (canAct), иначе откроется превью
+        const able = cards.find((c) => /ring-green-400/.test(c.className));
+        if (!able) return false;
+        able.click();
+        return true;
+      });
+      await page.waitForTimeout(600);
+      const attackBtn = await page.evaluate(() => {
+        const b = document.querySelector('.attack-hero-btn');
+        if (!b) return null;
+        const r = b.getBoundingClientRect();
+        return {
+          size: `${Math.round(r.width)}x${Math.round(r.height)}`,
+          inside: r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth,
+        };
+      });
+      if (attackBtn) {
+        await page.evaluate(() => document.querySelector('.attack-hero-btn')?.click());
+        await page.waitForTimeout(250);
+      }
+      const combat = await page.evaluate(() => {
+        const inside = (el) => {
+          const r = el.getBoundingClientRect();
+          return r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth;
+        };
+        const zoneP = document.querySelector('.board-zone.player');
+        const zoneE = document.querySelector('.board-zone.enemy');
+        return {
+          damageNumbers: Array.from(document.querySelectorAll('.damage-number')).map((d) => ({
+            text: (d.textContent || '').trim(),
+            inside: inside(d),
+          })),
+          fieldOverflowPlayer: zoneP ? zoneP.scrollWidth - zoneP.clientWidth : 0,
+          fieldOverflowEnemy: zoneE ? zoneE.scrollWidth - zoneE.clientWidth : 0,
+        };
+      });
+      combatResults.push({ label, attackerReady, attackBtn, combat });
+      console.log(
+        `[${vp.name}] бой (${label}): существо=${attackerReady ? 'выбрано' : 'не выбралось'} ` +
+        `кнопка=${attackBtn ? attackBtn.size + (attackBtn.inside ? ' в экране' : ' ВНЕ ЭКРАНА') : 'не появилась'} ` +
+        `урона=${combat.damageNumbers.length} вне экрана=${combat.damageNumbers.filter((d) => !d.inside).length} ` +
+        `переполнениеПоля=${combat.fieldOverflowPlayer}/${combat.fieldOverflowEnemy}`
+      );
+      if (shotsDir) {
+        await page.screenshot({ path: path.join(path.resolve(shotsDir), `${vp.name}_поле_бой.png`) });
+      }
+      return true;
     }
 
     report.boardDynamics = report.boardDynamics || [];
@@ -445,7 +645,9 @@ for (const vp of VIEWPORTS) {
       `превью=${last.preview ? last.preview.box + ' арт ' + last.preview.art + ' обрезка ' + last.preview.artCrop + '%' : 'нет'} ` +
       `рукаЗаЗоной=${boardSteps.reduce((a, s) => Math.max(a, s.handClippedByZone), 0)} свес=${boardSteps.reduce((a, s) => Math.max(a, s.handOverhang), 0)}px ` +
       `срезПриНаведении=${boardSteps.reduce((a, s) => Math.max(a, s.hoverLiftClip), 0)}px ` +
-      `панельПоверхРуки=${boardSteps.reduce((a, s) => Math.max(a, s.panelsOverHand), 0)}`
+      `панельПоверхРуки=${boardSteps.reduce((a, s) => Math.max(a, s.panelsOverHand), 0)} ` +
+      `рукаМакс=${boardSteps.reduce((a, s) => Math.max(a, s.handCount), 0)} видно=${boardSteps.reduce((a, s) => Math.min(a, s.handVisible ?? 1), 1)} ` +
+      `скроллРуки=${boardSteps.reduce((a, s) => Math.max(a, s.handOverflow), 0)}px`
     );
   } else {
     console.log(`[${vp.name}] поле — кнопка «Играть» не найдена`);
