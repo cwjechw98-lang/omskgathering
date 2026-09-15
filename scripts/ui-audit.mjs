@@ -262,20 +262,191 @@ for (const vp of VIEWPORTS) {
     await page.waitForTimeout(2600);
     await clickButton(page, /Пропустить/.source); // слайдшоу -> поле
     await page.waitForTimeout(3200);
-    const board = await page.evaluate(() => {
-      const q = (s) => document.querySelectorAll(s).length;
-      return {
-        cardFrames: q('.card-frame'),
-        handCards: q('[class*="hand-card"], .hand-card-arc, .hand-card'),
-        boardSlots: q('.board-slot'),
-        text: (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 120),
-      };
+
+    // ─── ПОЛЕ В ДИНАМИКЕ: розыгрыш карт, ход ИИ, геометрия руки и карт ───
+    // Статичный замер поля бесполезен: на старте оно пустое, а обрезка арта
+    // и обрезка руки интерфейсом видны только когда карты есть.
+    const boardSteps = [];
+    const measureBoard = () =>
+      page.evaluate(() => {
+        const bx = (el) => {
+          const r = el.getBoundingClientRect();
+          return { w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), right: Math.round(r.right) };
+        };
+        // сколько картинки срезает cover в этом блоке.
+        // Размеры — по layout (offsetWidth/Height): карта в руке повёрнута веером,
+        // и её прямоугольник всегда шире настоящего блока, что завышало обрезку.
+        const cropOf = (img) => {
+          if (!img || !img.naturalWidth || !img.naturalHeight) return null;
+          const w = img.offsetWidth || img.getBoundingClientRect().width;
+          const h = img.offsetHeight || img.getBoundingClientRect().height;
+          if (!w || !h) return null;
+          const box = w / h;
+          const nat = img.naturalWidth / img.naturalHeight;
+          if (Math.abs(box - nat) / nat <= 0.02) return 0;
+          const keep = box > nat ? nat / box : box / nat;
+          return Math.round((1 - keep) * 100);
+        };
+        const worstCrop = (cards) => {
+          const vals = cards.map((c) => cropOf(c.querySelector('img'))).filter((v) => v !== null);
+          return vals.length ? Math.max(...vals) : null;
+        };
+        const zone = document.querySelector('.hand-zone');
+        const wrappers = Array.from(document.querySelectorAll('.hand-card-wrapper'));
+        const inner = wrappers.map((w) => w.querySelector('.card-hand-container') || w);
+        // размер карты берём по layout (offsetWidth), а не по прямоугольнику:
+        // карты в руке повёрнуты веером, и bounding box у них всегда больше и «квадратнее».
+        const dims = (el) => ({ w: el.offsetWidth, h: el.offsetHeight });
+        const boxes = inner.map(bx);
+        const sizes = inner.map(dims);
+        const zoneBox = zone ? bx(zone) : null;
+        const vh = window.innerHeight;
+        const playerField = Array.from(document.querySelectorAll('.board-zone.player .card-in-field'));
+        const enemyField = Array.from(document.querySelectorAll('.board-zone.enemy .card-in-field'));
+        const hand = Array.from(document.querySelectorAll('.card-in-hand'));
+        const shell = document.querySelector('.card-preview-shell');
+        const shellArt = shell ? shell.querySelector('img') : null;
+        const overhang = zoneBox
+          ? Math.round(Math.max(0, ...boxes.map((b) => b.bottom - zoneBox.bottom)))
+          : 0;
+        const ratio = (n, d) => (d ? +(n / d).toFixed(3) : null);
+        return {
+          handCount: wrappers.length,
+          handCard: sizes[0] ? `${sizes[0].w}x${sizes[0].h}` : null,
+          handRatio: sizes[0] ? ratio(sizes[0].w, sizes[0].h) : null,
+          handZoneBottom: zoneBox ? zoneBox.bottom : null,
+          handOverhang: overhang,
+          // карта вылезла ниже своей зоны (её режет overflow: hidden) или ниже экрана
+          handClippedByZone: boxes.filter((b) => b.bottom > zoneBox.bottom + 1).length,
+          handClippedByViewport: boxes.filter((b) => b.bottom > vh + 1).length,
+          handOverflow: zone ? zone.scrollWidth - zone.clientWidth : 0,
+          // на сколько карта в поднятом состоянии (наведение/выбор) выходит за верх зоны
+          hoverLiftClip: (() => {
+            if (!zoneBox) return 0;
+            const lifted = wrappers
+              .map((w) => (w.matches(':hover') || w.classList.contains('selected') ? w.getBoundingClientRect() : null))
+              .filter(Boolean);
+            if (!lifted.length) return 0;
+            return Math.round(Math.max(0, zoneBox.top - Math.min(...lifted.map((r) => r.top))));
+          })(),
+          fieldPlayer: playerField.length,
+          fieldEnemy: enemyField.length,
+          fieldCard: playerField[0] ? `${dims(playerField[0]).w}x${dims(playerField[0]).h}` : null,
+          fieldRatio: playerField[0] ? ratio(dims(playerField[0]).w, dims(playerField[0]).h) : null,
+          fieldArtCrop: worstCrop(playerField.length ? playerField : enemyField),
+          handArtCrop: worstCrop(hand),
+          preview: shell ? { box: `${bx(shell).w}x${bx(shell).h}`, art: shellArt ? `${Math.round(bx(shellArt).w)}x${Math.round(bx(shellArt).h)}` : null, artCrop: cropOf(shellArt) } : null,
+          // наложения: панель обучения / превью, севшие поверх карт руки
+          panelsOverHand: (() => {
+            const panels = Array.from(
+              document.querySelectorAll('.tutorial-hint-panel, .game-topbar, .ai-action-banner, .game-debug-drawer')
+            ).map((p) => p.getBoundingClientRect());
+            if (!panels.length) return 0;
+            const overlap = (a, b) => {
+              const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+              const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+              return w > 0 && h > 0 ? w * h : 0;
+            };
+            return boxes.filter((b) => {
+              const area = b.w * b.h;
+              return panels.some((p) => overlap(b, p) > area * 0.15);
+            }).length;
+          })(),
+          turn: (document.querySelector('header')?.innerText || '').replace(/\s+/g, ' ').slice(0, 40),
+        };
+      });
+
+    const closePreview = async () => {
+      await page.evaluate(() => {
+        const b = document.querySelector('.card-preview-shell button');
+        if (b) b.click();
+      });
+      await page.waitForTimeout(220);
+    };
+    const playHandCard = async (i) => {
+      // Розыгрыш устроен так: клик по карте выбирает её и открывает превью, а
+      // следующий клик ПО КАРТЕ (превью закрывается и проверяет точку попадания)
+      // разыгрывает. Программный .click() даёт точку (0,0) и только закрывает
+      // превью, поэтому здесь настоящие клики мышью по координатам центра карты.
+      const center = async () =>
+        page.evaluate((idx) => {
+          const w = document.querySelectorAll('.hand-card-wrapper')[idx];
+          const t = w && (w.querySelector('.card-hand-container') || w);
+          if (!t) return null;
+          const r = t.getBoundingClientRect();
+          return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+        }, i);
+      const c1 = await center();
+      if (!c1) return false;
+      await page.mouse.click(c1.x, c1.y);
+      await page.waitForTimeout(400);
+      const c2 = (await center()) || c1; // выбранная карта приподнимается — берём точку заново
+      await page.mouse.click(c2.x, c2.y);
+      await page.waitForTimeout(700);
+      return true;
+    };
+    const endTurn = async () => {
+      const ok = await clickButton(page, /Конец хода/.source);
+      if (ok) await page.waitForTimeout(6000); // ход Хранителя
+      return ok;
+    };
+
+    const snap = async (name) => {
+      const m = await measureBoard();
+      boardSteps.push({ name, ...m });
+      if (shotsDir) {
+        await page.screenshot({ path: path.join(path.resolve(shotsDir), `${vp.name}_поле_${name}.png`) });
+      }
+      return m;
+    };
+
+    await snap('старт');
+    // превью карты: арт-полоса наверху — отдельный источник обрезки
+    await page.evaluate(() => {
+      const w = document.querySelectorAll('.hand-card-wrapper')[0];
+      (w && (w.querySelector('.card-hand-container') || w))?.click();
     });
-    report.board = { vp: vp.name, ...board };
-    console.log(`[${vp.name}] поле              card-frame=${board.cardFrames} элементов руки=${board.handCards} слотов=${board.boardSlots}`);
-    if (shotsDir) {
-      await page.screenshot({ path: path.join(path.resolve(shotsDir), `${vp.name}_поле.png`) });
+    await page.waitForTimeout(500);
+    await snap('превью-карты');
+    await closePreview();
+
+    // наведение: карта приподнимается и может быть срезана верхом зоны руки
+    const midCard = await page.evaluate(() => {
+      const w = document.querySelectorAll('.hand-card-wrapper');
+      const t = w[Math.floor(w.length / 2)];
+      if (!t) return null;
+      const r = t.getBoundingClientRect();
+      return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+    });
+    if (midCard) {
+      await page.mouse.move(midCard.x, midCard.y);
+      await page.waitForTimeout(500);
+      const hovered = await snap('наведение');
+      console.log(
+        `[${vp.name}] наведение: карта срезана сверху на ${hovered.hoverLiftClip}px (0 = не срезана)`
+      );
+      await page.mouse.move(5, 5);
+      await page.waitForTimeout(300);
     }
+
+    for (let round = 1; round <= 3; round++) {
+      await playHandCard(0);
+      await playHandCard(1);
+      await endTurn();
+      await snap(`ход${round}`);
+    }
+
+    report.boardDynamics = report.boardDynamics || [];
+    report.boardDynamics.push({ vp: vp.name, steps: boardSteps });
+    const last = boardSteps[boardSteps.length - 1];
+    console.log(
+      `[${vp.name}] поле  шагов=${boardSteps.length} полеИгрока=${last.fieldPlayer} полеИИ=${last.fieldEnemy} рука=${last.handCount} ` +
+      `карта=${last.handCard}(ratio ${last.handRatio}) картаПоля=${last.fieldCard}(ratio ${last.fieldRatio}) артПоля=${last.fieldArtCrop}% артРуки=${last.handArtCrop}% ` +
+      `превью=${last.preview ? last.preview.box + ' арт ' + last.preview.art + ' обрезка ' + last.preview.artCrop + '%' : 'нет'} ` +
+      `рукаЗаЗоной=${boardSteps.reduce((a, s) => Math.max(a, s.handClippedByZone), 0)} свес=${boardSteps.reduce((a, s) => Math.max(a, s.handOverhang), 0)}px ` +
+      `срезПриНаведении=${boardSteps.reduce((a, s) => Math.max(a, s.hoverLiftClip), 0)}px ` +
+      `панельПоверхРуки=${boardSteps.reduce((a, s) => Math.max(a, s.panelsOverHand), 0)}`
+    );
   } else {
     console.log(`[${vp.name}] поле — кнопка «Играть» не найдена`);
   }
