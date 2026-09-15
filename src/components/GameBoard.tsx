@@ -1319,8 +1319,7 @@ export function GameBoard({ mode, onBack }: Props) {
     owner: 'player1' | 'player2';
   } | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
-  const aiActionStatusState = useState<string | null>(null);
-  const setAiActionStatus = aiActionStatusState[1];
+  const [aiActionStatus, setAiActionStatus] = useState<string | null>(null);
   const [showTurnTransition, setShowTurnTransition] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
@@ -1618,9 +1617,14 @@ export function GameBoard({ mode, onBack }: Props) {
     prevPlayedFieldRef.current = { p1: currentP1, p2: currentP2 };
 
     if (played.length > 0) {
-      setNewlyPlayedUids(new Set(played));
-      const t = setTimeout(() => setNewlyPlayedUids(new Set()), 450);
-      return () => clearTimeout(t);
+      // Показываем по одной карте с паузой: когда противник выкладывает
+      // несколько существ разом, одновременное появление не читается.
+      const step = 260;
+      const timers: number[] = played.map((uid, i) =>
+        window.setTimeout(() => setNewlyPlayedUids(new Set([uid])), i * step)
+      );
+      timers.push(window.setTimeout(() => setNewlyPlayedUids(new Set()), played.length * step + 450));
+      return () => timers.forEach((t) => window.clearTimeout(t));
     }
   }, [me.field, enemy.field]);
 
@@ -1875,7 +1879,7 @@ export function GameBoard({ mode, onBack }: Props) {
       setAiThinking(false);
       setTimeout(() => {
         if (mountedRef.current) setAiActionStatus(null);
-      }, 2500);
+      }, 3600);
     }, 1200);
   }, [mode, gs, showCardNarrative, addMessage, runAIAnimations, setAiActionStatus]);
 
@@ -2323,6 +2327,20 @@ export function GameBoard({ mode, onBack }: Props) {
   return (
     <div className={`game-grid ${screenShake ? 'effect-screen-shake' : ''}`} onClick={clickBF}>
       {explosionFlash && <div className="explosion-flash" />}
+
+      {/* Что разыграл или кого атаковал противник. Раньше это состояние
+          нигде не выводилось, поэтому ход Хранителя нельзя было прочитать. */}
+      {aiActionStatus && (
+        <div
+          className={`ai-action-banner ${
+            aiActionStatus.startsWith('⚔️') ? 'ai-action-banner-attack' : ''
+          }`}
+          role="status"
+          aria-live="polite"
+        >
+          {aiActionStatus}
+        </div>
+      )}
       {/* TOP BAR */}
       <div className="zone-topbar game-topbar">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">

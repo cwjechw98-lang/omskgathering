@@ -2122,6 +2122,48 @@ body {
   animation: cardDraw 0.35s var(--ease-out) forwards;
 }
 
+/* 3b. БАННЕР ХОДА ПРОТИВНИКА: показывает, что именно разыграл Хранитель.
+   Раньше статус хранился в состоянии, но нигде не выводился, поэтому ход
+   противника читался только по мельканию карт. */
+@keyframes aiActionBannerIn {
+  0% {
+    transform: translateX(-50%) translateY(-14px) scale(0.96);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+.ai-action-banner {
+  position: fixed;
+  top: 11%;
+  left: 50%;
+  z-index: var(--z-overlay);
+  pointer-events: none;
+  max-width: min(92vw, 860px);
+  padding: 10px 24px;
+  border-radius: 14px;
+  border: 1px solid rgba(240, 214, 138, 0.45);
+  background: linear-gradient(180deg, rgba(20, 20, 32, 0.97), rgba(9, 9, 16, 0.97));
+  box-shadow:
+    0 14px 44px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: #f0d68a;
+  font-family: Cinzel, serif;
+  font-weight: 700;
+  font-size: clamp(14px, 1.5vw, 20px);
+  line-height: 1.35;
+  text-align: center;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
+  animation: aiActionBannerIn 0.4s var(--ease-out-back) forwards;
+}
+
+.ai-action-banner-attack {
+  border-color: rgba(255, 120, 120, 0.5);
+  color: #ffb4b4;
+}
+
 /* 4. СБРОС КАРТЫ: 0.3 сек ease-in */
 @keyframes cardDiscard {
   0% {
