@@ -213,7 +213,7 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
         <div className="omsk-screen-header flex items-center justify-between mb-3">
           <button
             onClick={onBack}
-            className="text-[#8a7a5a] hover:text-[#f0d68a] font-heading text-sm transition"
+            className="tap-target text-[#8a7a5a] hover:text-[#f0d68a] font-heading text-sm transition"
           >
             ← Назад
           </button>
@@ -226,7 +226,7 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
             <button
               key={i}
               onClick={() => setCh(i)}
-              className={`px-2.5 py-1 rounded-lg font-heading text-xs transition-all ${
+              className={`tap-target px-2.5 py-1 rounded-lg font-heading text-xs transition-all ${
                 ch === i
                   ? 'bg-[#5a4010] text-[#f0d68a] border border-[#c9a84c]/50'
                   : 'bg-[#1a1a2a] text-gray-500 hover:text-gray-300 border border-gray-800'
@@ -271,7 +271,7 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
               <button
                 onClick={() => setCh(Math.max(0, ch - 1))}
                 disabled={ch === 0}
-                className={`font-heading text-xs px-3 py-1 rounded transition ${ch === 0 ? 'text-gray-700' : 'text-[#c9a84c] hover:bg-[#1a1508]'}`}
+                className={`tap-target font-heading text-xs px-3 py-1 rounded transition ${ch === 0 ? 'text-gray-700' : 'text-[#c9a84c] hover:bg-[#1a1508]'}`}
               >
                 ← Назад
               </button>
@@ -281,7 +281,7 @@ function LoreScreen({ onBack }: { onBack: () => void }) {
               <button
                 onClick={() => setCh(Math.min(WORLD_LORE.length - 1, ch + 1))}
                 disabled={ch === WORLD_LORE.length - 1}
-                className={`font-heading text-xs px-3 py-1 rounded transition ${ch === WORLD_LORE.length - 1 ? 'text-gray-700' : 'text-[#c9a84c] hover:bg-[#1a1508]'}`}
+                className={`tap-target font-heading text-xs px-3 py-1 rounded transition ${ch === WORLD_LORE.length - 1 ? 'text-gray-700' : 'text-[#c9a84c] hover:bg-[#1a1508]'}`}
               >
                 Далее →
               </button>
@@ -337,7 +337,7 @@ function CardCollection({ onBack }: { onBack: () => void }) {
       <div className="omsk-screen-header flex items-center justify-between px-4 py-3 bg-black/80 z-20 border-b border-[#c9a84c]/15 shrink-0">
         <button
           onClick={onBack}
-          className="text-[#8a7a5a] hover:text-[#f0d68a] font-heading text-sm transition"
+          className="tap-target text-[#8a7a5a] hover:text-[#f0d68a] font-heading text-sm transition"
         >
           ← Назад
         </button>
@@ -357,7 +357,7 @@ function CardCollection({ onBack }: { onBack: () => void }) {
           <button
             key={f.key}
             onClick={() => applyFilter(f.key)}
-            className={`px-3 py-1.5 rounded-lg font-heading text-xs transition-all border ${
+            className={`tap-target px-3 py-1.5 rounded-lg font-heading text-xs transition-all border ${
               filter === f.key
                 ? 'bg-[#5a4010] text-[#f0d68a] border-[#c9a84c]/50'
                 : 'bg-[#1a1a2a] text-gray-400 border-gray-800 hover:border-gray-600'
@@ -421,10 +421,12 @@ function CardCollection({ onBack }: { onBack: () => void }) {
                   }}
                 >
                   <div className={`border-2 rounded-xl overflow-hidden ${rarityBorder} shadow-lg`}>
-                    {/* Art section — using classic card aspect ratio 1:1.35 */}
+                    {/* Art section — 2:3, ровно как у файлов карт (682x1024).
+                        Было `paddingTop: 74%`: процент считается от ШИРИНЫ, поэтому блок
+                        выходил альбомным (1.35:1) и object-cover срезал 51% портретной
+                        картинки. Замер: scripts/ui-audit.mjs. */}
                     <div
-                      className={`relative ${COLOR_BG[cardData.color]} overflow-hidden`}
-                      style={{ paddingTop: '74%' /* ~1:1.35 ratio, matching game cards */ }}
+                      className={`relative aspect-[2/3] ${COLOR_BG[cardData.color]} overflow-hidden`}
                     >
                       {art.src && (
                         <img
@@ -574,7 +576,8 @@ function CardCollection({ onBack }: { onBack: () => void }) {
         {/* Detail sidebar */}
         {detail && (
           <div className="hidden md:block w-80 shrink-0 bg-[#0f0f18]/98 border-l border-[#c9a84c]/20 overflow-y-auto">
-            <div className={`relative h-56 ${COLOR_BG[detail.color]} overflow-hidden`}>
+            {/* 2:3 — пропорция самого файла карты, чтобы обрезки не было вообще */}
+            <div className={`relative aspect-[2/3] ${COLOR_BG[detail.color]} overflow-hidden`}>
               {detailArt?.src && (
                 <img
                   src={detailArt.src}
@@ -673,7 +676,7 @@ function CardCollection({ onBack }: { onBack: () => void }) {
               className="h-full max-h-[calc(100dvh-1.25rem)] bg-[#0f0f18]/98 border border-[#c9a84c]/20 rounded-xl overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className={`relative h-56 ${COLOR_BG[detail.color]} overflow-hidden`}>
+              <div className={`relative aspect-[2/3] ${COLOR_BG[detail.color]} overflow-hidden`}>
                 {detailArt?.src && (
                   <img
                     src={detailArt.src}
@@ -823,7 +826,7 @@ function Rules({ onBack }: { onBack: () => void }) {
       <div className="max-w-3xl mx-auto pb-8 relative z-10">
         <button
           onClick={onBack}
-          className="text-[#8a7a5a] hover:text-[#f0d68a] mb-4 font-heading text-sm"
+          className="tap-target text-[#8a7a5a] hover:text-[#f0d68a] mb-4 font-heading text-sm"
         >
           ← Назад
         </button>

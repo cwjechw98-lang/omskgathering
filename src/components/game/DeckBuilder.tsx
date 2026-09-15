@@ -575,14 +575,14 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <button
-                          className="px-2 py-1 rounded bg-[#2a2a36] hover:bg-[#3a3a4a]"
+                          className="tap-target rounded bg-[#2a2a36] px-2 hover:bg-[#3a3a4a]"
                           onClick={() => changeCount(card.id, -1)}
                         >
                           −
                         </button>
                         <span className="w-8 text-center text-sm">{count}</span>
                         <button
-                          className="px-2 py-1 rounded bg-[#2a2a36] hover:bg-[#3a3a4a] disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="tap-target rounded bg-[#2a2a36] px-2 hover:bg-[#3a3a4a] disabled:opacity-40 disabled:cursor-not-allowed"
                           onClick={() => changeCount(card.id, 1)}
                           disabled={!canIncrement}
                         >

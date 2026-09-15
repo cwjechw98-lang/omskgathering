@@ -970,6 +970,17 @@ body {
 }
 
 /* ═══ CARD FRAMES ═══ */
+/* Цели касания. Именно пиксели, а не rem: html { font-size } сжимается до 14px на
+   мобильном, и привычный h-7 (1.75rem) превращается в 24.5px вместо 28.
+   Замер до/после — scripts/ui-audit.mjs (раздел «мелких»). */
+.tap-target {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  min-width: 28px;
+}
+
 .card-frame {
   position: relative;
   border-radius: 8px;
