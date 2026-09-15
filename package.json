@@ -14,6 +14,7 @@
     "test:ai:board": "node scripts/ai-board-audit.mjs",
     "test:replay": "vitest run tests/regression/replay-regression.test.ts",
     "test:regression": "tsc -p tsconfig.regression.json && node -e \"require('fs').writeFileSync('.tmp-regression/package.json','{\\\"type\\\":\\\"commonjs\\\"}')\" && node .tmp-regression/tests/regression/combat-regression.js",
+    "audit:ui": "node scripts/ui-audit.mjs",
     "audit:new-cards": "node scripts/audit-new-cards-matrix.mjs",
     "cache:card-images": "node scripts/cache-card-images.mjs",
     "lint": "eslint src/",
