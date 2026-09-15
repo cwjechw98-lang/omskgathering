@@ -18,6 +18,11 @@ export type DecksStorageState = {
 };
 
 const DECKS_STORAGE_KEY = 'omsk.decks.v1';
+/**
+ * Ключи, которыми пользовались прежние сборки. Основной идёт первым,
+ * остальные читаются только ради миграции — иначе колоды игрока пропадут молча.
+ */
+const LEGACY_DECKS_STORAGE_KEYS = [DECKS_STORAGE_KEY, 'omsk.decks', 'decksState'];
 const MAX_COPIES_PER_CARD = 8;
 const MAX_EXPANDED_DECK_SIZE = 240;
 
@@ -30,12 +35,25 @@ function createDefaultDecksState(): DecksStorageState {
 }
 
 function normalizeDeckCardEntry(value: unknown): DeckCardEntry | null {
+  // Прежние сборки писали карту просто строкой с её id.
+  if (typeof value === 'string') {
+    const cardId = value.trim();
+    return cardId.length > 0 ? { cardId, count: 1 } : null;
+  }
   if (!value || typeof value !== 'object') return null;
-  const candidate = value as Partial<DeckCardEntry>;
-  if (typeof candidate.cardId !== 'string') return null;
-  const cardId = candidate.cardId.trim();
+  const candidate = value as {
+    cardId?: unknown;
+    id?: unknown;
+    count?: unknown;
+    copies?: unknown;
+  };
+  // `id` — прежнее имя поля с идентификатором карты, `copies` — прежнее имя количества.
+  const rawCardId = typeof candidate.cardId === 'string' ? candidate.cardId : candidate.id;
+  if (typeof rawCardId !== 'string') return null;
+  const cardId = rawCardId.trim();
   if (cardId.length === 0) return null;
-  const count = Math.floor(Number(candidate.count));
+  const rawCount = candidate.count ?? candidate.copies ?? 1;
+  const count = Math.floor(Number(rawCount));
   if (!Number.isFinite(count) || count <= 0) return null;
   const safeCount = Math.min(count, MAX_COPIES_PER_CARD);
 
@@ -77,18 +95,35 @@ function normalizeDeckCards(values: unknown[]): DeckCardEntry[] {
   return cards;
 }
 
-function normalizeDeck(value: unknown): SavedDeck | null {
+function normalizeDeck(value: unknown, index: number): SavedDeck | null {
   if (!value || typeof value !== 'object') return null;
-  const candidate = value as Partial<SavedDeck>;
-  if (typeof candidate.id !== 'string') return null;
-  const deckId = candidate.id.trim();
-  if (deckId.length === 0) return null;
-  if (typeof candidate.name !== 'string') return null;
-  const normalizedName = candidate.name.trim();
-  if (normalizedName.length === 0) return null;
-  if (!Array.isArray(candidate.cards)) return null;
+  const candidate = value as {
+    id?: unknown;
+    name?: unknown;
+    cards?: unknown;
+    cardIds?: unknown;
+    createdAt?: unknown;
+    updatedAt?: unknown;
+  };
 
-  const cards = normalizeDeckCards(candidate.cards);
+  // Прежние сборки допускали колоду без id и без имени, а карты клали в `cardIds`.
+  // Опознаватель берём из позиции в массиве — он стабилен между загрузками.
+  const rawDeckId = typeof candidate.id === 'string' ? candidate.id.trim() : '';
+  const deckId = rawDeckId.length > 0 ? rawDeckId : `legacy-deck-${index}`;
+
+  const normalizedName =
+    typeof candidate.name === 'string' && candidate.name.trim().length > 0
+      ? candidate.name.trim()
+      : 'Колода';
+
+  const rawCards = Array.isArray(candidate.cards)
+    ? candidate.cards
+    : Array.isArray(candidate.cardIds)
+      ? candidate.cardIds
+      : null;
+  if (!rawCards) return null;
+
+  const cards = normalizeDeckCards(rawCards);
 
   if (cards.length === 0) return null;
 
@@ -111,12 +146,27 @@ function normalizeDeck(value: unknown): SavedDeck | null {
 
 function normalizeDecksState(value: unknown): DecksStorageState | null {
   if (!value || typeof value !== 'object') return null;
-  const candidate = value as Partial<DecksStorageState>;
-  if (candidate.version !== 1) return null;
-  if (!Array.isArray(candidate.decks)) return null;
+  const candidate = value as {
+    version?: unknown;
+    decks?: unknown;
+    items?: unknown;
+    activeDeckId?: unknown;
+    selectedDeckId?: unknown;
+  };
 
-  const normalizedDecks = candidate.decks
-    .map(normalizeDeck)
+  // Записи прежних сборок не имели поля version — считаем их версией 1.
+  // Всё, что явно помечено другой версией, по-прежнему отвергаем.
+  if (candidate.version !== undefined && candidate.version !== 1) return null;
+
+  const rawDecks = Array.isArray(candidate.decks)
+    ? candidate.decks
+    : Array.isArray(candidate.items)
+      ? candidate.items
+      : null;
+  if (!rawDecks) return null;
+
+  const normalizedDecks = rawDecks
+    .map((deck, index) => normalizeDeck(deck, index))
     .filter((deck): deck is SavedDeck => Boolean(deck));
 
   const decks: SavedDeck[] = [];
@@ -127,8 +177,13 @@ function normalizeDecksState(value: unknown): DecksStorageState | null {
     decks.push(deck);
   }
 
-  const requestedActiveDeckId =
-    typeof candidate.activeDeckId === 'string' ? candidate.activeDeckId.trim() : '';
+  const rawActiveDeckId =
+    typeof candidate.activeDeckId === 'string'
+      ? candidate.activeDeckId
+      : typeof candidate.selectedDeckId === 'string'
+        ? candidate.selectedDeckId
+        : '';
+  const requestedActiveDeckId = rawActiveDeckId.trim();
 
   const activeDeckId =
     requestedActiveDeckId.length > 0 && decks.some((deck) => deck.id === requestedActiveDeckId)
@@ -144,14 +199,19 @@ function normalizeDecksState(value: unknown): DecksStorageState | null {
 
 export function loadDecksState(): DecksStorageState {
   if (typeof window === 'undefined') return createDefaultDecksState();
-  try {
-    const raw = window.localStorage.getItem(DECKS_STORAGE_KEY);
-    if (!raw) return createDefaultDecksState();
-    const parsed = normalizeDecksState(JSON.parse(raw));
-    return parsed ?? createDefaultDecksState();
-  } catch {
-    return createDefaultDecksState();
+  // Основной ключ идёт первым. Остальные читаем только ради миграции: если игрок
+  // сохранял колоды в прежней сборке, без этого его данные исчезли бы молча.
+  for (const key of LEGACY_DECKS_STORAGE_KEYS) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = normalizeDecksState(JSON.parse(raw));
+      if (parsed && parsed.decks.length > 0) return parsed;
+    } catch {
+      // Битый или экспериментальный формат — пробуем следующий ключ.
+    }
   }
+  return createDefaultDecksState();
 }
 
 export function saveDecksState(state: DecksStorageState): void {
