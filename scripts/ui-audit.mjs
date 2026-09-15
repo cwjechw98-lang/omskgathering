@@ -295,10 +295,6 @@ for (const vp of VIEWPORTS) {
     await page.waitForTimeout(2600);
     await clickButton(page, /Пропустить/.source); // слайдшоу -> поле
     await page.waitForTimeout(3200);
-    // Обучение закрываем: с открытой подсказкой клики по руке не доходили до карт,
-    // и аудит молча не разыгрывал ни одной карты (проверено пробником).
-    await clickButton(page, /Пропустить обучение/.source);
-    await page.waitForTimeout(600);
 
     // ─── ПОЛЕ В ДИНАМИКЕ: розыгрыш карт, ход ИИ, геометрия руки и карт ───
     // Статичный замер поля бесполезен: на старте оно пустое, а обрезка арта
@@ -399,6 +395,30 @@ for (const vp of VIEWPORTS) {
             }).length;
           })(),
           turn: (document.querySelector('header')?.innerText || '').replace(/\s+/g, ' ').slice(0, 40),
+          // подсказка обучения: шаг берётся из состояния игры, поэтому её надо мерить
+          // на каждом шаге, а не один раз
+          tutorial: (() => {
+            const p = document.querySelector('.tutorial-hint-panel');
+            if (!p) return null;
+            const r = bx(p);
+            const textEl = p.querySelector('p');
+            return {
+              step: ((p.innerText || '').match(/Шаг \d+ из \d+/) || [''])[0],
+              box: `${r.w}x${r.h}`,
+              inside: r.top >= -2 && r.bottom <= window.innerHeight + 2 && r.left >= -2 && r.right <= window.innerWidth + 2,
+              // наложение на карты руки считается по площади, порог 15%
+              overlapHandCards: zoneBox
+                ? boxes.filter((b) => {
+                    const w = Math.min(b.right, r.right) - Math.max(b.left, r.left);
+                    const h = Math.min(b.bottom, r.bottom) - Math.max(b.top, r.top);
+                    return w > 0 && h > 0 && w * h > b.w * b.h * 0.15;
+                  }).length
+                : 0,
+              clippedText: textEl
+                ? Math.max(0, textEl.scrollWidth - textEl.clientWidth, textEl.scrollHeight - textEl.clientHeight)
+                : 0,
+            };
+          })(),
         };
       });
 
@@ -478,6 +498,51 @@ for (const vp of VIEWPORTS) {
       }
       return m;
     };
+
+    // Замер произвольной панели: окно отладки, журнал, экран конца боя.
+    // Ищем и вылезание за экран, и обрезанный внутри текст — раньше эти окна
+    // не открывались в аудите ни разу.
+    const measurePanel = (sel) =>
+      page.evaluate((s) => {
+        const el = document.querySelector(s);
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const clipped = [];
+        for (const child of el.querySelectorAll('*')) {
+          const cs = getComputedStyle(child);
+          if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+          if (child.children.length > 0) continue;
+          if (cs.webkitLineClamp && cs.webkitLineClamp !== 'none') continue;
+          const t = (child.textContent || '').trim();
+          if (!t) continue;
+          const isClipped =
+            cs.overflow === 'hidden' || cs.overflowX === 'hidden' || cs.overflowY === 'hidden';
+          const overX = child.scrollWidth - child.clientWidth;
+          const overY = child.scrollHeight - child.clientHeight;
+          if (isClipped && (overX > 1 || overY > 1)) {
+            clipped.push({ text: t.slice(0, 28), overX, overY });
+          }
+        }
+        const close = el.querySelector('.modal-overlay-close, button');
+        const closeRect = close ? close.getBoundingClientRect() : null;
+        return {
+          box: `${Math.round(r.width)}x${Math.round(r.height)}`,
+          inside:
+            r.top >= -2 && r.bottom <= vh + 2 && r.left >= -2 && r.right <= vw + 2,
+          overflowPx: Math.max(
+            0,
+            Math.round(r.right - vw),
+            Math.round(-r.left),
+            Math.round(r.bottom - vh),
+            Math.round(-r.top)
+          ),
+          closeBtn: closeRect ? `${Math.round(closeRect.width)}x${Math.round(closeRect.height)}` : null,
+          clipped,
+          text: (el.innerText || '').replace(/\s+/g, ' ').slice(0, 90),
+        };
+      }, sel);
 
     // Диагностика розыгрыша: --diag печатает, что именно происходит при клике по карте.
     const diag = args.includes('--diag');
@@ -561,10 +626,23 @@ for (const vp of VIEWPORTS) {
 
     const combatResults = [];
     for (let round = 1; round <= 5; round++) {
-      for (let k = 0; k < 3; k++) await playSomething();
+      for (let k = 0; k < 3; k++) {
+        await playSomething();
+        // сразу после первой сыгранной карты подсказка переходит на следующий шаг —
+        // если мерить только в конце хода, шаги 2–3 не попадают в замер вообще
+        if (round === 1 && k === 0) await snap('обучение-после-первой-карты');
+      }
+      // Подсказка обучения меняет шаг от состояния ИМЕННО этого хода, поэтому мерить
+      // её надо до завершения хода: после «Конец хода» счётчики сбрасываются и шаг
+      // навсегда остаётся первым (проверено — все замеры показывали «Шаг 1 из 4»).
+      if (round <= 3) await snap(`обучение-ход${round}`);
       if (combatResults.length < 2) await tryAttack(`ход${round}`);
       await endTurn();
       await snap(`ход${round}`);
+      if (round === 3) {
+        await clickButton(page, /Пропустить обучение/.source);
+        await page.waitForTimeout(500);
+      }
     }
     report.combat = report.combat || [];
     report.combat.push({ vp: vp.name, attempts: combatResults });
@@ -575,6 +653,59 @@ for (const vp of VIEWPORTS) {
       await endTurn();
     }
     await snap('большая-рука');
+
+    // ─── панели интерфейса: окно отладки и журнал боя ───
+    // Ни одно из этих окон аудит до сих пор не открывал.
+    const panels = {};
+    await clickButton(page, /Отладка/.source);
+    await page.waitForTimeout(600);
+    panels.debug = await measurePanel('.game-debug-drawer');
+    await clickButton(page, /Отладка/.source);
+    await page.waitForTimeout(400);
+
+    await clickButton(page, /Журнал/.source);
+    await page.waitForTimeout(700);
+    panels.journal = await measurePanel('.modal-overlay-content');
+    panels.journalBackdrop = await measurePanel('.modal-overlay');
+    if (shotsDir) {
+      await page.screenshot({ path: path.join(path.resolve(shotsDir), `${vp.name}_журнал.png`) });
+    }
+    await page.evaluate(() => document.querySelector('.modal-overlay-close')?.click());
+    await page.waitForTimeout(400);
+    report.panels = report.panels || [];
+    report.panels.push({ vp: vp.name, panels });
+    for (const [name, p] of Object.entries(panels)) {
+      if (!p) {
+        console.log(`[${vp.name}] ${name}: не открылось`);
+        continue;
+      }
+      console.log(
+        `[${vp.name}] ${name}: ${p.box}${p.inside ? ' в экране' : ' ВНЕ ЭКРАНА на ' + p.overflowPx + 'px'} ` +
+        `обрезанныйТекст=${p.clipped.length}${p.closeBtn ? ' кнопкаЗакрытия=' + p.closeBtn : ''}`
+      );
+    }
+
+    // ─── экран победы/поражения: доводим бой до конца ───
+    let gameOver = await measurePanel('.game-over-panel');
+    for (let i = 0; i < 14 && !gameOver; i++) {
+      const canContinue = await clickButton(page, /Конец хода/.source);
+      await page.waitForTimeout(2500);
+      gameOver = await measurePanel('.game-over-panel');
+      if (!canContinue && !gameOver) break;
+    }
+    report.gameOver = report.gameOver || [];
+    report.gameOver.push({ vp: vp.name, panel: gameOver });
+    if (gameOver) {
+      if (shotsDir) {
+        await page.screenshot({ path: path.join(path.resolve(shotsDir), `${vp.name}_конец-боя.png`) });
+      }
+      console.log(
+        `[${vp.name}] конец боя: "${gameOver.text}" ${gameOver.box}${gameOver.inside ? ' в экране' : ' ВНЕ ЭКРАНА на ' + gameOver.overflowPx + 'px'} ` +
+        `обрезанныйТекст=${gameOver.clipped.length}${gameOver.clipped.length ? ' -> ' + JSON.stringify(gameOver.clipped.slice(0, 3)) : ''}`
+      );
+    } else {
+      console.log(`[${vp.name}] конец боя: экран не появился за 14 ходов`);
+    }
 
     // ─── бой: атакуем СРАЗУ, как только наше существо вышло на поле ───
     // Отдельная фаза «потом» не работает: к тому моменту Хранитель уже убивает
