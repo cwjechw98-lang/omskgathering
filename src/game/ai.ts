@@ -185,29 +185,56 @@ export type AIAttackAction =
   | { type: 'attack-hero'; attackerUid: string }
   | { type: 'attack-creature'; attackerUid: string; defenderUid: string };
 
+// Разыгранная карта. Интерфейс показывает по этому списку, что сделал противник.
+// Раньше здесь были только атаки, поэтому его карты возникали на столе без
+// движения, а ход с одной землёй вообще не был виден.
+export type AICardPlayAction = {
+  type: 'play-card';
+  cardUid: string;
+  cardId: string;
+  cardName: string;
+  cardEmoji: string;
+  cardType: CardInstance['data']['type'];
+};
+
+export type AIAction = AIAttackAction | AICardPlayAction;
+
 export type AITurnResult = {
   state: GameState;
   comment: string | null;
-  actions: AIAttackAction[];
+  actions: AIAction[];
 };
+
+function toPlayAction(card: CardInstance): AICardPlayAction {
+  return {
+    type: 'play-card',
+    cardUid: card.uid,
+    cardId: card.data.id,
+    cardName: card.data.name,
+    cardEmoji: card.data.emoji,
+    cardType: card.data.type,
+  };
+}
 
 /**
  * Ход AI: разыгрывает карты и атакует
- * @returns Новое состояние, комментарий и список атак
+ * @returns Новое состояние, комментарий и список действий по порядку
  */
 export function aiTurn(state: GameState): AITurnResult {
   let gs = JSON.parse(JSON.stringify(state)) as GameState;
   let lastComment: string | null = null;
-  const actions: AIAttackAction[] = [];
+  const actions: AIAction[] = [];
 
   // PHASE 1: Play a land
   const landResult = playLandPhase(gs);
   gs = landResult.state;
+  actions.push(...landResult.actions);
 
   // PHASE 2: Play cards (priority-based)
   const cardsResult = playCardsPhase(gs, lastComment);
   gs = cardsResult.state;
   lastComment = cardsResult.comment;
+  actions.push(...cardsResult.actions);
 
   // PHASE 3: Attack
   const attackResult = attackPhase(gs, lastComment);
@@ -224,28 +251,36 @@ export function aiTurn(state: GameState): AITurnResult {
 /**
  * Фаза 1: Розыгрыш земли
  */
-function playLandPhase(gs: GameState): { state: GameState } {
+function playLandPhase(gs: GameState): { state: GameState; actions: AICardPlayAction[] } {
+  const actions: AICardPlayAction[] = [];
   const landInHand = gs.player2.hand.find((c) => c.data.type === 'land');
   const preferredLand = gs.player2.hand.find((c) => c.data.id === 'ploshchad_buhgoltsa');
-  
+
   if ((preferredLand || landInHand) && gs.player2.landsPlayed < gs.player2.maxLandsPerTurn) {
     const landToPlay = preferredLand || landInHand;
     if (landToPlay) {
       const next = playCard(gs, 'player2', landToPlay.uid);
-      if (next !== gs) gs = next;
+      if (next !== gs) {
+        gs = next;
+        actions.push(toPlayAction(landToPlay));
+      }
     }
   }
-  
-  return { state: gs };
+
+  return { state: gs, actions };
 }
 
 /**
  * Фаза 2: Розыгрыш карт с приоритетами
  */
-function playCardsPhase(gs: GameState, lastComment: string | null): { state: GameState; comment: string | null } {
+function playCardsPhase(
+  gs: GameState,
+  lastComment: string | null
+): { state: GameState; comment: string | null; actions: AICardPlayAction[] } {
   let played = true;
   let safety = 0;
   let comment = lastComment;
+  const actions: AICardPlayAction[] = [];
 
   while (played && safety < 20) {
     safety++;
@@ -273,6 +308,7 @@ function playCardsPhase(gs: GameState, lastComment: string | null): { state: Gam
       if (next !== gs) {
         gs = next;
         played = true;
+        actions.push(toPlayAction(nonCreature.card));
         comment = getComment(nonCreature.card.data.id, gs.player2.health, gs.player2.maxHealth);
       }
       continue;
@@ -283,11 +319,12 @@ function playCardsPhase(gs: GameState, lastComment: string | null): { state: Gam
     if (next !== prev) {
       gs = next;
       played = true;
+      actions.push(toPlayAction(best.card));
       comment = getComment(best.card.data.id, gs.player2.health, gs.player2.maxHealth);
     }
   }
 
-  return { state: gs, comment };
+  return { state: gs, comment, actions };
 }
 
 /**

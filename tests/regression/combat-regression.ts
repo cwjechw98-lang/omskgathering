@@ -178,7 +178,12 @@ function testAiReturnsAttackActions(): void {
   const result = aiTurn(state);
   expect(result.actions.length > 0, 'aiTurn should return at least one attack action');
   expect(result.actions[0].type === 'attack-hero', `expected first action attack-hero, got ${result.actions[0].type}`);
-  expect(result.actions[0].attackerUid === aiAttacker.uid, 'ai action should reference attacker uid');
+  // actions теперь объединение розыгрышей и атак, поэтому тип нужно сузить
+  const first = result.actions[0];
+  expect(
+    first.type === 'attack-hero' && first.attackerUid === aiAttacker.uid,
+    'ai action should reference attacker uid'
+  );
 }
 
 function testAiAttacksDefenderWhenPresent(): void {

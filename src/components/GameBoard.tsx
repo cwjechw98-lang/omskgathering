@@ -1387,6 +1387,10 @@ export function GameBoard({ mode, onBack }: Props) {
   const aiTurnTimerRef = useRef<number | null>(null);
   const mountedRef = useRef(true);
   const prevFieldRef = useRef<{ p1: string[]; p2: string[] }>({ p1: [], p2: [] });
+  // Отдельный ref для анимации розыгрыша. Общий prevFieldRef обновляет соседний
+  // эффект смерти, объявленный раньше, поэтому разница всегда получалась пустой
+  // и анимация не срабатывала ни у игрока, ни у противника.
+  const prevPlayedFieldRef = useRef<{ p1: string[]; p2: string[] }>({ p1: [], p2: [] });
   const prevHandRef = useRef<string[]>([]);
   const [newlyDrawnUids, setNewlyDrawnUids] = useState<Set<string>>(new Set());
   const [newlyPlayedUids, setNewlyPlayedUids] = useState<Set<string>>(new Set());
@@ -1599,19 +1603,26 @@ export function GameBoard({ mode, onBack }: Props) {
     }
   }, [me.hand]);
 
-  /* ── Play animation: detect new cards on field ── */
+  /* ── Play animation: detect cards newly arrived on either side ── */
   useEffect(() => {
     const currentP1 = me.field.map((c) => c.uid);
-    const prev = prevFieldRef.current.p1;
-    if (prev.length > 0) {
-      const played = currentP1.filter((uid) => !prev.includes(uid));
-      if (played.length > 0) {
-        setNewlyPlayedUids(new Set(played));
-        const t = setTimeout(() => setNewlyPlayedUids(new Set()), 450);
-        return () => clearTimeout(t);
-      }
+    const currentP2 = enemy.field.map((c) => c.uid);
+    const prev = prevPlayedFieldRef.current;
+
+    // Первый проход только запоминает состояние: иначе анимация сработала бы
+    // на всех картах, уже стоящих на столе при входе в бой.
+    const played = [
+      ...(prev.p1.length > 0 ? currentP1.filter((uid) => !prev.p1.includes(uid)) : []),
+      ...(prev.p2.length > 0 ? currentP2.filter((uid) => !prev.p2.includes(uid)) : []),
+    ];
+    prevPlayedFieldRef.current = { p1: currentP1, p2: currentP2 };
+
+    if (played.length > 0) {
+      setNewlyPlayedUids(new Set(played));
+      const t = setTimeout(() => setNewlyPlayedUids(new Set()), 450);
+      return () => clearTimeout(t);
     }
-  }, [me.field]);
+  }, [me.field, enemy.field]);
 
   useEffect(() => {
     const ev = STORY_EVENTS.find(
@@ -1775,13 +1786,18 @@ export function GameBoard({ mode, onBack }: Props) {
 
   const runAIAnimations = useCallback(
     (
-      actions: {
-        type: 'attack-hero' | 'attack-creature';
-        attackerUid: string;
+      allActions: {
+        type: 'attack-hero' | 'attack-creature' | 'play-card';
+        attackerUid?: string;
         defenderUid?: string;
       }[]
     ) => {
-      if (!actions || actions.length === 0) return;
+      // Появление карты на столе показывает эффект отслеживания поля, здесь
+      // остаётся только бой. Иначе ход растянулся бы на число розыгрышей.
+      const actions = (allActions || []).filter(
+        (a) => a.type === 'attack-hero' || a.type === 'attack-creature'
+      );
+      if (actions.length === 0) return;
       if (aiAnimTimerRef.current) {
         window.clearTimeout(aiAnimTimerRef.current);
         aiAnimTimerRef.current = null;
@@ -1832,6 +1848,17 @@ export function GameBoard({ mode, onBack }: Props) {
             );
         }
         runAIAnimations(result.actions);
+      }
+      // Что именно разыграл противник: раньше при ходу без атак об этом
+      // сообщала только последняя карта на столе, и ход выглядел пустым.
+      const playedCards = result.actions.filter((a) => a.type === 'play-card');
+      if (playedCards.length > 0) {
+        const shown = playedCards
+          .slice(0, 3)
+          .map((a) => `${a.cardEmoji} ${a.cardName}`)
+          .join(', ');
+        const more = playedCards.length > 3 ? ` и ещё ${playedCards.length - 3}` : '';
+        setAiActionStatus(`✨ ${AI_CHARACTER.name} разыгрывает: ${shown}${more}`);
       }
       const lastCard = result.state.player2.field[result.state.player2.field.length - 1];
       if (lastCard && (!result.actions || result.actions.length === 0)) {
@@ -2435,6 +2462,7 @@ export function GameBoard({ mode, onBack }: Props) {
                 onDrop={handleDrop}
               >
                 {card && (
+                  <div className={newlyPlayedUids.has(card.uid) ? 'card-play-animation' : ''}>
                   <FieldCard
                     card={card}
                     player={enemy}
@@ -2449,6 +2477,7 @@ export function GameBoard({ mode, onBack }: Props) {
                       if (el) cardRefsMap.current.set(card.uid, el);
                     }}
                   />
+                  </div>
                 )}
               </div>
             );

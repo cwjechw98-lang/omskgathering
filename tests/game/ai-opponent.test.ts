@@ -99,3 +99,74 @@ describe('Противник действительно ходит', () => {
     expect(gs.player2.maxMana).toBe(3);
   });
 });
+
+// Интерфейс анимирует ход противника по списку actions. Раньше в нём были
+// только атаки, поэтому разыгранные карты появлялись на столе без движения.
+describe('Ход противника сообщает интерфейсу, что было разыграно', () => {
+  test('розыгрыш земли попадает в actions', () => {
+    const gs = startAiTurn();
+
+    const result = aiTurn(gs);
+
+    const plays = result.actions.filter((a) => a.type === 'play-card');
+    expect(plays.length).toBeGreaterThan(0);
+    expect(plays[0]).toMatchObject({ cardId: 'ploshchad_buhgoltsa', cardType: 'land' });
+  });
+
+  test('у записи о розыгрыше есть всё нужное для показа', () => {
+    const gs = startAiTurn();
+
+    const result = aiTurn(gs);
+    const play = result.actions.find((a) => a.type === 'play-card');
+
+    expect(play).toBeDefined();
+    expect(typeof play!.cardName).toBe('string');
+    expect(play!.cardName.length).toBeGreaterThan(0);
+    expect(typeof play!.cardEmoji).toBe('string');
+    expect(play!.cardEmoji.length).toBeGreaterThan(0);
+  });
+
+  test('за восемь ходов в actions попадают не только атаки', () => {
+    let gs = createInitialGameState();
+    const allActions: { type: string }[] = [];
+
+    for (let round = 0; round < 8; round++) {
+      if (gs.currentTurn === 'player1') gs = endTurn(gs);
+      if (gs.currentTurn === 'player2') {
+        const result = aiTurn(gs);
+        allActions.push(...result.actions);
+        gs = result.state;
+      }
+    }
+
+    const plays = allActions.filter((a) => a.type === 'play-card');
+    const creaturePlays = allActions.filter(
+      (a) => a.type === 'play-card' && (a as { cardType?: string }).cardType === 'creature'
+    );
+
+    expect(plays.length).toBeGreaterThanOrEqual(8);
+    expect(creaturePlays.length).toBeGreaterThan(0);
+    expect(allActions.some((a) => a.type.startsWith('attack-'))).toBe(true);
+  });
+
+  test('розыгрыши идут в actions раньше атак', () => {
+    let gs = createInitialGameState();
+    let checked = false;
+
+    for (let round = 0; round < 8 && !checked; round++) {
+      if (gs.currentTurn === 'player1') gs = endTurn(gs);
+      if (gs.currentTurn === 'player2') {
+        const result = aiTurn(gs);
+        const firstPlay = result.actions.findIndex((a) => a.type === 'play-card');
+        const firstAttack = result.actions.findIndex((a) => a.type.startsWith('attack-'));
+        if (firstPlay >= 0 && firstAttack >= 0) {
+          expect(firstPlay).toBeLessThan(firstAttack);
+          checked = true;
+        }
+        gs = result.state;
+      }
+    }
+
+    expect(checked).toBe(true);
+  });
+});
