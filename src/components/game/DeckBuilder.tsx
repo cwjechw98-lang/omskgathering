@@ -630,7 +630,7 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
                           <div className="text-sm font-medium truncate">{deck.name}</div>
                           {isActive && (
                             <span className="text-[10px] bg-[#5a4010] text-[#f0d68a] px-2 py-0.5 rounded">
-                              active
+                              активная
                             </span>
                           )}
                         </div>
