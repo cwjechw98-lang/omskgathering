@@ -635,7 +635,9 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
                           )}
                         </div>
                         <div className="text-[10px] text-gray-500">{cardsTotal} карт</div>
-                        <div className="flex gap-2">
+                        {/* flex-wrap: на 390 px четыре кнопки в одну строку сжимались,
+                            и подписи обрезались на 4–9 px (замер: scripts/ui-audit.mjs) */}
+                        <div className="flex flex-wrap gap-2">
                           <Button variant="nav" size="sm" onClick={() => loadIntoEditor(deck)}>
                             Редактировать
                           </Button>
