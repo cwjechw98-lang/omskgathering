@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 import { PhaseIndicator } from '../../src/components/game/PhaseIndicator';
-import { Tutorial, getActiveTutorialStep } from '../../src/components/game/Tutorial';
+import { Tutorial } from '../../src/components/game/Tutorial';
+import { createInitialTutorialProgress } from '../../src/utils/tutorialProgress';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -134,54 +135,67 @@ describe('PhaseIndicator', () => {
 
 // ─── Tutorial ─────────────────────────────────────────────────────────────────
 
+const noLearned = createInitialTutorialProgress().learned;
+
 describe('Tutorial', () => {
   beforeEach(() => localStorage.clear());
 
-  it('не рендерится если localStorage содержит tutorialCompleted=true', () => {
-    localStorage.setItem('tutorialCompleted', 'true');
-    const gs = makeMockGameState();
-    const { container } = render(
-      <Tutorial gameState={gs} playerKey="player1" onSkip={() => {}} />
+  it('показывает урок про землю и номер шага', () => {
+    render(
+      <Tutorial
+        hint={{ lesson: 1, variant: 'action' }}
+        learned={noLearned}
+        mana={1}
+        requiredMana={null}
+        onSkip={() => {}}
+      />
     );
-    expect(container.firstChild).toBeNull();
+    expect(screen.getByText(/Шаг 1 из 4/)).toBeTruthy();
+    expect(screen.getByText(/Сыграйте ЗЕМЛЮ/)).toBeTruthy();
   });
 
-  it('рендерится и показывает шаг', () => {
-    const gs = makeMockGameState();
-    render(<Tutorial gameState={gs} playerKey="player1" onSkip={() => {}} />);
-    // mana=3 и нет карт в руке => показывается общий блок обучения
-    expect(screen.getByText(/Шаг/)).toBeTruthy();
+  it('в состоянии ожидания объясняет нехватку маны, но номер шага не меняет', () => {
+    render(
+      <Tutorial
+        hint={{ lesson: 2, variant: 'wait', requiredMana: 3 }}
+        learned={{ ...noLearned, land: true }}
+        mana={1}
+        requiredMana={3}
+        onSkip={() => {}}
+      />
+    );
+    expect(screen.getByText(/Шаг 2 из 4/)).toBeTruthy();
+    expect(screen.getByText(/Маны пока мало/)).toBeTruthy();
+    expect(screen.getByText(/стоит 3, а у вас 1 маны/)).toBeTruthy();
   });
 
-  it('кнопка «Пропустить» вызывает onSkip и записывает в localStorage', () => {
+  it('в состоянии терпения объясняет болезнь призыва', () => {
+    render(
+      <Tutorial
+        hint={{ lesson: 3, variant: 'patience', reason: 'attack' }}
+        learned={{ ...noLearned, land: true, nonLand: true }}
+        mana={3}
+        requiredMana={null}
+        onSkip={() => {}}
+      />
+    );
+    expect(screen.getByText(/Шаг 3 из 4/)).toBeTruthy();
+    expect(screen.getByText(/болезнью призыва/)).toBeTruthy();
+  });
+
+  it('кнопка «Пропустить» вызывает onSkip и прячет панель', () => {
     const onSkip = vi.fn();
-    const gs = makeMockGameState();
-    render(<Tutorial gameState={gs} playerKey="player1" onSkip={onSkip} />);
-    const btn = screen.getByText(/Пропустить/);
-    fireEvent.click(btn);
+    render(
+      <Tutorial
+        hint={{ lesson: 4, variant: 'action' }}
+        learned={{ ...noLearned, land: true, nonLand: true, attack: true }}
+        mana={3}
+        requiredMana={null}
+        onSkip={onSkip}
+      />
+    );
+    fireEvent.click(screen.getByText(/Пропустить/));
     expect(onSkip).toHaveBeenCalledTimes(1);
-    expect(localStorage.getItem('tutorialCompleted')).toBe('true');
-  });
-
-  it('показывает шаг завершения хода, если есть мана, но нет разыгрываемых карт', () => {
-    const gs = makeMockGameState({
-      player1: {
-        ...makeMockGameState().player1,
-        mana: 3,
-        hand: [
-          {
-            uid: 'expensive-creature',
-            data: {
-              id: 'expensive-creature',
-              type: 'creature',
-              cost: 5,
-              keywords: [],
-            },
-          },
-        ],
-      },
-    });
-
-    expect(getActiveTutorialStep(gs, 'player1')).toBe(4);
+    expect(screen.queryByText(/Шаг 4 из 4/)).toBeNull();
   });
 });

@@ -18,6 +18,15 @@ import {
 } from '../game/engine';
 import { createDeckFromCardIds } from '../data/cards';
 import { expandDeckCardIds, getActiveDeck, loadDecksState } from '../utils/decksStorage';
+import {
+  loadTutorialProgress,
+  markTutorialLearned,
+  resolveTutorialLesson,
+  saveTutorialProgress,
+  tutorialLessonTelemetryKey,
+  type TutorialLearnedKey,
+  type TutorialProgress,
+} from '../utils/tutorialProgress';
 import { aiTurn } from '../game/ai';
 import {
   CARD_NARRATIVES,
@@ -140,7 +149,6 @@ const ACHIEVEMENTS_STORAGE_KEY = 'omsk.achievements.v0';
 const XP_PROFILE_STORAGE_KEY = 'omsk.xp-profile.v0';
 const TELEMETRY_STORAGE_KEY = 'omsk.telemetry.v0';
 const BASELINE_STORAGE_KEY = 'omsk.baseline.v0';
-const TUTORIAL_STORAGE_KEY = 'tutorialCompleted';
 const DAILY_QUEST_TARGET = 1;
 const XP_PER_LEVEL = 100;
 const TELEMETRY_MAX_EVENTS = 200;
@@ -1353,7 +1361,6 @@ export function GameBoard({ mode, onBack }: Props) {
   } | null>(null);
   // Attack notification state - shows when creatures can attack and player has mana
   const [showAttackNotification, setShowAttackNotification] = useState(false);
-  const [hasPlayedNonLandCardThisTurn, setHasPlayedNonLandCardThisTurn] = useState(false);
   const [dailyQuests, setDailyQuests] = useState<DailyQuestState>(() => loadDailyQuestState());
   const [achievements, setAchievements] = useState<AchievementsState>(() =>
     loadAchievementsState()
@@ -1365,10 +1372,17 @@ export function GameBoard({ mode, onBack }: Props) {
   const [baselineMetrics, setBaselineMetrics] = useState<BaselineMetricsState>(() =>
     loadBaselineMetricsState()
   );
-  const [tutorialCompleted, setTutorialCompleted] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem(TUTORIAL_STORAGE_KEY) === 'true';
-  });
+  const [tutorialProgress, setTutorialProgress] = useState<TutorialProgress>(() =>
+    loadTutorialProgress()
+  );
+  const markLearned = useCallback((key: TutorialLearnedKey) => {
+    setTutorialProgress((prev) => {
+      const next = markTutorialLearned(prev, key);
+      if (next === prev) return prev;
+      saveTutorialProgress(next);
+      return next;
+    });
+  }, []);
   const prevTurnRef = useRef<{ turnNumber: number; currentTurn: GameState['currentTurn'] }>({
     turnNumber: gs.turnNumber,
     currentTurn: gs.currentTurn,
@@ -1658,7 +1672,6 @@ export function GameBoard({ mode, onBack }: Props) {
         );
       }
       turnStartedAtRef.current = now;
-      setHasPlayedNonLandCardThisTurn(false);
       prevTurnRef.current = { turnNumber: gs.turnNumber, currentTurn: gs.currentTurn };
     }
   }, [gs.turnNumber, gs.currentTurn]);
@@ -1691,14 +1704,27 @@ export function GameBoard({ mode, onBack }: Props) {
     return 'done' as const;
   })();
 
-  const tutorialVisible = gs.turnNumber <= 3 && !gs.gameOver && !tutorialCompleted;
-  const tutorialHintKey = (() => {
-    if (!tutorialVisible) return null;
-    if (hasPlayableLand && !landPlayed) return 'play_land';
-    if (hasPlayableCard && !hasPlayedNonLandCardThisTurn) return 'play_non_land';
-    if (hasAttackers && myTurn && phase === 'attack') return 'attack';
-    return 'end_turn';
-  })();
+  // Обучение больше не привязано к «ходу <= 3»: подсказка живёт, пока есть
+  // непройденные уроки. Раньше она исчезала на третьем ходу вместе с уроками 2–3,
+  // которые игрок физически не успевал увидеть. Потолок хода теперь внутри резолвера.
+  const hasCreatureOnField = me.field.length > 0;
+  const tutorialHint = resolveTutorialLesson({
+    progress: tutorialProgress,
+    myTurn,
+    gameOver: gs.gameOver,
+    turnNumber: gs.turnNumber,
+    hasPlayableLand,
+    hasPlayableNonLand: hasPlayableCard,
+    cheapestNonLandCost: me.hand.reduce<number | null>((min, c) => {
+      if (c.data.type === 'land') return min;
+      return min === null || c.data.cost < min ? c.data.cost : min;
+    }, null),
+    mana: me.mana,
+    hasAttackReadyCreature: hasAttackers,
+    hasCreatureOnField,
+  });
+  const tutorialVisible = tutorialHint !== null;
+  const tutorialHintKey = tutorialHint ? tutorialLessonTelemetryKey(tutorialHint) : null;
 
   useEffect(() => {
     if (!tutorialVisible || !tutorialHintKey) {
@@ -1903,9 +1929,8 @@ export function GameBoard({ mode, onBack }: Props) {
           mana: me.mana,
         });
         setXpProfile((prev) => awardXP(prev, 10));
-        if (card.data.type !== 'land') {
-          setHasPlayedNonLandCardThisTurn(true);
-        }
+        // Урок считается пройденным по факту действия, а не по «что доступно сейчас».
+        markLearned(card.data.type === 'land' ? 'land' : 'nonLand');
         setDailyQuests((prev) =>
           incrementDailyQuest(prev, card.data.type === 'land' ? 'play_land' : 'play_non_land')
         );
@@ -1936,6 +1961,7 @@ export function GameBoard({ mode, onBack }: Props) {
       setPlayAnim,
       me.mana,
       recordTelemetry,
+      markLearned,
     ]
   );
 
@@ -2074,6 +2100,7 @@ export function GameBoard({ mode, onBack }: Props) {
           }
         }
         setGs(next);
+        markLearned('attack');
         addMessage(
           'action',
           `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} → ${card.data.emoji} ${card.data.name}`,
@@ -2115,6 +2142,7 @@ export function GameBoard({ mode, onBack }: Props) {
         }, 400);
       }
       setGs(next);
+      markLearned('attack');
       addMessage(
         'action',
         `${attackerCard?.data.emoji || '⚔️'} ${attackerCard?.data.name || '?'} наносит удар ${opponentNameForLog}!`,
@@ -2131,6 +2159,7 @@ export function GameBoard({ mode, onBack }: Props) {
 
   const clickEndTurn = () => {
     if (!myTurn || gs.gameOver) return;
+    markLearned('endTurn');
     setGs((prev) => {
       const nextGs = endTurn(prev);
       if (mode === 'ai' && nextGs.currentTurn === 'player2') {
@@ -2151,7 +2180,6 @@ export function GameBoard({ mode, onBack }: Props) {
   const restart = () => {
     const initialState = createInitialGameStateForActiveDeck();
     setGs(initialState);
-    setHasPlayedNonLandCardThisTurn(false);
     prevTurnRef.current = {
       turnNumber: initialState.turnNumber,
       currentTurn: initialState.currentTurn,
@@ -2230,7 +2258,14 @@ export function GameBoard({ mode, onBack }: Props) {
   }, []);
 
   const handleTutorialSkip = useCallback(() => {
-    setTutorialCompleted(true);
+    // Раньше здесь выставлялось несуществующее состояние tutorialCompleted — то есть
+    // пропуск не сохранялся, и подсказка возвращалась после перезагрузки.
+    setTutorialProgress((prev) => {
+      const next: TutorialProgress = { ...prev, completed: true };
+      saveTutorialProgress(next);
+      return next;
+    });
+    prevTutorialHintRef.current = null;
     recordTelemetry('tutorial_skipped', {
       turnNumber: gs.turnNumber,
     });
@@ -2699,18 +2734,12 @@ export function GameBoard({ mode, onBack }: Props) {
       )}
 
       {/* TUTORIAL */}
-      {tutorialVisible && (
+      {tutorialVisible && tutorialHint && (
         <Tutorial
-          gameState={gs}
-          playerKey="player1"
-          hintContext={{
-            hasPlayableLand,
-            hasPlayedLandThisTurn: landPlayed,
-            hasPlayableNonLandCard: hasPlayableCard,
-            hasPlayedNonLandCardThisTurn,
-            hasAttackReadyCreature: hasAttackers,
-            isAttackOpportunity: myTurn && phase === 'attack',
-          }}
+          hint={tutorialHint}
+          learned={tutorialProgress.learned}
+          mana={me.mana}
+          requiredMana={tutorialHint.requiredMana ?? null}
           onSkip={handleTutorialSkip}
         />
       )}

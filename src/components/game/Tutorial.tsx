@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { GameState } from '../../game/types';
-
-const TUTORIAL_STORAGE_KEY = 'tutorialCompleted';
+import {
+  TUTORIAL_MAX_TURN,
+  type TutorialLearned,
+  type TutorialLessonHint,
+} from '../../utils/tutorialProgress';
 
 interface TutorialStep {
   id: number;
@@ -46,71 +48,64 @@ const STEPS: TutorialStep[] = [
   },
 ];
 
+/**
+ * Подсказка не пропускает невыполнимый урок молча: у неё есть два «честных»
+ * состояния вместо действия — не хватает маны и условия пока нет вовсе.
+ * Номер шага при этом не меняется, поэтому прогресс не скачет.
+ */
+const WAIT_TITLE = 'Маны пока мало';
+const WAIT_EMOJI = '💎';
+
+const PATIENCE_ATTACK_TITLE = 'Существо ещё не готово';
+const PATIENCE_ATTACK_EMOJI = '😴';
+
+function waitDescription(mana: number, requiredMana: number | null | undefined): string {
+  const need = requiredMana ?? mana + 1;
+  const missing = Math.max(1, need - mana);
+  return `Самая дешёвая карта в руке стоит ${need}, а у вас ${mana} маны. Не хватает ${missing}. Нажмите «Конец хода» — новая земля добавит ману, и карта станет играбельной.`;
+}
+
+const PATIENCE_ATTACK_DESCRIPTION =
+  'Существо выходит на поле с болезнью призыва: в тот же ход оно не атакует. Нажмите «Конец хода» — в начале следующего хода оно получит зелёную рамку (⚔️), и вы сможете им атаковать.';
+
 interface TutorialProps {
-  gameState: GameState;
-  playerKey: 'player1' | 'player2';
-  hintContext?: {
-    hasPlayableLand: boolean;
-    hasPlayedLandThisTurn: boolean;
-    hasPlayableNonLandCard: boolean;
-    hasPlayedNonLandCardThisTurn: boolean;
-    hasAttackReadyCreature: boolean;
-    isAttackOpportunity: boolean;
-  };
+  hint: TutorialLessonHint;
+  /** Что игрок уже освоил — заполненность полосок показывает именно это. */
+  learned: TutorialLearned;
+  mana: number;
+  /** Цена самой дешёвой не-земли в руке; null — таких карт нет. */
+  requiredMana: number | null;
   onSkip: () => void;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
-export function getActiveTutorialStep(
-  gameState: GameState,
-  playerKey: 'player1' | 'player2',
-  hintContext?: TutorialProps['hintContext']
-): number {
-  if (hintContext) {
-    if (hintContext.hasPlayableLand && !hintContext.hasPlayedLandThisTurn) return 1;
-    if (hintContext.hasPlayableNonLandCard && !hintContext.hasPlayedNonLandCardThisTurn) return 2;
-    if (hintContext.hasAttackReadyCreature && hintContext.isAttackOpportunity) return 3;
-    return 4;
-  }
-
-  const me = gameState[playerKey];
-  const hasLands = me.hand.some((c) => c.data.type === 'land') && me.landsPlayed < me.maxLandsPerTurn;
-  const hasPlayableNonLandCard = me.hand.some(
-    (c) => c.data.type !== 'land' && c.data.cost <= me.mana
-  );
-  const hasAttackers = me.field.some(
-    (c) =>
-      !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !c.keywords.includes('defender')
-  );
-
-  if (hasLands && me.landsPlayed === 0) return 1;
-  if (hasPlayableNonLandCard) return 2;
-  if (hasAttackers) return 3;
-  return 4;
-}
-
-export function Tutorial({ gameState, playerKey, hintContext, onSkip }: TutorialProps) {
-  const [completed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem(TUTORIAL_STORAGE_KEY) === 'true';
-  });
+export function Tutorial({ hint, learned, mana, requiredMana, onSkip }: TutorialProps) {
   const [dismissed, setDismissed] = useState(false);
 
-  if (completed || dismissed) return null;
+  if (dismissed) return null;
 
-  const stepIndex = getActiveTutorialStep(gameState, playerKey, hintContext) - 1;
-  const currentStep = STEPS[Math.min(stepIndex, STEPS.length - 1)];
+  const step = STEPS[hint.lesson - 1] ?? STEPS[STEPS.length - 1];
+  const isWait = hint.variant === 'wait';
+  const isPatience = hint.variant === 'patience';
+
+  const title = isWait
+    ? WAIT_TITLE
+    : isPatience
+      ? PATIENCE_ATTACK_TITLE
+      : step.title;
+  const emoji = isWait ? WAIT_EMOJI : isPatience ? PATIENCE_ATTACK_EMOJI : step.emoji;
+  const description = isWait
+    ? waitDescription(mana, requiredMana)
+    : isPatience
+      ? PATIENCE_ATTACK_DESCRIPTION
+      : step.description;
 
   const handleSkip = () => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true');
-    }
     setDismissed(true);
     onSkip();
   };
 
   const spotlightClass = (() => {
-    switch (currentStep.spotlight) {
+    switch (step.spotlight) {
       case 'hand':
         return 'tutorial-spotlight-hand';
       case 'player-board':
@@ -142,26 +137,38 @@ export function Tutorial({ gameState, playerKey, hintContext, onSkip }: Tutorial
           className="rounded-2xl border border-[#c9a84c]/50 shadow-2xl shadow-black/60 p-4"
           style={{ background: '#1a1a24', color: '#c9a84c' }}
         >
-          {/* Step indicators */}
+          {/* Полоски показывают освоенное, а не номер текущего шага: раньше они
+              заполнялись по позиции и обещали прогресс, которого не было. */}
           <div className="flex gap-1.5 mb-3">
-            {STEPS.map((s) => (
-              <div
-                key={s.id}
-                className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                  s.id <= currentStep.id ? 'bg-[#c9a84c]' : 'bg-[#c9a84c]/20'
-                }`}
-              />
-            ))}
+            {STEPS.map((s) => {
+              const done =
+                (s.id === 1 && learned.land) ||
+                (s.id === 2 && learned.nonLand) ||
+                (s.id === 3 && learned.attack) ||
+                (s.id === 4 && learned.endTurn);
+              return (
+                <div
+                  key={s.id}
+                  className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                    done ? 'bg-[#c9a84c]' : s.id === hint.lesson ? 'bg-[#c9a84c]/50' : 'bg-[#c9a84c]/20'
+                  }`}
+                  title={done ? `${s.title} — освоено` : s.title}
+                />
+              );
+            })}
           </div>
 
           {/* Content */}
           <div className="flex items-start gap-3">
-            <span className="text-3xl shrink-0">{currentStep.emoji}</span>
+            <span className="text-3xl shrink-0">{emoji}</span>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-[#c9a84c] text-sm mb-1">
-                Шаг {currentStep.id} из {STEPS.length}: {currentStep.title}
+                Шаг {step.id} из {STEPS.length}: {title}
               </p>
-              <p className="text-gray-300 text-xs leading-relaxed">{currentStep.description}</p>
+              <p className="text-gray-300 text-xs leading-relaxed">{description}</p>
+              <p className="text-gray-500 text-[10px] mt-2">
+                Обучение идёт, пока есть непройденные шаги — не дольше {TUTORIAL_MAX_TURN}-го хода.
+              </p>
             </div>
           </div>
 
