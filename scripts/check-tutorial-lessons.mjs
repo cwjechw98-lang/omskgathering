@@ -126,6 +126,16 @@ check(
 );
 
 check(
+  'атаковать нечем и на столе пусто — молчание, а не «конец хода»',
+  resolveTutorialLesson({
+    ...base,
+    progress: progress({ learned: learned({ land: true, nonLand: true }) }),
+    turnNumber: 3,
+  }),
+  null
+);
+
+check(
   'урок 1 не пропускается, если урок 2 пройден раньше',
   resolveTutorialLesson({
     ...base,

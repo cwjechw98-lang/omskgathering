@@ -154,13 +154,16 @@ describe('честные состояния урока', () => {
     expect(ask({ hasPlayableLand: true, turnNumber: TUTORIAL_MAX_TURN + 1 })).toBeNull();
   });
 
-  it('не требует атаки, если атаковать некому и на столе пусто', () => {
+  it('молчит, если атаковать нечем и на столе пусто, — а не зовёт завершать ход', () => {
+    // Прежнее ожидание здесь было «шаг 4, нажмите конец хода» — то есть ровно тот
+    // прыжок через непройденный урок 3, который и чинится. Урок 4 показывать рано:
+    // игрок ещё не атаковал ни разу, просто атаковать пока нечем.
     const r = resolveTutorialLesson({
       ...base,
       progress: progress({ learned: learned({ land: true, nonLand: true }) }),
       turnNumber: 3,
     });
-    expect(r).toEqual({ lesson: 4, variant: 'action' });
+    expect(r).toBeNull();
   });
 });
 
