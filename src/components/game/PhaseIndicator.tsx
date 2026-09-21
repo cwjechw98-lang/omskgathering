@@ -1,4 +1,5 @@
 import { GameState } from '../../game/types';
+import { canCreatureAttack } from '../../game/engine';
 
 interface PhaseIndicatorProps {
   gameState: GameState;
@@ -22,13 +23,11 @@ function detectPhase(
 ): PhaseId {
   if (!isMyTurn || gameState.gameOver) return 'done';
   const me = gameState[playerKey];
+  const opponent = gameState[playerKey === 'player1' ? 'player2' : 'player1'];
   const hasLands =
     me.hand.some((c) => c.data.type === 'land') && me.landsPlayed < me.maxLandsPerTurn;
   const hasPlayable = me.hand.some((c) => c.data.type !== 'land' && c.data.cost <= me.mana);
-  const hasAttackers = me.field.some(
-    (c) =>
-      !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !c.keywords.includes('defender')
-  );
+  const hasAttackers = me.field.some((c) => canCreatureAttack(c, me, opponent));
 
   if (hasLands && me.landsPlayed === 0) return 'land';
   if (hasPlayable || me.mana > 0) return 'play';

@@ -45,7 +45,6 @@ export interface GameState {
   gameOver: boolean;
   winner: 'player1' | 'player2' | null;
   log: string[];
-  cantAttackNextTurn: boolean;
   lastDiceRoll: DiceRoll | null;
   aiComment: string | null;
   // Mulligan state

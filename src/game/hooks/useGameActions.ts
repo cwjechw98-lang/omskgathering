@@ -5,7 +5,7 @@
 
 import { useCallback } from 'react';
 import type { GameState, CardInstance, PlayerState } from '../types';
-import { attackPlayer, attackCreature, endTurn, getEffectiveAttack } from '../engine';
+import { attackPlayer, attackCreature, endTurn, getEffectiveAttack, canCreatureAttack } from '../engine';
 import type { GameMessageType } from '@/components/game/MessageFeed';
 
 type CardAnim = { name: string; emoji: string; color: string } | null;
@@ -209,11 +209,7 @@ export function useGameActions(props: UseGameActionsProps): UseGameActionsReturn
         setInspected({ card, owner: 'player1' });
         return;
       }
-      const canAct =
-        !card.summoningSickness &&
-        !card.hasAttacked &&
-        card.frozen <= 0 &&
-        !card.keywords.includes('defender');
+      const canAct = canCreatureAttack(card, me, enemy);
       if (canAct) {
         if (selectedAttacker === uid) {
           setSelectedAttacker(null);
@@ -244,7 +240,8 @@ export function useGameActions(props: UseGameActionsProps): UseGameActionsReturn
       }
     },
     [
-      me.field,
+      me,
+      enemy,
       myTurn,
       gs.gameOver,
       selectedAttacker,

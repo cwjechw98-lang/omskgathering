@@ -6,6 +6,7 @@ import {
   endTurn,
   getEffectiveAttack,
   getEffectiveHealth,
+  canCreatureAttack,
 } from './engine';
 
 // ====== AI COMMENTS ======
@@ -169,13 +170,16 @@ function kw(card: CardInstance, keyword: string): boolean {
   return card.keywords.includes(keyword as CardInstance['keywords'][number]);
 }
 
-function canCreatureAttack(c: CardInstance, gs: GameState): boolean {
-  const atk = getEffectiveAttack(c, gs.player2, gs.player1);
-  return !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !kw(c, 'defender') && atk > 0;
+function canAiCreatureAttack(c: CardInstance, gs: GameState): boolean {
+  return canCreatureAttack(c, gs.player2, gs.player1);
 }
 
-// Only 'defender' is a mandatory blocker in MTG rules.
-// Vigilance allows attacking without tapping but does NOT force enemies to attack it.
+// ВНИМАНИЕ: это НЕ правило MTG. По 702.3b «защитник» значит только «не может
+// атаковать», а блокирующего выбирает защищающийся (509.1a). Наш движок шага
+// блокирования не имеет, поэтому defender здесь играет роль Taunt («атакуй меня
+// первым») — механика Hearthstone. Называть её правилом MTG неверно.
+// Vigilance в MTG — «атака не поворачивает существо» (702.20); движок поворот за
+// атаку не моделирует вовсе, так что vigilance сейчас ни на что не влияет.
 function getPlayerDefenders(p: PlayerState): CardInstance[] {
   return p.field.filter((c) => kw(c, 'defender') && c.frozen <= 0 && c.currentHealth > 0);
 }
@@ -339,7 +343,7 @@ function attackPhase(
   const actions: AIAttackAction[] = [];
 
   // Recalculate attackers from current state
-  let attackers = state.player2.field.filter((c) => canCreatureAttack(c, state));
+  let attackers = state.player2.field.filter((c) => canAiCreatureAttack(c, state));
 
   // Check for lethal
   const defenders = getPlayerDefenders(state.player1);
@@ -359,7 +363,7 @@ function attackPhase(
 
   // Execute attacks
   for (let i = 0; i < 20; i++) {
-    attackers = state.player2.field.filter((c) => canCreatureAttack(c, state));
+    attackers = state.player2.field.filter((c) => canAiCreatureAttack(c, state));
     if (attackers.length === 0) break;
 
     const att = attackers[0];

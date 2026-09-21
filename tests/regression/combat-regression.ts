@@ -102,7 +102,6 @@ function makeState(player1: PlayerState, player2: PlayerState, currentTurn: 'pla
     gameOver: false,
     winner: null,
     log: [],
-    cantAttackNextTurn: false,
     lastDiceRoll: null,
     aiComment: null,
     mulliganPhase: false,
@@ -746,6 +745,75 @@ function testBabkaRetaliatesWhenBuffed(): void {
   expect((nextEnemy?.currentHealth ?? 0) === 2, 'buffed babka should deal 1 retaliation damage');
 }
 
+/**
+ * Существо с эффективной атакой 0 не должно атаковать вообще.
+ *
+ * «Бабка с Семечками» — 0/3 без Защитника. Раньше движок и весь UI смотрели только
+ * на Защитника и поворот, поэтому её можно было отправить в атаку: она поворачивалась,
+ * проигрывала анимацию удара и наносила 0 урона. Игрок видел пустой удар.
+ */
+function testZeroAttackCreatureCannotAttackHero(): void {
+  const babka = makeCreature('babka_semechki', 'Babka', 0, 3);
+  babka.summoningSickness = false;
+
+  const state = makeState(
+    makePlayer({ field: [babka] }),
+    makePlayer({ health: 20, maxHealth: 30 }),
+    'player1'
+  );
+
+  const next = attackPlayer(state, 'player1', babka.uid);
+  expect(next === state, 'zero-attack creature must not attack the hero');
+  expect(next.player2.health === 20, 'hero health must not change on a zero-damage attack');
+}
+
+function testZeroAttackCreatureCannotAttackCreature(): void {
+  const babka = makeCreature('babka_semechki', 'Babka', 0, 3);
+  babka.summoningSickness = false;
+  const target = makeCreature('enemy-target', 'Enemy Target', 2, 3);
+
+  const state = makeState(
+    makePlayer({ field: [babka] }),
+    makePlayer({ field: [target] }),
+    'player1'
+  );
+
+  const next = attackCreature(state, 'player1', babka.uid, target.uid);
+  expect(next === state, 'zero-attack creature must not attack another creature');
+}
+
+/**
+ * Та же карта с баффом атаки обязана атаковать — иначе фикс запретил бы атаку по
+ * базовой атаке и сломал бы `testBabkaCanAttackWhenBuffed`. Эти два теста держат
+ * правило с двух сторон: запрет идёт по ЭФФЕКТИВНОЙ атаке.
+ */
+function testZeroBaseAttackCreatureAttacksOnceBuffed(): void {
+  const plain = makeCreature('babka_semechki', 'Babka', 0, 3);
+  plain.summoningSickness = false;
+  const buffed = makeCreature('babka_semechki', 'Babka', 0, 3);
+  buffed.summoningSickness = false;
+  buffed.buffAttack = 1;
+
+  const plainState = makeState(
+    makePlayer({ field: [plain] }),
+    makePlayer({ health: 20, maxHealth: 30 }),
+    'player1'
+  );
+  const buffedState = makeState(
+    makePlayer({ field: [buffed] }),
+    makePlayer({ health: 20, maxHealth: 30 }),
+    'player1'
+  );
+
+  expect(
+    attackPlayer(plainState, 'player1', plain.uid) === plainState,
+    'unbuffed zero-attack creature must be rejected'
+  );
+  const afterBuff = attackPlayer(buffedState, 'player1', buffed.uid);
+  expect(afterBuff !== buffedState, 'the same creature with +1 attack must be able to attack');
+  expect(afterBuff.player2.health === 19, 'buffed creature must deal 1 damage');
+}
+
 function testKeeperAttackReceivesRetaliationWhenDefenderNotFrozen(): void {
   const keeperAttacker = makeCreature('keeper-attacker', 'Keeper Attacker', 3, 4);
   keeperAttacker.summoningSickness = false;
@@ -1001,6 +1069,9 @@ function run(): void {
     { name: 'Land play limited to 1 per turn', fn: testLandPlayLimitedToOnePerTurn },
     { name: 'Babka can attack when buffed', fn: testBabkaCanAttackWhenBuffed },
     { name: 'Babka retaliates when buffed', fn: testBabkaRetaliatesWhenBuffed },
+    { name: 'Zero-attack creature cannot attack hero', fn: testZeroAttackCreatureCannotAttackHero },
+    { name: 'Zero-attack creature cannot attack creature', fn: testZeroAttackCreatureCannotAttackCreature },
+    { name: 'Zero base attack attacks once buffed', fn: testZeroBaseAttackCreatureAttacksOnceBuffed },
     { name: 'Keeper attack gets retaliation when defender is not frozen', fn: testKeeperAttackReceivesRetaliationWhenDefenderNotFrozen },
     { name: 'Keeper attack gets no retaliation when defender is frozen', fn: testKeeperAttackIntoFrozenDefenderGetsNoRetaliation },
     { name: 'Khroniker Irtysha ETB selects best of top two', fn: testKhronikerIrtyshaTakesBestOfTopTwo },

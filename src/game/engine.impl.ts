@@ -1,5 +1,6 @@
 import { CardData, createDeck } from '../data/cards';
 import { GameState, PlayerState, CardInstance } from './types';
+import { getEffectiveAttack, getEffectiveHealth, hasKeyword } from './buffs';
 
 let uidCounter = 0;
 export function generateUid(): string {
@@ -54,7 +55,6 @@ export function createInitialGameState(): GameState {
     gameOver: false,
     winner: null,
     log: [],
-    cantAttackNextTurn: false,
     lastDiceRoll: null,
     aiComment: null,
     mulliganPhase: true,
@@ -160,70 +160,10 @@ export function drawCard(player: PlayerState, log: string[]): boolean {
   }
 }
 
-export function getEffectiveAttack(
-  card: CardInstance,
-  player: PlayerState,
-  opponent?: PlayerState
-): number {
-  let atk = card.currentAttack + card.buffAttack + card.tempBuffAttack;
-
-  // Dvornik: +1/+0 per other creature
-  if (card.data.id === 'dvornik') {
-    atk += player.field.filter((c) => c.uid !== card.uid).length;
-  }
-
-  // Mer Omska: +1/+1 all
-  if (player.field.some((c) => c.data.id === 'mer_omska' && c.uid !== card.uid)) atk += 1;
-
-  // Cluster Lord: +1/+1 all
-  if (player.field.some((c) => c.data.id === 'cluster_lord' && c.uid !== card.uid)) atk += 1;
-
-  // Duh Omska enchantment: +1 atk
-  if (player.enchantments.some((c) => c.data.id === 'duh_omska')) atk += 1;
-
-  // Zarya Pobedy: +1 atk
-  if (player.enchantments.some((c) => c.data.id === 'zarya_pobedy')) atk += 1;
-
-  // Bocal: +1/+1 to pisiner
-  if (card.data.id === 'pisiner_21' && player.field.some((c) => c.data.id === 'bocal')) {
-    atk += 1;
-  }
-
-  // Omskaya Zima: -1 atk to opponents
-  if (opponent && opponent.enchantments.some((c) => c.data.id === 'omskaya_zima')) {
-    atk -= 1;
-  }
-
-  return Math.max(0, atk);
-}
-
-export function getEffectiveHealth(card: CardInstance, player: PlayerState): number {
-  // IMPORTANT: currentHealth already includes permanent buffs that increased maxHealth.
-  // So we DO NOT add buffHealth again here (otherwise buffs double-count).
-  let hp = card.currentHealth + card.tempBuffHealth;
-
-  // Mer Omska: +1/+1 all
-  if (player.field.some((c) => c.data.id === 'mer_omska' && c.uid !== card.uid)) hp += 1;
-
-  // Cluster Lord: +1/+1 all
-  if (player.field.some((c) => c.data.id === 'cluster_lord' && c.uid !== card.uid)) hp += 1;
-
-  // Blagoustroistvo: +0/+2
-  if (player.enchantments.some((c) => c.data.id === 'blagoustroistvo')) hp += 2;
-  // Klyatva Metrostroya: +0/+1
-  if (player.enchantments.some((c) => c.data.id === 'klyatva_metrostroya')) hp += 1;
-
-  // Bocal: +1/+1 to pisiner (handled as buffHealth/maxHealth on apply, but keep this as safety)
-  if (card.data.id === 'pisiner_21' && player.field.some((c) => c.data.id === 'bocal')) {
-    hp += 0;
-  }
-
-  return hp;
-}
-
-function hasKeyword(card: CardInstance, kw: string): boolean {
-  return card.keywords.includes(kw as CardInstance['keywords'][number]);
-}
+// getEffectiveHealth живёт в buffs.ts — раньше здесь была вторая копия, которая
+// расходилась с ней (учитывала «Клятву Метростроя», но не «Бокал»). Наружу через
+// barrel уходила версия из buffs, поэтому ИИ считал здоровье по другой формуле.
+// Оставлена одна реализация, как уже сделано для getEffectiveAttack и hasKeyword.
 
 // Freeze counters are decremented at the start of owner's turn.
 // To skip N full turns, store N+1.
@@ -232,9 +172,11 @@ function applyFreeze(card: CardInstance, turns: number) {
 }
 
 function isBlocker(c: CardInstance): boolean {
-  // MTG-aligned: only Defender forces attacks to be redirected.
-  // Vigilance in MTG just means "doesn't tap to attack" (we don't model tap),
-  // so it should NOT be treated as a mandatory defender.
+  // Наш defender — это Taunt, а не MTG-защитник: по 702.3b защитник лишь не может
+  // атаковать, а блокирующего выбирает защищающийся (509.1a). Шага блокирования в
+  // движке нет, поэтому defender перехватывает атаки на себя.
+  // Vigilance сюда не входит: в MTG это «атака не поворачивает существо» (702.20),
+  // а поворот за атаку движок не моделирует.
   return hasKeyword(c, 'defender') && c.frozen <= 0 && c.currentHealth > 0;
 }
 
@@ -585,13 +527,10 @@ function applyEntryEffects(
       break;
 
     case 'bocal':
-      for (const c of player.field) {
-        if (c.data.id === 'pisiner_21') {
-          c.buffAttack += 1;
-          c.buffHealth += 1;
-          c.currentHealth += 1;
-        }
-      }
+      // Постоянный бафф здесь убран: он double-count'ился с веткой Bocal в
+      // getEffectiveAttack/getEffectiveHealth. Теперь +1/+1 считает одна
+      // непрерывная проверка, поэтому и старые, и новые Писинеры получают ровно
+      // +1/+1, как и написано на карте.
       state.log.push('🏢 Бокал усиливает всех Писинеров!');
       break;
 
@@ -675,6 +614,8 @@ function applySpellEffect(
       }
       player.health = Math.min(player.maxHealth, player.health + 2);
       state.log.push('🥙 +2 здоровья!');
+      // Карта обещает «Потяните карту» — без этого вызова добор не происходил.
+      drawCard(player, state.log);
       break;
     }
 
@@ -714,11 +655,12 @@ function applySpellEffect(
     }
 
     case 'probka_lenina':
-      // Freeze all enemy creatures for 1 turn
+      // applyFreeze(c, 1) уже означает «пропустить следующий ход» (см. конвенцию
+      // N+1 в applyFreeze). Второй мороз через cantAttackNextTurn в endTurn давал
+      // два хода вместо одного — карта обещает один.
       for (const c of opponent.field) {
         applyFreeze(c, 1);
       }
-      state.cantAttackNextTurn = true;
       state.log.push('🚗 Пробка на Ленина! Все вражеские существа заморожены!');
       break;
 
@@ -782,7 +724,8 @@ function applySpellEffect(
       if (player.field.length > 0) {
         const target = player.field[Math.floor(Math.random() * player.field.length)];
         target.tempBuffAttack += 2;
-        target.hasAttacked = false; // Can attack immediately
+        // «Ускорение» — это право атаковать в ход входа, а не вторая атака.
+        // Сброс hasAttacked позволял существу ударить дважды за один ход.
         target.summoningSickness = false;
         state.log.push(`🌱 Ускоренный Рост: ${target.data.name} получает +2/+0 и ускорение!`);
       } else {
@@ -925,6 +868,12 @@ export function attackPlayer(
   if (!attacker) return state;
   if (hasKeyword(attacker, 'defender')) return state;
   if (attacker.summoningSickness || attacker.hasAttacked || attacker.frozen > 0) return state;
+  // Эффективная атака 0 — удара не будет, но существо повернётся и проиграет анимацию.
+  // Игрок увидит «пустую атаку»: лог «атакует героя на 0», а здоровье не меняется.
+  if (getEffectiveAttack(attacker, player, opponent) <= 0) {
+    newState.log.push(`❌ ${attacker.data.name} не может атаковать: атака 0.`);
+    return state;
+  }
 
   // Check for defenders (unless unblockable or flying and no flying defenders)
   if (!hasKeyword(attacker, 'unblockable') && hasDefender(opponent)) {
@@ -1000,6 +949,11 @@ export function attackCreature(
   if (!attacker || !defender) return state;
   if (hasKeyword(attacker, 'defender')) return state;
   if (attacker.summoningSickness || attacker.hasAttacked || attacker.frozen > 0) return state;
+  // Эффективная атака 0 — удара не будет, но существо повернётся. Отклоняем.
+  if (getEffectiveAttack(attacker, player, opponent) <= 0) {
+    newState.log.push(`❌ ${attacker.data.name} не может атаковать: атака 0.`);
+    return state;
+  }
 
   // Flying check
   if (hasKeyword(defender, 'flying') && !hasKeyword(attacker, 'flying')) {
@@ -1171,15 +1125,6 @@ export function endTurn(state: GameState): GameState {
     if (card.frozen > 0) card.frozen -= 1;
     card.hasAttacked = false;
     card.summoningSickness = false;
-  }
-
-  // Probka effect
-  if (newState.cantAttackNextTurn) {
-    for (const card of nextPlayer.field) {
-      applyFreeze(card, 1);
-    }
-    newState.cantAttackNextTurn = false;
-    newState.log.push('🚗 Пробка: все существа заморожены на 1 ход!');
   }
 
   // Draw card

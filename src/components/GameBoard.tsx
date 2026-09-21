@@ -15,6 +15,7 @@ import {
   attackCreature,
   endTurn,
   getEffectiveAttack,
+  canCreatureAttack,
 } from '../game/engine';
 import { createDeckFromCardIds } from '../data/cards';
 import { expandDeckCardIds, getActiveDeck, loadDecksState } from '../utils/decksStorage';
@@ -1655,10 +1656,7 @@ export function GameBoard({ mode, onBack }: Props) {
   const hasPlayableLand =
     me.hand.some((c) => c.data.type === 'land') && me.landsPlayed < me.maxLandsPerTurn;
   const hasPlayableCard = me.hand.some((c) => c.data.type !== 'land' && c.data.cost <= me.mana);
-  const hasAttackers = me.field.some(
-    (c) =>
-      !c.summoningSickness && !c.hasAttacked && c.frozen <= 0 && !c.keywords.includes('defender')
-  );
+  const hasAttackers = me.field.some((c) => canCreatureAttack(c, me, enemy));
   const landPlayed = me.landsPlayed > 0;
 
   useEffect(() => {
@@ -2020,11 +2018,7 @@ export function GameBoard({ mode, onBack }: Props) {
       setInspected({ card, owner: activePlayerKey });
       return;
     }
-    const canAct =
-      !card.summoningSickness &&
-      !card.hasAttacked &&
-      card.frozen <= 0 &&
-      !card.keywords.includes('defender');
+    const canAct = canCreatureAttack(card, me, enemy);
     if (canAct) {
       if (selectedAttacker === uid) {
         setSelectedAttacker(null);
@@ -2598,12 +2592,7 @@ export function GameBoard({ mode, onBack }: Props) {
         <div className={`board-zone player ${dropZoneActive ? 'drop-target' : ''}`}>
           {Array.from({ length: 7 }, (_, i) => {
             const card = me.field[i];
-            const canAct =
-              card &&
-              !card.summoningSickness &&
-              !card.hasAttacked &&
-              card.frozen <= 0 &&
-              !card.keywords.includes('defender');
+            const canAct = card && canCreatureAttack(card, me, enemy);
             const laneSourceActive =
               selectedAttacker !== null && !gs.gameOver && selectedAttackerSlot === i;
             return (

@@ -66,18 +66,37 @@ describe('engine turns', () => {
     expect(next.player2.hand.length).toBe(6);
   });
 
-  it('applies Probka freeze for next attacker turn', () => {
+  it('«Пробка на Ленина» морозит врага ровно на один ход', () => {
     const state = createInitialGameState();
     state.currentTurn = 'player1';
-    state.cantAttackNextTurn = true;
-    const nextCreature = createCardInstance(
+    state.player1.mana = 10;
+    state.player1.maxMana = 10;
+
+    const probka = createCardInstance(
+      card({ id: 'probka_lenina', name: 'Пробка на Ленина', type: 'spell', cost: 3 })
+    );
+    state.player1.hand = [probka];
+
+    const enemy = createCardInstance(
       card({ id: 'target', name: 'Next Target', type: 'creature', attack: 1, health: 3 })
     );
-    nextCreature.frozen = 0;
-    state.player2.field = [nextCreature];
+    enemy.frozen = 0;
+    state.player2.field = [enemy];
 
-    const next = endTurn(state);
-    expect(next.cantAttackNextTurn).toBe(false);
-    expect(next.player2.field[0].frozen).toBe(2);
+    // Розыгрыш: applyFreeze(c, 1) хранит N+1, то есть ровно один пропущенный ход.
+    const afterCast = playCard(state, 'player1', probka.uid);
+    expect(afterCast.player2.field[0].frozen).toBe(2);
+
+    // Первый ход врага: счётчик падает до 1, атаковать ещё нельзя.
+    const afterFirstEnd = endTurn(afterCast);
+    expect(afterFirstEnd.currentTurn).toBe('player2');
+    expect(afterFirstEnd.player2.field[0].frozen).toBe(1);
+
+    // Второй ход врага: мороз кончился — атака снова доступна.
+    // Раньше здесь стоял повторный applyFreeze, и существо пропускало два хода.
+    const afterSecondEnd = endTurn(afterFirstEnd);
+    const afterThirdEnd = endTurn(afterSecondEnd);
+    expect(afterThirdEnd.currentTurn).toBe('player2');
+    expect(afterThirdEnd.player2.field[0].frozen).toBe(0);
   });
 });
