@@ -26,6 +26,8 @@
     "jev:spells-probe": "node scripts/jev/probe-spell-classes.mjs",
     "jev:spells-control": "node scripts/jev/spell-class-control.mjs",
     "jev:stability": "node scripts/jev/judge-stability.mjs",
+    "jev:colors": "node scripts/jev/color-audit.mjs",
+    "jev:colors-apply": "node scripts/jev/apply-recolor.mjs",
     "cache:card-images": "node scripts/cache-card-images.mjs",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",

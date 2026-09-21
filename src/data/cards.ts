@@ -28,6 +28,36 @@ export interface CardData {
   imageUrl?: string;
 }
 
+/**
+ * Паспорт цвета: русское имя, значок и Источник из лора.
+ *
+ * Цвета здесь не придуманы заново. Они уже описаны в src/data/lore.ts (Глава I):
+ * пять Источников Маны — это пять реальных мест Омска, у каждого свой характер,
+ * фракция и лидер. Бесцветный — Школа 21, которую лор называет «шестой силой»,
+ * стоящей в тени остальных фракций; её карты это код и машины, а не стихия.
+ * Здесь только то, что нужно интерфейсу.
+ */
+export const COLOR_INFO: Record<CardColor, { name: string; emoji: string; source: string }> = {
+  white: { name: 'Белый', emoji: '🏛️', source: 'Проспект Мира' },
+  blue: { name: 'Синий', emoji: '🌊', source: 'Набережная Иртыша' },
+  black: { name: 'Чёрный', emoji: '⬛', source: 'Омское Подземелье' },
+  red: { name: 'Красный', emoji: '🔥', source: 'Омский НПЗ' },
+  green: { name: 'Зелёный', emoji: '🌳', source: 'Парк 30-летия' },
+  colorless: { name: 'Бесцветный', emoji: '💻', source: 'Школа 21' },
+};
+
+/** Порядок цветов в интерфейсе. */
+export const COLOR_ORDER: CardColor[] = ['white', 'blue', 'black', 'red', 'green', 'colorless'];
+
+/**
+ * Карты выбранных цветов. Пустой список означает «ограничения нет» — так колода
+ * без выбранных цветов остаётся прежней, и старые сохранённые колоды не ломаются.
+ */
+export function cardsOfColors(colors: CardColor[]): CardData[] {
+  if (colors.length === 0) return ALL_CARDS;
+  return ALL_CARDS.filter((c) => colors.includes(c.color));
+}
+
 // Helper: generate image URL from pollinations.ai
 function img(prompt: string, seed: number = 1): string {
   const encoded = encodeURIComponent(
@@ -231,7 +261,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'pisiner_21',
     name: 'Писинер Школы 21',
     cost: 3,
-    color: 'blue',
+    color: 'colorless',
     type: 'creature',
     attack: 1,
     health: 3,
@@ -471,7 +501,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'bocal',
     name: 'Бокал',
     cost: 4,
-    color: 'white',
+    color: 'colorless',
     type: 'creature',
     attack: 2,
     health: 5,
@@ -490,7 +520,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'makefile_golem',
     name: 'Голем Сборки',
     cost: 4,
-    color: 'red',
+    color: 'colorless',
     type: 'creature',
     attack: 4,
     health: 3,
@@ -638,7 +668,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'blackhole',
     name: 'Чёрная Дыра',
     cost: 7,
-    color: 'black',
+    color: 'colorless',
     type: 'creature',
     attack: 5,
     health: 5,
@@ -696,7 +726,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'cluster_lord',
     name: 'Лорд Кластера',
     cost: 7,
-    color: 'blue',
+    color: 'colorless',
     type: 'creature',
     attack: 5,
     health: 7,
@@ -769,7 +799,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'segfault',
     name: 'Сбой Памяти',
     cost: 3,
-    color: 'black',
+    color: 'colorless',
     type: 'spell',
     description: '🎲 Бросьте кубик: 1 → 2 урона своему, 2-6 → 3 урона вражескому.',
     flavor: '«Память рассыпалась. Реальность тоже.»',
@@ -816,7 +846,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'peer_review',
     name: 'Пир-ревью',
     cost: 2,
-    color: 'blue',
+    color: 'colorless',
     type: 'spell',
     description: 'Посмотрите 3 верхние карты колоды. Возьмите в руку 2 лучшие.',
     flavor: '«Код ревью в 3 часа ночи — лучшее ревью.»',
@@ -847,7 +877,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'debug_mode',
     name: 'Режим Отладки',
     cost: 2,
-    color: 'green',
+    color: 'colorless',
     type: 'spell',
     description: 'Дайте случайному вашему существу +2/+2 навсегда. Потяните карту.',
     flavor: '«Теперь я вижу всё.»',
@@ -935,7 +965,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'norminette',
     name: 'Норминетта',
     cost: 3,
-    color: 'red',
+    color: 'colorless',
     type: 'spell',
     description: 'Уничтожьте сильнейшее вражеское существо с атакой ≤ 4.',
     flavor: '«Норминетта: провал. Существо уничтожено.»',
@@ -950,7 +980,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'exam_42',
     name: 'Экзамен Школы 21',
     cost: 3,
-    color: 'black',
+    color: 'colorless',
     type: 'spell',
     description: '🎲 Бросьте кубик: оба сбрасывают столько карт (мин 1, макс 3).',
     flavor: '«Экзамен шестого ранга... Молись.»',
@@ -1069,7 +1099,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'holy_graph',
     name: 'Святой Граф',
     cost: 4,
-    color: 'green',
+    color: 'colorless',
     type: 'enchantment',
     description: 'При розыгрыше существа — потяните карту. +1 мана за каждого Писинера.',
     flavor: '«Граф проектов — путь к просветлению кодера.»',
@@ -1129,7 +1159,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'golos_telebashni',
     name: 'Голос Телебашни',
     cost: 4,
-    color: 'black',
+    color: 'colorless',
     type: 'enchantment',
     description: 'В начале хода соперник сбрасывает карту, если у него 4+ карт в руке.',
     flavor: '«Сигнал ловят все. Игнорировать не может никто.»',
@@ -1301,7 +1331,7 @@ export const ALL_CARDS: CardData[] = [
     id: 'nalogovaya_inspektsiya',
     name: 'Налоговая Инспекция',
     cost: 3,
-    color: 'black',
+    color: 'white',
     type: 'spell',
     description: 'Выберите карту в руке врага. Он сбрасывает её.',
     flavor: '«У вас есть неоплаченные счета... в жизни и в игре.»',

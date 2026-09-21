@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ALL_CARDS, CardType } from '../../data/cards';
+import { ALL_CARDS, CardColor, CardType, COLOR_INFO, COLOR_ORDER } from '../../data/cards';
 import {
   DeckCardEntry,
   DecksStorageState,
@@ -20,6 +20,13 @@ const CARD_BY_ID = new Map(CANDIDATE_CARDS.map((card) => [card.id, card]));
 const MAX_COPIES_PER_CARD = 8;
 const MAX_EXPANDED_DECK_SIZE = 240;
 const RECOMMENDED_DECK_SIZE = 40;
+/**
+ * Сколько цветов можно взять в одну колоду. Два — как в Magic: один цвет даёт
+ * узкую, но очень ровную колоду, два — основной способ играть. Больше двух
+ * размывает замысел: карт в игре пока по 9–13 на цвет, и на три цвета уже
+ * не хватает глубины.
+ */
+const MAX_DECK_COLORS = 2;
 const DEFAULT_DECK_NAME = 'Новая колода';
 
 type SortOption = 'name_asc' | 'cost_asc';
@@ -153,6 +160,13 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
   const [typeFilter, setTypeFilter] = useState<'all' | CardType>('all');
   const [costFilter, setCostFilter] = useState<string>('all');
   const [sortOption, setSortOption] = useState<SortOption>('name_asc');
+  /**
+   * Рабочий фильтр конструктора: какие цвета сейчас показывать. Пустой список —
+   * показывать все. НЕ сохраняется вместе с колодой и не должен: цвета колоды
+   * выводятся из её карт (см. deckColors ниже), поэтому сохранённая колода сама
+   * несёт свой цвет и хранилище менять не нужно.
+   */
+  const [deckColors, setDeckColors] = useState<CardColor[]>([]);
 
   const totalCards = useMemo(() => getTotalCards(counts), [counts]);
 
@@ -177,7 +191,8 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
       const matchesSearch = normalizedSearch.length === 0 || card.name.toLowerCase().includes(normalizedSearch);
       const matchesType = typeFilter === 'all' || card.type === typeFilter;
       const matchesCost = costFilter === 'all' || card.cost === Number(costFilter);
-      return matchesSearch && matchesType && matchesCost;
+      const matchesColor = deckColors.length === 0 || deckColors.includes(card.color);
+      return matchesSearch && matchesType && matchesCost && matchesColor;
     });
 
     return filtered.sort((a, b) => {
@@ -187,7 +202,7 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [costFilter, searchQuery, sortOption, typeFilter]);
+  }, [costFilter, deckColors, searchQuery, sortOption, typeFilter]);
 
   const landsInDeck = useMemo(() => {
     return Object.entries(counts).reduce((acc, [cardId, count]) => {
@@ -196,6 +211,58 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
       return acc;
     }, 0);
   }, [counts]);
+
+  /**
+   * Цвета, которые РЕАЛЬНО есть в колоде. Не хранятся, а считаются по картам —
+   * поэтому сохранённая колода сама несёт свой цвет, и хранилище менять не нужно.
+   *
+   * ЗЕМЛИ НЕ СЧИТАЮТСЯ. Сейчас мана в игре общая: любая земля даёт одно и то же
+   * «+1 мана», независимо от цвета. Если считать и земли, то колода с шестью видами
+   * земель всегда выглядела бы шестицветной. Когда появится цветная мана, земли
+   * надо будет включить сюда — это единственное место, которое придётся поправить.
+   */
+  const colorsInDeck = useMemo(() => {
+    const tally = new Map<CardColor, number>();
+    for (const [cardId, count] of Object.entries(counts)) {
+      if (count <= 0) continue;
+      const card = CARD_BY_ID.get(cardId);
+      if (!card || card.type === 'land') continue;
+      tally.set(card.color, (tally.get(card.color) ?? 0) + count);
+    }
+    return tally;
+  }, [counts]);
+
+  /** Цвета колоды в порядке интерфейса. */
+  const deckColorList = useMemo(
+    () => COLOR_ORDER.filter((color) => (colorsInDeck.get(color) ?? 0) > 0),
+    [colorsInDeck],
+  );
+
+  /**
+   * Выбор цвета в конструкторе. Повторное нажатие снимает выбор. Если уже выбрано
+   * два цвета, третий заменяет самый давний — так кнопка никогда не «не работает»
+   * молча, а игрок видит, что именно заменилось.
+   */
+  function toggleDeckColor(color: CardColor) {
+    if (deckColors.includes(color)) {
+      setDeckColors(deckColors.filter((c) => c !== color));
+      return;
+    }
+    if (deckColors.length < MAX_DECK_COLORS) {
+      setDeckColors([...deckColors, color]);
+      return;
+    }
+    setStatus(
+      'В колоде не больше ' +
+        MAX_DECK_COLORS +
+        ' цветов — «' +
+        COLOR_INFO[deckColors[0]].name +
+        '» заменён на «' +
+        COLOR_INFO[color].name +
+        '».',
+    );
+    setDeckColors([...deckColors.slice(1), color]);
+  }
 
   const deckSizeHint = useMemo(() => {
     if (totalCards < RECOMMENDED_DECK_SIZE) {
@@ -505,6 +572,69 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-[#11111a] border border-[#c9a84c]/20 rounded-lg p-4">
             <h3 className="font-heading text-[#f0d68a] mb-3">Доступные карты</h3>
+
+            {/* Выбор цвета колоды. Цвет здесь не украшение: он решает, из чего вообще
+                можно собирать колоду. Больше двух цветов не даём — карт в игре пока
+                по 9–13 на цвет, и на три цвета глубины не хватает. */}
+            <div className="mb-3">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-[11px] uppercase tracking-wide text-gray-400">
+                  Цвета колоды
+                </span>
+                {deckColors.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setDeckColors([])}
+                    className="text-[11px] text-gray-400 hover:text-[#f0d68a] underline"
+                  >
+                    Показать все
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {COLOR_ORDER.map((color) => {
+                  const info = COLOR_INFO[color];
+                  const picked = deckColors.includes(color);
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => toggleDeckColor(color)}
+                      title={info.name + ' — ' + info.source}
+                      aria-pressed={picked}
+                      className={
+                        'px-2.5 py-1 rounded-full border text-xs transition-colors ' +
+                        (picked
+                          ? 'border-[#c9a84c] bg-[#c9a84c]/20 text-[#f0d68a]'
+                          : 'border-gray-700 text-gray-300 hover:border-gray-500')
+                      }
+                    >
+                      {info.emoji + ' ' + info.name}
+                    </button>
+                  );
+                })}
+              </div>
+              {deckColors.length > 0 && (
+                <div className="text-[11px] text-gray-500 mt-1.5">
+                  Показаны карты только выбранных цветов. Земли доступны всегда.
+                </div>
+              )}
+              {deckColorList.length > 0 && (
+                <div className="text-[11px] mt-1.5 text-gray-400">
+                  Колода сейчас:{' '}
+                  <span className="text-[#f0d68a]">
+                    {deckColorList.map((color) => COLOR_INFO[color].name).join(' + ')}
+                  </span>
+                  {deckColorList.length > MAX_DECK_COLORS && (
+                    <span className="text-amber-400">
+                      {' '}
+                      — больше {MAX_DECK_COLORS} цветов, колода размывается
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
               <input
                 value={searchQuery}
