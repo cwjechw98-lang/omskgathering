@@ -228,7 +228,23 @@ const rows = subjects.map((c) => {
 const ORDER = ['перекрасить', 'решает человек', 'неуверенно', 'неустойчиво', 'на месте'];
 const byVerdict = Object.fromEntries(ORDER.map((v) => [v, rows.filter((r) => r.verdict === v)]));
 
+/**
+ * Признак вырожденного прогона: модель вернула ОДНУ И ТУ ЖЕ метку почти всем картам.
+ * Это не суждение, а отказ. Именно так выглядела настоящая ошибка прибора, когда
+ * текст карты не попал в вопрос: «белый» всем в одном прогоне и «синий» всем в другом.
+ * Без этой проверки скрипт отчитывался «ok» на мусоре — прибор врал о себе.
+ */
+const distinctLore = new Set(rows.map((r) => r.lore)).size;
+const distinctMech = new Set(rows.map((r) => r.mech)).size;
+const degenerate = distinctLore <= 1 || distinctMech <= 1;
+
 console.log('─── ИТОГ ───');
+if (degenerate) {
+  console.log(
+    `⚠️  ВЫРОЖДЕННЫЙ ПРОГОН: различных меток — лор ${distinctLore}, механика ${distinctMech}. ` +
+      'Суждению верить нельзя, результат недействителен.',
+  );
+}
 for (const v of ORDER) console.log(`${v.padEnd(16)} ${byVerdict[v].length}`);
 console.log('');
 for (const v of ['перекрасить', 'решает человек']) {
@@ -292,14 +308,16 @@ writeFileSync(outPath, md.join('\n'), 'utf8');
 console.log('Отчёт:', outPath);
 
 // Журнал: исход записывается всегда, самооценка модели — никогда.
+// Вырожденный прогон обязан записаться как провал, иначе журнал учит неверному.
 logOutcome({
   label: 'color-audit',
-  verdict: byVerdict['неустойчиво'].length === 0 ? 'ok' : 'unclear',
+  verdict: degenerate ? 'wrong' : byVerdict['неустойчиво'].length === 0 ? 'ok' : 'unclear',
   model: lore1.model,
   inputTokens: totalTokens,
   costUsd: totalCost,
   note:
     `перекрасить ${byVerdict['перекрасить'].length}, решает человек ` +
     `${byVerdict['решает человек'].length}, на месте ${byVerdict['на месте'].length}, ` +
-    `неуверенно ${byVerdict['неуверенно'].length}, неустойчиво ${byVerdict['неустойчиво'].length}`,
+    `неуверенно ${byVerdict['неуверенно'].length}, неустойчиво ${byVerdict['неустойчиво'].length}, ` +
+    `различных меток: лор ${distinctLore}, механика ${distinctMech}`,
 });
