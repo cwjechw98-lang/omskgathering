@@ -2,6 +2,7 @@ import { attackCreature, attackPlayer, createCardInstance, endTurn, playCard, dr
 import { aiTurn } from '../../src/game/ai';
 import type { CardData, Keyword } from '../../src/data/cards';
 import type { CardInstance, GameState, PlayerState } from '../../src/game/types';
+import { emptyPool } from '../../src/game/mana';
 
 function makeCreature(
   id: string,
@@ -76,10 +77,19 @@ function makeLand(id: string, name: string): CardInstance {
 }
 
 function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
+  // Мана в этих тестах всегда означала «хватит на карту» — карты тут разного цвета
+  // (заклинания синие, чары белые, земли бесцветные). Такую ману даёт только пул
+  // «любая»: обычная цветная мана оплатила бы лишь свой цвет, и половина тестов
+  // упала бы на «не хватает маны» по причине, к механике не относящейся.
+  // Общее число при этом остаётся прежним, поэтому проверки вида
+  // «мана не потрачена при отказе» продолжают работать без правок.
+  const mana = overrides.mana ?? 0;
   return {
     health: 30,
     maxHealth: 30,
-    mana: 0,
+    mana,
+    manaPool: { ...emptyPool(), any: mana },
+    landsByColor: { white: 0, blue: 0, black: 0, red: 0, green: 0, colorless: 0 },
     maxMana: 0,
     hand: [],
     field: [],

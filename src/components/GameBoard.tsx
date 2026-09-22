@@ -18,6 +18,7 @@ import {
   canCreatureAttack,
 } from '../game/engine';
 import { createDeckFromCardIds } from '../data/cards';
+import { canPay, describePool, pipsFor } from '../game/mana';
 import { expandDeckCardIds, getActiveDeck, loadDecksState } from '../utils/decksStorage';
 import {
   loadTutorialProgress,
@@ -1097,6 +1098,9 @@ function PlayerArea({
               <p>
                 Мана: {player.mana} / {player.maxMana}
               </p>
+              {/* Без расшифровки игрок видит «3/5» и не понимает, почему зелёная карта
+                  не играется: общее число есть, а нужного цвета нет. */}
+              <p className="text-xs opacity-80">Есть: {describePool(player.manaPool)}</p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -1655,7 +1659,11 @@ export function GameBoard({ mode, onBack }: Props) {
 
   const hasPlayableLand =
     me.hand.some((c) => c.data.type === 'land') && me.landsPlayed < me.maxLandsPerTurn;
-  const hasPlayableCard = me.hand.some((c) => c.data.type !== 'land' && c.data.cost <= me.mana);
+  const hasPlayableCard = me.hand.some(
+    (c) =>
+      c.data.type !== 'land' &&
+      canPay(me.manaPool, c.data.color, c.data.cost, pipsFor(c.data.color, c.data.cost)),
+  );
   const hasAttackers = me.field.some((c) => canCreatureAttack(c, me, enemy));
   const landPlayed = me.landsPlayed > 0;
 
@@ -2673,7 +2681,12 @@ export function GameBoard({ mode, onBack }: Props) {
               !gs.gameOver &&
               (card.data.type === 'land'
                 ? me.landsPlayed < me.maxLandsPerTurn
-                : card.data.cost <= me.mana);
+                : canPay(
+                    me.manaPool,
+                    card.data.color,
+                    card.data.cost,
+                    pipsFor(card.data.color, card.data.cost),
+                  ));
             return (
               <div
                 key={card.uid}

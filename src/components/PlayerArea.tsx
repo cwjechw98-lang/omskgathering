@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { PlayerState } from '@/game/types';
+import { describePool } from '@/game/mana';
 
 interface PlayerAreaProps {
   player: PlayerState;
@@ -171,7 +172,12 @@ export function PlayerArea({
               </div>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <p>Мана: {player.mana} / {player.maxMana}</p>
+              <p>
+                Мана: {player.mana} / {player.maxMana}
+              </p>
+              {/* Без расшифровки игрок видит «3/5» и не понимает, почему зелёная карта
+                  не играется: общее число есть, а нужного цвета нет. */}
+              <p className="text-xs opacity-80">Есть: {describePool(player.manaPool)}</p>
             </TooltipContent>
           </Tooltip>
         </div>

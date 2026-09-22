@@ -1,4 +1,5 @@
 import { GameState, CardInstance, PlayerState } from './types';
+import { canPay, pipsFor } from './mana';
 import {
   playCard,
   attackPlayer,
@@ -293,9 +294,23 @@ function playCardsPhase(
     const ai = gs.player2;
     const enemy = gs.player1;
 
-    // Get all playable cards and score them
+    // Get all playable cards and score them.
+    // «Играбельно» теперь значит «цвет сходится», а не «цена меньше общего числа маны»:
+    // зелёную карту нельзя оплатить белыми землями. Налог Бабушки с Метро удорожает
+    // заклинание на 1 общую ману, поэтому ИИ обязан его учитывать, иначе он будет
+    // выбирать карту, которую движок откажется разыгрывать, и застрянет.
+    const enemyTaxesSpells = enemy.field.some((c) => c.data.id === 'babushka_metro');
     const playable = ai.hand
-      .filter((c) => c.data.type !== 'land' && c.data.cost <= ai.mana)
+      .filter(
+        (c) =>
+          c.data.type !== 'land' &&
+          canPay(
+            ai.manaPool,
+            c.data.color,
+            c.data.cost + (enemyTaxesSpells && c.data.type === 'spell' ? 1 : 0),
+            pipsFor(c.data.color, c.data.cost),
+          ),
+      )
       .map((c) => ({ card: c, score: scoreCardToPlay(c, ai, enemy) }))
       .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score);

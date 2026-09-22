@@ -1,5 +1,6 @@
 import { GameState } from '../../game/types';
 import { canCreatureAttack } from '../../game/engine';
+import { canPay, pipsFor } from '../../game/mana';
 
 interface PhaseIndicatorProps {
   gameState: GameState;
@@ -26,7 +27,11 @@ function detectPhase(
   const opponent = gameState[playerKey === 'player1' ? 'player2' : 'player1'];
   const hasLands =
     me.hand.some((c) => c.data.type === 'land') && me.landsPlayed < me.maxLandsPerTurn;
-  const hasPlayable = me.hand.some((c) => c.data.type !== 'land' && c.data.cost <= me.mana);
+  const hasPlayable = me.hand.some(
+    (c) =>
+      c.data.type !== 'land' &&
+      canPay(me.manaPool, c.data.color, c.data.cost, pipsFor(c.data.color, c.data.cost)),
+  );
   const hasAttackers = me.field.some((c) => canCreatureAttack(c, me, opponent));
 
   if (hasLands && me.landsPlayed === 0) return 'land';

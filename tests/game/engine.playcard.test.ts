@@ -7,6 +7,7 @@ import {
   getEffectiveHealth,
   playCard,
 } from '../../src/game/engine';
+import { giveMana } from '../helpers/mana';
 
 function card(overrides: Partial<CardData> & Pick<CardData, 'id' | 'name' | 'type'>): CardData {
   return {
@@ -47,7 +48,8 @@ describe('engine playCard regression', () => {
   it('does not duplicate the card in hand when the field is full', () => {
     const state = createInitialGameState();
     state.currentTurn = 'player1';
-    state.player1.mana = 10;
+    // Карты в этом файле по умолчанию красные — платим красной маной.
+    giveMana(state.player1, 'red', 10);
     state.player1.field = Array.from({ length: 7 }, (_, index) =>
       readyCreature(
         card({
@@ -75,7 +77,8 @@ describe('engine playCard regression', () => {
   it('cleans up a creature killed by a spell immediately', () => {
     const state = createInitialGameState();
     state.currentTurn = 'player1';
-    state.player1.mana = 10;
+    // Карты в этом файле по умолчанию красные — платим красной маной.
+    giveMana(state.player1, 'red', 10);
     const victim = readyCreature(
       card({ id: 'victim', name: 'Victim', type: 'creature', attack: 1, health: 5 })
     );
@@ -96,7 +99,8 @@ describe('engine playCard regression', () => {
   it('«Сила Шавермы» тянет карту, как написано на карте', () => {
     const state = createInitialGameState();
     state.currentTurn = 'player1';
-    state.player1.mana = 10;
+    // Карты в этом файле по умолчанию красные — платим красной маной.
+    giveMana(state.player1, 'red', 10);
     state.player1.field = [
       readyCreature(card({ id: 'ally', name: 'Ally', type: 'creature', attack: 2, health: 2 })),
     ];
@@ -118,7 +122,8 @@ describe('engine playCard regression', () => {
   it('«Ускоренный Рост» не даёт второй атаки в тот же ход', () => {
     const state = createInitialGameState();
     state.currentTurn = 'player1';
-    state.player1.mana = 10;
+    // Карты в этом файле по умолчанию красные — платим красной маной.
+    giveMana(state.player1, 'red', 10);
     const attacker = readyCreature(
       card({ id: 'attacker', name: 'Attacker', type: 'creature', attack: 2, health: 2 })
     );
@@ -140,7 +145,8 @@ describe('engine playCard regression', () => {
   it('«Бокал» даёт +1/+1 и старым, и новым Писинерам', () => {
     const state = createInitialGameState();
     state.currentTurn = 'player1';
-    state.player1.mana = 10;
+    // Карты в этом файле по умолчанию красные — платим красной маной.
+    giveMana(state.player1, 'red', 10);
     const oldPisiner = readyCreature(
       card({ id: 'pisiner_21', name: 'Old Pisiner', type: 'creature', cost: 3, attack: 1, health: 3 })
     );

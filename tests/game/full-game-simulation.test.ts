@@ -1,5 +1,6 @@
 import { test, expect, describe } from 'vitest';
 import { createInitialGameState, playCard, attackPlayer, attackCreature, endTurn } from '../../src/game/engine';
+import { canPay } from '../../src/game/mana';
 import { GameState } from '../../src/game/types';
 
 describe('Full Game Simulation', () => {
@@ -65,8 +66,16 @@ describe('Full Game Simulation', () => {
       gs = endTurn(gs);
     }
 
-    // Find a creature in hand that we can afford
-    const creature = gs.player1.hand.find(c => c.data.type === 'creature' && c.data.cost <= gs.player1.mana);
+    // Find a creature in hand that we can afford.
+    // «Достаточно общей маны» больше не значит «играбельно»: мана цветная, и карту
+    // не оплатить, если нет маны ЕЁ цвета. С `cost <= mana` тест был плавающим —
+    // иногда попадалась карта, которой не хватало цвета, она не разыгрывалась,
+    // и проверка «существо на поле» падала. `canPay` — та же правда, что у движка.
+    const creature = gs.player1.hand.find(
+      c =>
+        c.data.type === 'creature' &&
+        canPay(gs.player1.manaPool, c.data.color, c.data.cost)
+    );
 
     if (creature && gs.player1.field.length < 7) {
       const manaBefore = gs.player1.mana;
@@ -234,9 +243,13 @@ describe('Full Game Simulation', () => {
         gs = playCard(gs, 'player1', land.uid);
       }
       
-      // Try to play creature
+      // Try to play creature. См. «Creature combat flow»: играбельность решает цвет,
+      // а не только число маны, иначе тест плавает.
       const creature = gs.player1.hand.find(
-        c => c.data.type === 'creature' && c.data.cost <= gs.player1.mana && c.data.cost >= turn.minCost
+        c =>
+          c.data.type === 'creature' &&
+          c.data.cost >= turn.minCost &&
+          canPay(gs.player1.manaPool, c.data.color, c.data.cost)
       );
       
       if (creature && gs.player1.field.length < 7) {

@@ -107,11 +107,39 @@ describe('cardsOfColors', () => {
 });
 
 describe('Цвета: колода', () => {
-  it('createDeck собирает карты всех шести цветов', () => {
+  it('createDeck собирает колоду из двух цветов по правилам конструктора', () => {
+    // Колода по умолчанию больше не «все карты всех шести цветов»: с цветной маной
+    // такая колода не разыграла бы почти ничего. Теперь это 40 карт, два цвета и
+    // 14 земель — ровно то, что разрешает DeckBuilder (40 / 2 цвета / земель ≥ 35%).
     const deck = createDeck();
-    const colors = new Set(deck.map((c) => c.color));
-    for (const color of COLOR_ORDER) {
-      expect(colors.has(color), `в колоде нет карт цвета ${color}`).toBe(true);
+    expect(deck).toHaveLength(40);
+
+    const deckColors = [...new Set(deck.map((c) => c.color))].filter((c) => c !== 'colorless');
+    expect(deckColors).toHaveLength(2);
+    expect(new Set(deckColors)).toEqual(new Set(['white', 'green']));
+
+    const lands = deck.filter((c) => c.type === 'land');
+    expect(lands).toHaveLength(14);
+    // Земля обязана давать ману цвета самой колоды: иначе цветной пипс нечем платить.
+    for (const land of lands) {
+      expect(deckColors, `земля ${land.id} не цвета колоды`).toContain(land.color);
+    }
+
+    // Бесцветный не входит в цвета колоды по умолчанию — Школа 21 собирается отдельно.
+    expect(deckColors).not.toContain('colorless');
+  });
+
+  it('createDeck уважает запрошенные цвета', () => {
+    const deck = createDeck(['blue', 'black']);
+    expect(deck).toHaveLength(40);
+
+    const deckColors = [...new Set(deck.map((c) => c.color))].filter((c) => c !== 'colorless');
+    expect(new Set(deckColors)).toEqual(new Set(['blue', 'black']));
+
+    const lands = deck.filter((c) => c.type === 'land');
+    expect(lands).toHaveLength(14);
+    for (const land of lands) {
+      expect(deckColors, `земля ${land.id} не цвета колоды`).toContain(land.color);
     }
   });
 

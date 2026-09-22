@@ -6,6 +6,7 @@ import {
   endTurn,
   playCard,
 } from '../../src/game/engine';
+import { giveMana } from '../helpers/mana';
 
 function card(overrides: Partial<CardData> & Pick<CardData, 'id' | 'name' | 'type'>): CardData {
   return {
@@ -45,6 +46,9 @@ describe('engine turns', () => {
     const state = createInitialGameState();
     state.currentTurn = 'player1';
     state.player2.maxMana = 3;
+    // Мана больше не хранится числом: на начало хода пул собирается заново из
+    // разыгранных земель. Три белые земли — это три БЕЛЫЕ маны, а не «три маны».
+    state.player2.landsByColor = { white: 3, blue: 0, black: 0, red: 0, green: 0, colorless: 0 };
     state.player2.mana = 0;
     state.player2.deck = [createCardInstance(card({ id: 'deck_draw', name: 'Draw', type: 'spell' }))];
 
@@ -60,6 +64,19 @@ describe('engine turns', () => {
 
     expect(next.currentTurn).toBe('player2');
     expect(next.player2.mana).toBe(3);
+    // Цвет — суть изменения: земля даёт ману СВОЕГО цвета, и в пуле три белых,
+    // а не три «вообще». Без этой проверки тест не отличил бы цветную ману от старой.
+    expect(next.player2.manaPool.white).toBe(3);
+    expect(next.player2.manaPool.green).toBe(0);
+    expect(next.player2.mana).toBe(
+      next.player2.manaPool.white +
+        next.player2.manaPool.blue +
+        next.player2.manaPool.black +
+        next.player2.manaPool.red +
+        next.player2.manaPool.green +
+        next.player2.manaPool.colorless +
+        next.player2.manaPool.any
+    );
     expect(next.player2.field[0].frozen).toBe(1);
     expect(next.player2.field[0].hasAttacked).toBe(false);
     expect(next.player2.field[0].summoningSickness).toBe(false);
@@ -69,7 +86,8 @@ describe('engine turns', () => {
   it('«Пробка на Ленина» морозит врага ровно на один ход', () => {
     const state = createInitialGameState();
     state.currentTurn = 'player1';
-    state.player1.mana = 10;
+    // «Пробка на Ленина» в этом файле собирается хелпером с цветом по умолчанию — синим.
+    giveMana(state.player1, 'blue', 10);
     state.player1.maxMana = 10;
 
     const probka = createCardInstance(

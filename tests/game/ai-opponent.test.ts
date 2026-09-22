@@ -110,7 +110,18 @@ describe('Ход противника сообщает интерфейсу, ч�
 
     const plays = result.actions.filter((a) => a.type === 'play-card');
     expect(plays.length).toBeGreaterThan(0);
-    expect(plays[0]).toMatchObject({ cardId: 'ploshchad_buhgoltsa', cardType: 'land' });
+    // Контракт интерфейса: первым в actions идёт РОЗЫГРЫШ ЗЕМЛИ. Раньше здесь был
+    // захардкожен `ploshchad_buhgoltsa` — бесцветная земля из старой колоды на 233
+    // карты. Новая колода по умолчанию бело-зелёная, бесцветной земли в ней нет,
+    // поэтому ИИ берёт первую землю руки. Проверяем то, что действительно важно:
+    // земля разыграна и её тип передан интерфейсу.
+    const landIds = gs.player2.hand
+      .concat(result.state.player2.field)
+      .filter((c) => c.data.type === 'land')
+      .map((c) => c.data.id);
+    expect(landIds.length).toBeGreaterThan(0);
+    expect(plays[0]).toMatchObject({ cardType: 'land' });
+    expect(landIds).toContain((plays[0] as { cardId?: string }).cardId);
   });
 
   test('у записи о розыгрыше есть всё нужное для показа', () => {

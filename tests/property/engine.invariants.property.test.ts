@@ -9,6 +9,7 @@ import {
   playCard,
 } from '../../src/game/engine';
 import type { CardData, Keyword } from '../../src/data/cards';
+import { emptyPool, poolTotal } from '../../src/game/mana';
 import type { CardInstance, GameState, PlayerState } from '../../src/game/types';
 
 const PROPERTY_RUNS = 500;
@@ -83,6 +84,11 @@ function makePlayer(overrides: Partial<PlayerState> = {}): PlayerState {
     health: 30,
     maxHealth: 30,
     mana: 0,
+    // Мана цветная: движок платит из пула и на начало хода собирает пул заново из
+    // земель. Без этих двух полей игрок — «пустой»: `refillPool` падал на undefined,
+    // а оплата не проходила вовсе, и проверка «мана не отрицательна» была бы пустой.
+    manaPool: emptyPool(),
+    landsByColor: { white: 0, blue: 0, black: 0, red: 0, green: 0, colorless: 0 },
     maxMana: 0,
     hand: [],
     field: [],
@@ -228,9 +234,21 @@ describe('Game engine property invariants', () => {
             return card;
           });
 
+          // Пул настоящий, а не «число маны без цвета»: белый запас плюс «любая»
+          // мана. Так оплата ДЕЙСТВИТЕЛЬНО происходит, и свойство про неотрицательность
+          // проверяет `payMana`, а не пустой пул, который отвергает всё подряд.
+          // Пул вдвое больше `mana`, поэтому любой разыгранный набор карт оплачиваем.
+          const makeManaPlayer = () =>
+            makePlayer({
+              manaPool: { ...emptyPool(), white: startMana, any: startMana },
+              mana: startMana * 2,
+              maxMana: Math.max(startMana, 1),
+              landsByColor: { white: startMana, blue: 0, black: 0, red: 0, green: 0, colorless: 0 },
+            });
+
           let state = makeState(
-            makePlayer({ mana: startMana, maxMana: Math.max(startMana, 1), hand }),
-            makePlayer({ mana: startMana, maxMana: Math.max(startMana, 1) }),
+            { ...makeManaPlayer(), hand },
+            makeManaPlayer(),
             'player1'
           );
 
@@ -244,6 +262,10 @@ describe('Game engine property invariants', () => {
 
             expect(state.player1.mana).toBeGreaterThanOrEqual(0);
             expect(state.player2.mana).toBeGreaterThanOrEqual(0);
+            // Два поля можно доверять только пока они согласованы: `mana` — витрина,
+            // `manaPool` — правда. Расхождение означает, что кто-то правит одно без другого.
+            expect(state.player1.mana).toBe(poolTotal(state.player1.manaPool));
+            expect(state.player2.mana).toBe(poolTotal(state.player2.manaPool));
           }
         }
       ),

@@ -226,7 +226,11 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
     for (const [cardId, count] of Object.entries(counts)) {
       if (count <= 0) continue;
       const card = CARD_BY_ID.get(cardId);
-      if (!card || card.type === 'land') continue;
+      // Земли здесь БОЛЬШЕ НЕ пропускаются. Раньше пропускались, потому что мана была
+      // безликой и земля ни на что не влияла. Теперь земля даёт ману своего цвета,
+      // поэтому земля — часть цвета колоды: зелёная земля в белой колоде делает её
+      // двухцветной, и это правда, а не придирка.
+      if (!card) continue;
       tally.set(card.color, (tally.get(card.color) ?? 0) + count);
     }
     return tally;
@@ -237,6 +241,49 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
     () => COLOR_ORDER.filter((color) => (colorsInDeck.get(color) ?? 0) > 0),
     [colorsInDeck],
   );
+
+  /**
+   * Цвета для предупреждения «колода размывается» — без бесцветного.
+   *
+   * Бесцветная мана (Площадь Бухгольца) платит за любую карту в части «остаток»,
+   * то есть она общая. Бесцветная земля не размывает колоду, её можно класть в любую,
+   * и пугать за неё игрока нельзя.
+   */
+  const dilutionColors = useMemo(
+    () => deckColorList.filter((color) => color !== 'colorless'),
+    [deckColorList],
+  );
+
+  /**
+   * Мана-база: сколько земель каждого цвета уже в колоде.
+   *
+   * Это главное, что нужно знать про цветную ману: цвет карты без земли этого цвета
+   * не оплатить ничем. Раньше такой проверки не существовало, потому что любая земля
+   * платила за любую карту.
+   */
+  const landsByColorInDeck = useMemo(() => {
+    const tally = new Map<CardColor, number>();
+    for (const [cardId, count] of Object.entries(counts)) {
+      if (count <= 0) continue;
+      const card = CARD_BY_ID.get(cardId);
+      if (!card || card.type !== 'land') continue;
+      tally.set(card.color, (tally.get(card.color) ?? 0) + count);
+    }
+    return tally;
+  }, [counts]);
+
+  /** Цвета карт, под которые в колоде нет ни одной земли: их физически нечем платить. */
+  const colorsWithoutLands = useMemo(() => {
+    const needed = new Set<CardColor>();
+    for (const [cardId, count] of Object.entries(counts)) {
+      if (count <= 0) continue;
+      const card = CARD_BY_ID.get(cardId);
+      // Бесцветным картам цветная земля не нужна: они платятся любой маной.
+      if (!card || card.type === 'land' || card.color === 'colorless') continue;
+      if ((landsByColorInDeck.get(card.color) ?? 0) === 0) needed.add(card.color);
+    }
+    return COLOR_ORDER.filter((color) => needed.has(color));
+  }, [counts, landsByColorInDeck]);
 
   /**
    * Выбор цвета в конструкторе. Повторное нажатие снимает выбор. Если уже выбрано
@@ -566,6 +613,15 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
           >
             {landsHint.text}
           </div>
+          {/* Главное предупреждение цветной маны: цвет карты без земли этого цвета
+              не оплатить ничем. Показываем только когда такие карты уже есть. */}
+          {colorsWithoutLands.length > 0 && (
+            <div className="text-xs text-red-400">
+              Нечем платить за{' '}
+              {colorsWithoutLands.map((color) => `«${COLOR_INFO[color].name}»`).join(', ')}
+              {' '}— в колоде нет ни одной земли этого цвета. Добавьте землю или уберите карты.
+            </div>
+          )}
           {status && <div className="text-xs text-[#c9a84c]">{status}</div>}
         </div>
 
@@ -625,7 +681,7 @@ export function DeckBuilder({ onBack, onDecksChanged }: DeckBuilderProps) {
                   <span className="text-[#f0d68a]">
                     {deckColorList.map((color) => COLOR_INFO[color].name).join(' + ')}
                   </span>
-                  {deckColorList.length > MAX_DECK_COLORS && (
+                  {dilutionColors.length > MAX_DECK_COLORS && (
                     <span className="text-amber-400">
                       {' '}
                       — больше {MAX_DECK_COLORS} цветов, колода размывается

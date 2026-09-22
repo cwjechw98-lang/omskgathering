@@ -1,4 +1,18 @@
-import { CardData, Keyword } from '../data/cards';
+import { CardColor, CardData, Keyword } from '../data/cards';
+
+/**
+ * Мана по цветам. `any` — не от земель, а от существ и чар (Писинер, Святой Граф):
+ * она платит за что угодно, включая цветные пипсы.
+ */
+export interface ManaPool {
+  white: number;
+  blue: number;
+  black: number;
+  red: number;
+  green: number;
+  colorless: number;
+  any: number;
+}
 
 export interface CardInstance {
   uid: string;
@@ -19,7 +33,16 @@ export interface CardInstance {
 export interface PlayerState {
   health: number;
   maxHealth: number;
+  /**
+   * Всего доступной маны сейчас — сумма пула. Оставлено числом, потому что так его
+   * читает интерфейс и дешёвые проверки. Менять его можно только вместе с `manaPool`,
+   * иначе два источника правды разойдутся.
+   */
   mana: number;
+  /** Из чего именно состоит доступная мана. Оплата считается только по нему. */
+  manaPool: ManaPool;
+  /** Разыгранные земли по цветам: из них собирается пул в начале хода. */
+  landsByColor: Record<CardColor, number>;
   maxMana: number;
   hand: CardInstance[];
   field: CardInstance[];

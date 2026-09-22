@@ -1350,42 +1350,62 @@ export const ALL_CARDS: CardData[] = [
 
 const CARD_BY_ID = new Map(ALL_CARDS.map((card) => [card.id, card]));
 
-export function createDeck(): CardData[] {
+/**
+ * Колода по умолчанию: 40 карт, два цвета, 14 земель.
+ *
+ * ПОЧЕМУ БОЛЬШЕ НЕ «ВСЕ КАРТЫ СРАЗУ». Раньше эта функция собирала 233 карты всех
+ * шести цветов и по 16 земель каждого. Пока мана была безликой, такая колода играла.
+ * С цветной маной она не разыграет почти ничего: земель каждого цвета в ней около
+ * одной шестой, то есть к пятому ходу нужного цвета обычно нет вовсе.
+ *
+ * Числа взяты не с потолка, а из правил самого конструктора колод (DeckBuilder.tsx):
+ * рекомендуемый размер 40, максимум 2 цвета, земель не меньше 35%. Прежняя колода
+ * нарушала все три — то есть быстрый бой шёл не по тем правилам, которым игра учит.
+ *
+ * Белый и зелёный — пара по умолчанию: самые «дружелюбные» цвета (порядок, лечение,
+ * защита и большие существа), на них проще провести первую партию. Остальные цвета
+ * никуда не делись: их карты лежат в коллекции, и в конструкторе из них собирается
+ * колода любого другого цвета.
+ */
+export const DEFAULT_DECK_COLORS: CardColor[] = ['white', 'green'];
+const DEFAULT_DECK_SIZE = 40;
+const DEFAULT_LAND_COUNT = 14;
+
+export function createDeck(colors: CardColor[] = DEFAULT_DECK_COLORS): CardData[] {
   const deck: CardData[] = [];
-  const nonLandCards = ALL_CARDS.filter((c) => c.type !== 'land' && c.id !== 'chinovnik');
-  const landCards = ALL_CARDS.filter((c) => c.type === 'land');
+  const wanted = new Set<CardColor>(colors);
+  const nonLandCards = ALL_CARDS.filter(
+    (c) => c.type !== 'land' && c.id !== 'chinovnik' && wanted.has(c.color)
+  );
+  const landCards = ALL_CARDS.filter((c) => c.type === 'land' && wanted.has(c.color));
 
-  // Cards with 3 copies for consistency (key gameplay cards)
-  const threeCopies = [
-    'norminette',
-    'siberian_gnev',
-    'yama_na_doroge',
-    'peer_review',
-    'probka_lenina',
-    'shaverma_power',
-  ];
-
+  // По одной копии каждой карты выбранных цветов — так колода показывает весь цвет.
   for (const card of nonLandCards) {
-    let copies = card.rarity === 'mythic' ? 1 : card.rarity === 'rare' ? 2 : 2;
-    // Increase specific cards to 3 copies
-    if (threeCopies.includes(card.id)) {
-      copies = 3;
-    }
-    for (let i = 0; i < copies; i++) {
-      deck.push({ ...card });
-    }
+    deck.push({ ...card });
   }
 
-  // Calculate target land count to reach ~40% of total deck size (MTG standard)
-  // Formula: Lands = (0.4 * NonLands) / 0.6  => Lands ≈ 0.67 * NonLands
-  const currentCount = deck.length;
-  const targetLandCount = Math.ceil(currentCount * 0.67);
-  const copiesPerLand = Math.ceil(targetLandCount / landCards.length);
+  // Добираем до нужного числа не-земель копиями самых дешёвых карт: дешёвые нужны
+  // в нескольких копиях, чтобы был ранний ход, а дорогие достаточно иметь по одной.
+  const targetNonLand = DEFAULT_DECK_SIZE - DEFAULT_LAND_COUNT;
+  const byCheapest = [...nonLandCards].sort((a, b) => a.cost - b.cost);
+  let fillIndex = 0;
+  while (deck.length < targetNonLand && byCheapest.length > 0) {
+    deck.push({ ...byCheapest[fillIndex % byCheapest.length] });
+    fillIndex++;
+  }
 
+  // Земли: поровну между цветами колоды.
+  const perColor = Math.floor(DEFAULT_LAND_COUNT / Math.max(1, landCards.length));
   for (const land of landCards) {
-    for (let i = 0; i < copiesPerLand; i++) {
+    for (let i = 0; i < perColor; i++) {
       deck.push({ ...land });
     }
+  }
+  // Остаток земель добираем по кругу, чтобы попасть ровно в размер колоды.
+  let extraIndex = 0;
+  while (deck.length < DEFAULT_DECK_SIZE && landCards.length > 0) {
+    deck.push({ ...landCards[extraIndex % landCards.length] });
+    extraIndex++;
   }
 
   // Guarantee 2 lands in first 5 cards (opening hand)

@@ -1,6 +1,14 @@
 import { CardData, createDeck } from '../data/cards';
 import { GameState, PlayerState, CardInstance } from './types';
 import { getEffectiveAttack, getEffectiveHealth, hasKeyword } from './buffs';
+import {
+  MANA_NAMES,
+  emptyPool,
+  payMana,
+  pipsFor,
+  poolTotal,
+  refillPool,
+} from './mana';
 
 let uidCounter = 0;
 export function generateUid(): string {
@@ -34,6 +42,8 @@ export function createPlayerState(): PlayerState {
     health: 30,
     maxHealth: 30,
     mana: 0,
+    manaPool: emptyPool(),
+    landsByColor: { white: 0, blue: 0, black: 0, red: 0, green: 0, colorless: 0 },
     maxMana: 0,
     hand,
     field: [],
@@ -201,15 +211,23 @@ function playLandCard(
 
   player.hand.splice(cardIndex, 1);
   player.maxMana += 1;
-  player.mana += 1;
   player.landsPlayed += 1;
+
+  // Земля даёт ману СВОЕГО цвета и запоминается по цвету: из этих записей собирается
+  // пул в начале каждого хода. Раньше земля давала безликую единицу маны.
+  const landColor = card.data.color;
+  player.landsByColor[landColor] += 1;
+  player.manaPool[landColor] += 1;
+  player.mana = poolTotal(player.manaPool);
 
   if (card.data.id === 'ploshchad_buhgoltsa' && player.maxMana === 3) {
     player.health = Math.min(player.maxHealth, player.health + 1);
     state.log.push('🗿 Площадь Бухгольца: третья земля — +1 здоровье!');
   }
 
-  state.log.push(`🏔️ ${card.data.name} разыграна. Мана: ${player.mana}/${player.maxMana}`);
+  state.log.push(
+    `🏔️ ${card.data.name} разыграна. Мана: ${player.mana}/${player.maxMana} (+${MANA_NAMES[landColor]})`,
+  );
   return state;
 }
 
@@ -222,14 +240,13 @@ function playCreatureCard(
   player: PlayerState,
   opponent: PlayerState,
   cardIndex: number,
-  card: CardInstance,
-  manaCost: number
+  card: CardInstance
 ): GameState {
+  // Проверка «поле полно» стоит ЗДЕСЬ только как страховка: playCard проверяет её
+  // до оплаты, поэтому мана ещё не списана и возвращать нечего. Раньше проверка была
+  // после списания, и приходилось возвращать ману числом.
   if (player.field.length >= 7) {
     state.log.push('❌ Поле полно! (максимум 7 существ)');
-    // Mana was already deducted by playCard; refund it. The card never left the
-    // hand, so it must NOT be re-inserted here (doing so duplicated the instance).
-    player.mana += manaCost;
     return state;
   }
 
@@ -326,22 +343,35 @@ export function playCard(
     return playLandCard(newState, player, cardIndex, card);
   }
 
-  // Check mana cost
+  // Проверяем поле ДО оплаты: иначе пришлось бы возвращать ману обратно в пул.
+  if (card.data.type === 'creature' && player.field.length >= 7) {
+    newState.log.push('❌ Поле полно! (максимум 7 существ)');
+    return newState;
+  }
+
+  // Цена. Налог Бабушки с Метро удорожает заклинание на 1 ОБЩУЮ ману и не добавляет
+  // цветной пипс, поэтому пипсы считаются от исходной цены карты.
   let manaCost = card.data.cost;
   const opponentHasBabushka = opponent.field.some((c) => c.data.id === 'babushka_metro');
   if (opponentHasBabushka && card.data.type === 'spell') {
     manaCost += 1;
   }
 
-  if (player.mana < manaCost) {
-    newState.log.push(`❌ Не хватает маны! Нужно ${manaCost}, есть ${player.mana}`);
+  const pips = pipsFor(card.data.color, card.data.cost);
+  const paid = payMana(player.manaPool, card.data.color, manaCost, pips);
+  if (!paid) {
+    const need =
+      pips > 0
+        ? `нужно ${manaCost} маны, из них ${pips} ${MANA_NAMES[card.data.color]}`
+        : `нужно ${manaCost} любой маны`;
+    newState.log.push(`❌ Не хватает маны! ${need}, а есть ${player.mana}`);
     return newState;
   }
-
-  player.mana -= manaCost;
+  player.manaPool = paid;
+  player.mana = poolTotal(paid);
 
   if (card.data.type === 'creature') {
-    return playCreatureCard(newState, player, opponent, cardIndex, card, manaCost);
+    return playCreatureCard(newState, player, opponent, cardIndex, card);
   } else if (card.data.type === 'spell') {
     // Rosgvardiya counter
     if (opponent.field.some((c) => c.data.id === 'rosgvardiya')) {
@@ -522,8 +552,13 @@ function applyEntryEffects(
       break;
 
     case 'pisiner_21':
-      player.mana = Math.min(player.maxMana + 1, player.mana + 1);
-      state.log.push('👨‍💻 Писинер: +1 мана!');
+      // Мана от существа — «любая»: она не принадлежит ни одному цвету и потому платит
+      // за что угодно, включая цветные пипсы. Потолок прежний: суммарно maxMana + 1.
+      if (poolTotal(player.manaPool) < player.maxMana + 1) {
+        player.manaPool.any += 1;
+        player.mana = poolTotal(player.manaPool);
+      }
+      state.log.push('👨‍💻 Писинер: +1 любая мана!');
       break;
 
     case 'bocal':
@@ -1117,7 +1152,10 @@ export function endTurn(state: GameState): GameState {
   if (nextPlayer.enchantments.some((c) => c.data.id === 'holy_graph')) {
     bonusMana = nextPlayer.field.filter((c) => c.data.id === 'pisiner_21').length;
   }
-  nextPlayer.mana = nextPlayer.maxMana + bonusMana;
+  // Пул собирается заново из разыгранных земель: по одной мане своего цвета за каждую.
+  // Бонус от Святого Графа — «любая» мана, как и от Писинера.
+  nextPlayer.manaPool = refillPool(nextPlayer.landsByColor, bonusMana);
+  nextPlayer.mana = poolTotal(nextPlayer.manaPool);
   nextPlayer.landsPlayed = 0;
 
   // Unfreeze and refresh creatures
