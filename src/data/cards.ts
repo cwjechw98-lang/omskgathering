@@ -173,10 +173,14 @@ export const ALL_CARDS: CardData[] = [
     type: 'creature',
     attack: 0,
     health: 3,
-    description: 'В начале хода восстановите 1 здоровье себе и бабке.',
+    description: 'Защитник. В начале хода восстановите 1 здоровье себе и бабке.',
     flavor: '«Семечки, семечки! Свежие, калёные!»',
     emoji: '🌻',
-    keywords: [],
+    // Защитник — потому что у неё 0 атаки: нападать она не может в принципе, и перехват
+    // не отнимает у неё ничего. Зато даёт зелёному единственный ответ на чужое существо:
+    // в этой игре нет шага блокирования, поэтому крупные звери зелёного не защищают,
+    // и без перехвата цвет не может ни убить, ни остановить никого.
+    keywords: ['defender'],
     rarity: 'common',
     imageUrl: img(
       'old russian grandmother selling sunflower seeds on street bench, magical aura, dark fantasy',
